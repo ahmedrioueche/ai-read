@@ -1,6 +1,6 @@
 import type { Config } from "tailwindcss";
 
-export default {
+const config: Config = {
   content: [
     "./src/pages/**/*.{js,ts,jsx,tsx,mdx}",
     "./src/components/**/*.{js,ts,jsx,tsx,mdx}",
@@ -9,10 +9,33 @@ export default {
   theme: {
     extend: {
       colors: {
-        background: "var(--background)",
-        foreground: "var(--foreground)",
+        // Define color variables for light mode
+        light: {
+          background: "#ffffff", // Light background
+          foreground: "#000000", // Light foreground (text)
+          primary: "#3b82f6", // Light primary color (blue)
+          secondary: "#F54F0B", // Light secondary color (yellow)
+          accent: "#eab308", // Light accent color (green)
+          "secondary-disabled": "#fce7b2", // Light secondary-disabled color
+        },
+        // Define color variables for dark mode
+        dark: {
+          background: "#1f1f1f", // Dark background
+          foreground: "#ffffff", // Dark foreground (text)
+          primary: "#2563eb", // Dark primary color (blue)
+          secondary: "#F54F0B", // Dark secondary color (yellow)
+          accent: "#f59e0b", // Dark accent color (green)
+          "secondary-disabled": "#7a5e27", // Dark secondary-disabled color
+        },
+      },
+      fontFamily: {
+        dancing: ["Dancing Script", "serif"],
+        stix: ["STIX Two Text", "serif"],
       },
     },
   },
-  plugins: [],
-} satisfies Config;
+  plugins: [require("tailwind-scrollbar-hide")],
+  darkMode: "class",
+};
+
+export default config;

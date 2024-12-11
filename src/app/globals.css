@@ -7,6 +7,18 @@
   --foreground: #171717;
 }
 
+@font-face {
+  font-family: "STIX Two Text";
+  src: url("/fonts/STIXTwoText-VariableFont_wght.ttf") format("truetype");
+  font-weight: 100 900;
+}
+
+@font-face {
+  font-family: "Dancing Script";
+  src: url("/fonts/DancingScript-VariableFont_wght.ttf") format("truetype");
+  font-weight: 100 900;
+}
+
 @media (prefers-color-scheme: dark) {
   :root {
     --background: #0a0a0a;
@@ -17,5 +29,65 @@
 body {
   color: var(--foreground);
   background: var(--background);
+  overflow-x: hidden;
   font-family: Arial, Helvetica, sans-serif;
+}
+
+@layer utilities {
+  .text-balance {
+    text-wrap: balance;
+  }
+}
+
+/* Hide scrollbar for WebKit-based browsers */
+html::-webkit-scrollbar,
+body::-webkit-scrollbar {
+  width: 0px;
+  background: transparent;
+}
+
+/* Hide scrollbar for Firefox */
+html,
+body {
+  scrollbar-width: none; /* Firefox */
+}
+
+/* Hide scrollbar for Internet Explorer 10+ and Edge */
+html,
+body {
+  -ms-overflow-style: none; /* IE and Edge */
+}
+
+/* Hide scrollbar manually */
+.hide-scrollbar::-webkit-scrollbar,
+.modal-content::-webkit-scrollbar {
+  display: none;
+}
+
+.no-spinner::-webkit-outer-spin-button,
+.no-spinner::-webkit-inner-spin-button {
+  -webkit-appearance: none;
+  margin: 0;
+}
+
+.no-spinner[type="number"] {
+  -moz-appearance: textfield;
+}
+
+/*------scroll-bar-------------*/
+::-webkit-scrollbar {
+  width: 7px;
+}
+
+::-webkit-scrollbar-thumb {
+  background-color: #007bff;
+  border-radius: 5px;
+}
+
+::-webkit-scrollbar-track {
+  background-color: #f0f0f0;
+}
+
+::-webkit-scrollbar-corner {
+  background-color: #fff;
 }
