@@ -198,16 +198,13 @@ const Main = ({ url }: { url: string }) => {
         const response = await aiApi.getTranslation(text, language);
         if (response) {
           setTranslation(response);
-          //setTimeout(() => {
-          //  setTranslation(null);
-          //  //if reading is disabled, then remove the selected text,
-          //  //but if it is not, check if it still reading first
-          //  if (settingsData.reading && !isReading) {
-          //    setSelectedText(null);
-          //  } else if (!settingsData.reading) {
-          //    setSelectedText(null);
-          //  }
-          //}, 10000 + response.length * 500);
+          // if(selectedText.length < 50){
+          //
+          // }
+          setTimeout(() => {
+            setTranslation(null);
+            setSelectedText(null);
+          }, 5000 + response.length * 200);
         }
       }
     };
@@ -230,7 +227,7 @@ const Main = ({ url }: { url: string }) => {
         setSummary(response);
         setTimeout(() => {
           setSummary(null);
-        }, response.length * 300);
+        }, 5000 + response.length * 200);
       }
     }
   };
@@ -247,7 +244,7 @@ const Main = ({ url }: { url: string }) => {
         setExplanation(response);
         setTimeout(() => {
           setExplanation(null);
-        }, response.length * 300);
+        }, 5000 + response.length * 200);
       }
     }
   };
@@ -282,7 +279,7 @@ const Main = ({ url }: { url: string }) => {
       />
 
       {translation && (
-        <div className="absolute bottom-1/4 left-10 z-10 sm:left-1/2 sm:transform sm:-translate-x-1/2 sm:-translate-y-0 md:bottom-1/4">
+        <div className="absolute mt-10 bottom-1/4 left-10 z-10 sm:left-1/2 sm:transform sm:-translate-x-1/2 sm:-translate-y-0 md:bottom-1/4">
           <TextCard
             text={translation}
             type="translation"

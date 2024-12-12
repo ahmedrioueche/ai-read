@@ -33,13 +33,13 @@ const TextCard: React.FC<TextCardProps> = ({
         sm:w-[80vw] 
         sm:max-w-[80%] 
         relative 
-        max-h-[60vh] 
+        max-h-[70vh] 
         overflow-y-auto
       `}
       style={{
         marginTop: "5vh",
         marginBottom: "5vh",
-        width: "calc(100vw - 5rem)", // Full width on mobile minus some padding
+        width: "calc(100vw - 3rem)", // Full width on mobile minus some padding
         maxWidth: "500px", // Reasonable max-width on larger screens
       }}
     >

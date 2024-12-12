@@ -1,6 +1,7 @@
 import { Loader, Settings, X } from "lucide-react";
 import React, { useEffect, useState } from "react";
 import CustomSelect from "./ui/CustomSelect";
+import useScreen from "@/hooks/useScreen";
 
 // Define options for Typing Modes
 const typingModes = [
@@ -38,11 +39,15 @@ const SettingsModal: React.FC<SettingsModalProps> = ({ isOpen, onClose }) => {
   const [isReading, setIsReading] = useState<boolean>(true);
   const [isTranslation, setIsTranslation] = useState<boolean>(false);
   const [readingSpeed, setReadingSpeed] = useState<string>("normal");
+  const { isSmallScreen } = useScreen();
+  useEffect(() => {
+    console.log({ isSmallScreen });
+  }, [isSmallScreen]);
 
   useEffect(() => {
     let settingsData = JSON.parse(localStorage.getItem("settings") || "{}");
     if (settingsData) {
-      setLanguage(settingsData.languageData.language || "en");
+      setLanguage(settingsData.languageData?.language || "en");
       setIsTranslation(settingsData.translation || true);
       setIsReading(settingsData.reading || true);
       setReadingSpeed(settingsData.readingSpeed || "normal");
@@ -89,11 +94,13 @@ const SettingsModal: React.FC<SettingsModalProps> = ({ isOpen, onClose }) => {
             <img
               src="/images/Settings.svg"
               alt="Settings"
-              className="md:w-70 md:h-70 object-contains hidden md:block"
+              className={`object-contain ${
+                isSmallScreen ? " w-36 h-36" : "w-50 h-50"
+              } `}
             />
           </div>
 
-          <div className="flex flex-col">
+          <div className="flex flex-col -mt-4 md:mt-0">
             <div className="flex flex-col">
               <CustomSelect
                 label="Translation Language"
@@ -102,64 +109,65 @@ const SettingsModal: React.FC<SettingsModalProps> = ({ isOpen, onClose }) => {
                 onChange={setLanguage}
               />
             </div>
-
-            <div className="mt-6">
-              <label className="font-semibold text-dark-foreground">
-                Enable Translation
-              </label>
-              <div className="flex items-center mt-2">
-                <label
-                  htmlFor="translation-toggle"
-                  className="relative inline-block w-12 h-6"
-                >
-                  <input
-                    id="translation-toggle"
-                    type="checkbox"
-                    checked={isTranslation}
-                    onChange={() => setIsTranslation(!isTranslation)}
-                    className="sr-only"
-                  />
-                  <span
-                    className={`block cursor-pointer absolute inset-0 rounded-full transition-colors duration-300 ${
-                      isTranslation ? "bg-dark-secondary" : "bg-gray-300"
-                    }`}
-                  ></span>
-                  <span
-                    className={`dot absolute left-1 top-1 bg-white w-4 h-4 rounded-full transition-transform duration-300 ${
-                      isTranslation ? "transform translate-x-6" : ""
-                    }`}
-                  ></span>
+            <div className="flex flex-row justify-between space-x-2">
+              <div className="mt-6">
+                <label className="font-semibold text-dark-foreground">
+                  Enable Translation
                 </label>
+                <div className="flex items-center mt-2">
+                  <label
+                    htmlFor="translation-toggle"
+                    className="relative inline-block w-12 h-6"
+                  >
+                    <input
+                      id="translation-toggle"
+                      type="checkbox"
+                      checked={isTranslation}
+                      onChange={() => setIsTranslation(!isTranslation)}
+                      className="sr-only"
+                    />
+                    <span
+                      className={`block cursor-pointer absolute inset-0 rounded-full transition-colors duration-300 ${
+                        isTranslation ? "bg-dark-secondary" : "bg-gray-300"
+                      }`}
+                    ></span>
+                    <span
+                      className={`dot absolute left-1 top-1 bg-white w-4 h-4 rounded-full transition-transform duration-300 ${
+                        isTranslation ? "transform translate-x-6" : ""
+                      }`}
+                    ></span>
+                  </label>
+                </div>
               </div>
-            </div>
 
-            <div className="mt-6">
-              <label className="font-semibold text-dark-foreground">
-                Enable Reading
-              </label>
-              <div className="flex items-center mt-2">
-                <label
-                  htmlFor="reading-toggle"
-                  className="relative inline-block w-12 h-6"
-                >
-                  <input
-                    id="reading-toggle"
-                    type="checkbox"
-                    checked={isReading}
-                    onChange={() => setIsReading(!isReading)}
-                    className="sr-only"
-                  />
-                  <span
-                    className={`block cursor-pointer absolute inset-0 rounded-full transition-colors duration-300 ${
-                      isReading ? "bg-dark-secondary" : "bg-gray-300"
-                    }`}
-                  ></span>
-                  <span
-                    className={`dot absolute left-1 top-1 bg-white w-4 h-4 rounded-full transition-transform duration-300 ${
-                      isReading ? "transform translate-x-6" : ""
-                    }`}
-                  ></span>
+              <div className="mt-6">
+                <label className="font-semibold text-dark-foreground">
+                  Enable Reading
                 </label>
+                <div className="flex items-center mt-2">
+                  <label
+                    htmlFor="reading-toggle"
+                    className="relative inline-block w-12 h-6"
+                  >
+                    <input
+                      id="reading-toggle"
+                      type="checkbox"
+                      checked={isReading}
+                      onChange={() => setIsReading(!isReading)}
+                      className="sr-only"
+                    />
+                    <span
+                      className={`block cursor-pointer absolute inset-0 rounded-full transition-colors duration-300 ${
+                        isReading ? "bg-dark-secondary" : "bg-gray-300"
+                      }`}
+                    ></span>
+                    <span
+                      className={`dot absolute left-1 top-1 bg-white w-4 h-4 rounded-full transition-transform duration-300 ${
+                        isReading ? "transform translate-x-6" : ""
+                      }`}
+                    ></span>
+                  </label>
+                </div>
               </div>
             </div>
 
@@ -175,16 +183,16 @@ const SettingsModal: React.FC<SettingsModalProps> = ({ isOpen, onClose }) => {
                 onChange={setReadingSpeed}
               />
             </div>
+            <div className="flex md:justify-end justify-start mt-9 ">
+              <button
+                type="button"
+                className="flex w-full justify-center px-4 py-3 bg-dark-secondary text-light-background rounded-md font-semibold  hover:bg-dark-accent transition-colors duration-300 focus:outline-none focus:ring-2 focus:ring-dark-secondary focus:ring-offset-2"
+                onClick={handleSave}
+              >
+                {loading ? <Loader className="animate-spin" /> : "Save"}
+              </button>
+            </div>
           </div>
-        </div>
-        <div className="flex md:justify-end justify-start mt-8 md:mt-0">
-          <button
-            type="button"
-            className="flex w-40 justify-center px-4 py-3 bg-dark-secondary text-light-background rounded-md font-semibold  hover:bg-dark-accent transition-colors duration-300 focus:outline-none focus:ring-2 focus:ring-dark-secondary focus:ring-offset-2"
-            onClick={handleSave}
-          >
-            {loading ? <Loader className="animate-spin" /> : "Save"}
-          </button>
         </div>
       </div>
     </div>
