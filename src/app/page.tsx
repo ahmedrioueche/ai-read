@@ -26,6 +26,7 @@ const Home: React.FC = () => {
   };
 
   useEffect(() => {
+    localStorage.clear();
     // Load the last loaded PDF Data URL from localStorage
     const lastPdfUrl = localStorage.getItem("lastPdfUrl");
     if (lastPdfUrl) {
