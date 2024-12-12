@@ -6,7 +6,8 @@
     "dev": "next dev --turbopack",
     "build": "next build",
     "start": "next start",
-    "lint": "next lint"
+    "lint": "next lint",
+    "install": "npm install --build-from-source=false"
   },
   "dependencies": {
     "@google/generative-ai": "^0.21.0",
@@ -20,6 +21,7 @@
     "react": "^19.0.0",
     "react-dom": "^19.0.0",
     "react-pdf": "^9.1.1",
+    "react-pdftotext": "^1.3.4",
     "tailwind-scrollbar-hide": "^1.1.7",
     "uninstall": "^0.0.0"
   },
