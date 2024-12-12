@@ -52,7 +52,7 @@ const Navbar: React.FC<{
       <nav
         className={`${
           isFullscreen ? "hidden" : "flex"
-        } items-center justify-between px-6 py-4 bg-dark-background text-dark-foreground shadow-md`}
+        } items-center justify-between px-6 py-4 z-50 bg-dark-background text-dark-foreground shadow-md`}
       >
         {/* Logo */}
         <div className="flex flex-row items-center space-x-2">

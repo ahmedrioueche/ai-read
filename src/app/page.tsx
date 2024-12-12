@@ -35,7 +35,7 @@ const Home: React.FC = () => {
 
     let settingsData = JSON.parse(localStorage.getItem("settings") || "{}");
     if (
-      !settingsData.language ||
+      !settingsData.languageData ||
       !settingsData.translation ||
       !settingsData.reading ||
       !settingsData.readingSpeed
@@ -59,7 +59,9 @@ const Home: React.FC = () => {
 
       {/* Main Content */}
       <div
-        className={`flex flex-col items-center ${!pdfFileUrl ? "-mt-10" : ""}`}
+        className={`flex flex-col items-center z-10 ${
+          !pdfFileUrl ? "-mt-10" : ""
+        }`}
       >
         {/* Adjusted padding-top */}
         {!pdfFileUrl ? (
