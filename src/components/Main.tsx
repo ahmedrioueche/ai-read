@@ -282,7 +282,7 @@ const Main = ({ url }: { url: string }) => {
       />
 
       {translation && (
-        <div className="absolute md:bottom-1/4 sm:bottom-1/2 left-10 z-10 sm:left-1/2 sm:transform sm:-translate-x-1/2 sm:-translate-y-0">
+        <div className="absolute bottom-1/4 left-10 z-10 sm:left-1/2 sm:transform sm:-translate-x-1/2 sm:-translate-y-0 md:bottom-1/4">
           <TextCard
             text={translation}
             type="translation"
@@ -293,27 +293,23 @@ const Main = ({ url }: { url: string }) => {
       )}
 
       {explanation && (
-        <div className="absolute md:bottom-1/4 sm:bottom-1/2 left-10 z-10 sm:left-1/2 sm:transform sm:-translate-x-1/2 sm:-translate-y-0">
+        <div className="absolute bottom-1/4 left-10 z-10 sm:left-1/2 sm:transform sm:-translate-x-1/2 sm:-translate-y-0 md:bottom-1/4">
           <TextCard
             text={explanation}
             type="explanation"
             languageData={languageData}
-            onClose={() => {
-              setExplanation(null);
-            }}
+            onClose={() => setExplanation(null)}
           />
         </div>
       )}
 
       {summary && (
-        <div className="absolute md:bottom-1/4 sm:bottom:1/2 left-10 z-10 sm:left-1/2 sm:transform sm:-translate-x-1/2 sm:-translate-y-0">
+        <div className="absolute bottom-1/4 left-10 z-10 sm:left-1/2 sm:transform sm:-translate-x-1/2 sm:-translate-y-0 md:bottom-1/4">
           <TextCard
             text={summary}
             type="summary"
             languageData={languageData}
-            onClose={() => {
-              setSummary(null);
-            }}
+            onClose={() => setSummary(null)}
           />
         </div>
       )}
