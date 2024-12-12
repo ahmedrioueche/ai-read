@@ -2,7 +2,6 @@
 import React, { useState, useEffect } from "react";
 import { Cog, Rocket, Maximize2, ChevronDown } from "lucide-react"; // Importing Fullscreen and back icons
 import SettingsModal from "./SettingsModal";
-import Image from "next/image";
 
 const Navbar: React.FC<{
   onUpload: (e: React.ChangeEvent<HTMLInputElement>) => void;

@@ -1,5 +1,4 @@
 import React from "react";
-import Image from "next/image";
 
 interface LandingProps {
   onFileChange: (e: React.ChangeEvent<HTMLInputElement>) => void;

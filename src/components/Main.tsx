@@ -269,7 +269,7 @@ const Main = ({ url }: { url: string }) => {
       <Worker workerUrl="https://cdnjs.cloudflare.com/ajax/libs/pdf.js/3.11.174/pdf.worker.min.js">
         <Viewer
           fileUrl={url}
-          plugins={[pageNavigationPluginInstance]}
+          plugins={[defaultLayoutPluginInstance]}
           initialPage={lastPage}
           onPageChange={handlePageChange}
           ref={viewerRef}
