@@ -1,6 +1,6 @@
 "use client";
 import React, { useState } from "react";
-import { Cog, Rocket } from "lucide-react";
+import { Cog, Rocket, Maximize2 } from "lucide-react"; // Importing Fullscreen icon
 import SettingsModal from "./SettingsModal";
 import Image from "next/image";
 
@@ -8,6 +8,22 @@ const Navbar: React.FC<{
   onUpload: (e: React.ChangeEvent<HTMLInputElement>) => void;
 }> = ({ onUpload }) => {
   const [isSettingModalOpen, setIsSettingModalOpen] = useState(false);
+
+  // Fullscreen Toggle Function
+  const handleFullscreen = () => {
+    if (document.documentElement.requestFullscreen) {
+      document.documentElement.requestFullscreen();
+    } else if (document.documentElement.requestFullscreen) {
+      // Firefox
+      document.documentElement.requestFullscreen();
+    } else if (document.documentElement.requestFullscreen) {
+      // Chrome, Safari and Opera
+      document.documentElement.requestFullscreen();
+    } else if (document.documentElement.requestFullscreen) {
+      // IE/Edge
+      document.documentElement.requestFullscreen();
+    }
+  };
 
   return (
     <nav className="flex items-center justify-between px-6 py-4 bg-dark-background text-dark-foreground shadow-md">
@@ -49,6 +65,15 @@ const Navbar: React.FC<{
           className="hover:text-dark-secondary transition duration-300"
         >
           <Cog size={24} />
+        </button>
+
+        {/* Fullscreen Icon */}
+        <button
+          onClick={handleFullscreen}
+          aria-label="Fullscreen"
+          className="hover:text-dark-secondary transition duration-300"
+        >
+          <Maximize2 size={24} />
         </button>
       </div>
 

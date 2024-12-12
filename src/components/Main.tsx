@@ -7,7 +7,7 @@ import { defaultLayoutPlugin } from "@react-pdf-viewer/default-layout";
 import "@react-pdf-viewer/default-layout/lib/styles/index.css";
 import { franc } from "franc-min";
 import pdfToText from "react-pdftotext";
-import { useState, useEffect } from "react";
+import { useState, useEffect, useCallback } from "react";
 import TextCard from "./ui/TextCard";
 import { FileText, Info } from "lucide-react";
 
@@ -38,13 +38,36 @@ const Main = ({ url }: { url: string }) => {
       }
     }
   }, [settingsData]);
-  // Function to handle text selection
-  const handleTextSelection = () => {
-    const selection = window.getSelection();
-    if (selection && selection.toString()) {
-      setSelectedText(selection.toString()); // Store the selected word/text
+
+  const handleTextSelection = useCallback(() => {
+    let selection: string | null = null;
+
+    // Check for window selection (works on desktop and mobile)
+    if (window.getSelection) {
+      const selectedText = window.getSelection();
+      selection = selectedText ? selectedText.toString().trim() : null;
     }
-  };
+
+    // Fallback for older browsers or additional mobile support
+    if (!selection) {
+      // Check if there's a current selection in the document
+      const activeElement = document.activeElement;
+      if (activeElement && "value" in activeElement) {
+        const inputElement = activeElement as HTMLInputElement;
+        selection = inputElement.value
+          .substring(
+            inputElement.selectionStart || 0,
+            inputElement.selectionEnd || 0
+          )
+          .trim();
+      }
+    }
+
+    // Set the selected text if it's not empty
+    if (selection && selection.length > 0) {
+      setSelectedText(selection);
+    }
+  }, []);
 
   const extractText = async (fileUrl: string) => {
     try {
@@ -74,14 +97,20 @@ const Main = ({ url }: { url: string }) => {
   }, [url]);
 
   useEffect(() => {
-    // Attach the event listener to handle selection
-    window.addEventListener("mouseup", handleTextSelection);
+    // Desktop events
+    document.addEventListener("mouseup", handleTextSelection);
+    document.addEventListener("selectionchange", handleTextSelection);
+
+    // Mobile touch events
+    document.addEventListener("touchend", handleTextSelection);
 
     return () => {
-      // Clean up the event listener on component unmount
-      window.removeEventListener("mouseup", handleTextSelection);
+      // Cleanup event listeners
+      document.removeEventListener("mouseup", handleTextSelection);
+      document.removeEventListener("selectionchange", handleTextSelection);
+      document.removeEventListener("touchend", handleTextSelection);
     };
-  }, []);
+  }, [handleTextSelection]);
 
   // Function to preprocess the selected text (remove unnecessary line breaks)
   const preprocessText = (text: string) => {
@@ -163,7 +192,10 @@ const Main = ({ url }: { url: string }) => {
   const defaultLayoutPluginInstance = defaultLayoutPlugin();
 
   return (
-    <div className="h-screen w-screen bg-gray-100 relative">
+    <div
+      className="h-screen w-screen bg-gray-100 relative"
+      style={{ touchAction: "none" }}
+    >
       <Worker workerUrl="https://cdnjs.cloudflare.com/ajax/libs/pdf.js/3.11.174/pdf.worker.min.js">
         <Viewer fileUrl={url} plugins={[defaultLayoutPluginInstance]} />
       </Worker>
@@ -195,7 +227,7 @@ const Main = ({ url }: { url: string }) => {
       )}
 
       {translation && (
-        <div className="absolute top-10 left-10 z-10">
+        <div className="absolute top-10 left-20 z-10">
           <TextCard
             text={translation}
             type="translation"
@@ -205,7 +237,7 @@ const Main = ({ url }: { url: string }) => {
       )}
 
       {explanation && (
-        <div className="absolute top-10 right-10 z-10">
+        <div className="absolute top-10 right-20 z-10">
           <TextCard
             text={explanation}
             type="explanation"
@@ -217,7 +249,7 @@ const Main = ({ url }: { url: string }) => {
       )}
 
       {summary && (
-        <div className="absolute top-60 left-10 z-10">
+        <div className="absolute top-60 left-20 z-10">
           <TextCard
             text={summary}
             type="summary"
