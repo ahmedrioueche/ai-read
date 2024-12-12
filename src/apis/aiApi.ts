@@ -26,7 +26,8 @@ export class AiApi {
   };
 
   getTranslation = async (text: string, language: string) => {
-    const prompt = `${this.MAIN_PROMPT} Translate this text: "${text}" to this language: "${language}"`;
+    const prompt = `${this.MAIN_PROMPT} Translate this text: "${text}" to this language: "${language}"
+        you should use on the ${language} language and nothing else. `;
     try {
       const response = await this.promptAi(prompt);
       return response;
@@ -36,7 +37,8 @@ export class AiApi {
   };
 
   getSummary = async (text: string, language: string) => {
-    const prompt = `${this.MAIN_PROMPT} Summarize this text: "${text}" in this language: "${language}". 
+    const prompt = `${this.MAIN_PROMPT} Summarize this text: "${text}" in this language: "${language}"
+    you should use on the ${language} language and nothing else. 
     You should give the meaining with as few words as possible
     `;
     try {
@@ -52,7 +54,8 @@ export class AiApi {
     language: string,
     bookContext: string
   ) => {
-    const prompt = `${this.MAIN_PROMPT} Explain this text: "${text}" in this language: "${language}" 
+    const prompt = `${this.MAIN_PROMPT} Explain this text: "${text}" in this language: "${language}",
+    you should use on the ${language} language and nothing else.  
     given this book context: "${bookContext}". if the text is a few words, explain them without 
     refering to the context, the context is only given to enhance your undertanding of the text.`;
     try {

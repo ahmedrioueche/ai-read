@@ -26,7 +26,8 @@ const Main = ({ url }: { url: string }) => {
   const [lastPage, setLastPage] = useState<number>();
   const [selectionTimeout, setSelectionTimeout] =
     useState<NodeJS.Timeout | null>(null);
-  const language = settingsData?.language || "English";
+  const languageData = settingsData?.languageData;
+  const language = languageData.language || "English";
   const aiApi = new AiApi();
   const pageNavigationPluginInstance = pageNavigationPlugin();
   const defaultLayoutPluginInstance = defaultLayoutPlugin();
@@ -40,10 +41,6 @@ const Main = ({ url }: { url: string }) => {
       }
     }
   }, []);
-
-  useEffect(() => {
-    console.log("lastPage in useEffect", lastPage);
-  }, [lastPage]);
 
   const handlePageChange = (e: any) => {
     const newPage = e.currentPage;
@@ -118,7 +115,7 @@ const Main = ({ url }: { url: string }) => {
     }
 
     // Only set a timeout if text is selected and meets minimum length
-    if (selection && selection.length > 10) {
+    if (selection && selection.trim() !== "") {
       // Clear the previous timeout if there is one
       if (selectionTimeout) {
         clearTimeout(selectionTimeout);
@@ -201,16 +198,16 @@ const Main = ({ url }: { url: string }) => {
         const response = await aiApi.getTranslation(text, language);
         if (response) {
           setTranslation(response);
-          setTimeout(() => {
-            setTranslation(null);
-            //if reading is disabled, then remove the selected text,
-            //but if it is not, check if it still reading first
-            if (settingsData.reading && !isReading) {
-              setSelectedText(null);
-            } else if (!settingsData.reading) {
-              setSelectedText(null);
-            }
-          }, 10000 + response.length * 500);
+          //setTimeout(() => {
+          //  setTranslation(null);
+          //  //if reading is disabled, then remove the selected text,
+          //  //but if it is not, check if it still reading first
+          //  if (settingsData.reading && !isReading) {
+          //    setSelectedText(null);
+          //  } else if (!settingsData.reading) {
+          //    setSelectedText(null);
+          //  }
+          //}, 10000 + response.length * 500);
         }
       }
     };
@@ -285,20 +282,22 @@ const Main = ({ url }: { url: string }) => {
       />
 
       {translation && (
-        <div className="absolute bottom-10 left-10 z-10 sm:left-1/2 sm:transform sm:-translate-x-1/2 sm:-translate-y-0">
+        <div className="absolute bottom-1/4 left-10 z-10 sm:left-1/2 sm:transform sm:-translate-x-1/2 sm:-translate-y-0">
           <TextCard
             text={translation}
             type="translation"
+            languageData={languageData}
             onClose={() => setTranslation(null)}
           />
         </div>
       )}
 
       {explanation && (
-        <div className="absolute bottom-10 left-10 z-10 sm:left-1/2 sm:transform sm:-translate-x-1/2 sm:-translate-y-0">
+        <div className="absolute bottom-1/4 left-10 z-10 sm:left-1/2 sm:transform sm:-translate-x-1/2 sm:-translate-y-0">
           <TextCard
             text={explanation}
             type="explanation"
+            languageData={languageData}
             onClose={() => {
               setExplanation(null);
             }}
@@ -307,10 +306,11 @@ const Main = ({ url }: { url: string }) => {
       )}
 
       {summary && (
-        <div className="absolute bottom-10 left-10 z-10 sm:left-1/2 sm:transform sm:-translate-x-1/2 sm:-translate-y-0">
+        <div className="absolute bottom-1/4 left-10 z-10 sm:left-1/2 sm:transform sm:-translate-x-1/2 sm:-translate-y-0">
           <TextCard
             text={summary}
             type="summary"
+            languageData={languageData}
             onClose={() => {
               setSummary(null);
             }}

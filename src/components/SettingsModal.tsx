@@ -11,21 +11,20 @@ const typingModes = [
 
 // Include the 15 most used languages
 const languages = [
-  { value: "en", label: "English" },
-  { value: "zh", label: "Chinese" },
-  { value: "hi", label: "Hindi" },
-  { value: "es", label: "Spanish" },
-  { value: "fr", label: "French" },
-  { value: "ar", label: "Arabic" },
-  { value: "bn", label: "Bengali" },
-  { value: "pt", label: "Portuguese" },
-  { value: "ru", label: "Russian" },
-  { value: "ja", label: "Japanese" },
-  { value: "de", label: "German" },
-  { value: "ko", label: "Korean" },
-  { value: "it", label: "Italian" },
-  { value: "tr", label: "Turkish" },
-  { value: "pl", label: "Polish" },
+  { value: "english", label: "English", rtl: false },
+  { value: "arabic", label: "Arabic", rtl: true },
+  { value: "french", label: "French", rtl: false },
+  { value: "spanish", label: "Spanish", rtl: false },
+  { value: "italian", label: "Italian", rtl: false },
+  { value: "german", label: "German", rtl: false },
+  { value: "russian", label: "Russian", rtl: false },
+  { value: "portuguese", label: "Portuguese", rtl: false },
+  { value: "chinese", label: "Chinese", rtl: true },
+  { value: "japanese", label: "Japanese", rtl: false },
+  { value: "korean", label: "Korean", rtl: false },
+  { value: "hindi", label: "Hindi", rtl: false },
+  { value: "turkish", label: "Turkish", rtl: false },
+  { value: "polish", label: "Polish", rtl: false },
 ];
 
 interface SettingsModalProps {
@@ -35,7 +34,7 @@ interface SettingsModalProps {
 
 const SettingsModal: React.FC<SettingsModalProps> = ({ isOpen, onClose }) => {
   const [loading, setLoading] = useState(false);
-  const [language, setLanguage] = useState<string>("en");
+  const [language, setLanguage] = useState("english");
   const [isReading, setIsReading] = useState<boolean>(true);
   const [isTranslation, setIsTranslation] = useState<boolean>(false);
   const [readingSpeed, setReadingSpeed] = useState<string>("normal");
@@ -43,7 +42,7 @@ const SettingsModal: React.FC<SettingsModalProps> = ({ isOpen, onClose }) => {
   useEffect(() => {
     let settingsData = JSON.parse(localStorage.getItem("settings") || "{}");
     if (settingsData) {
-      setLanguage(settingsData.language || "English");
+      setLanguage(settingsData.languageData.language || "en");
       setIsTranslation(settingsData.translation || true);
       setIsReading(settingsData.reading || true);
       setReadingSpeed(settingsData.readingSpeed || "normal");
@@ -51,15 +50,18 @@ const SettingsModal: React.FC<SettingsModalProps> = ({ isOpen, onClose }) => {
   }, []);
 
   const handleSave = () => {
+    const selectedLanguage = languages.find((lang) => lang.value === language);
     const settingsData = {
-      language: language,
+      languageData: {
+        language: selectedLanguage?.value,
+        rtl: selectedLanguage?.rtl,
+      },
       translation: isTranslation,
       reading: isReading,
       readingSpeed: readingSpeed,
     };
 
     localStorage.setItem("settings", JSON.stringify(settingsData));
-
     onClose();
   };
 
@@ -82,9 +84,7 @@ const SettingsModal: React.FC<SettingsModalProps> = ({ isOpen, onClose }) => {
             <X size={16} />
           </button>
         </div>
-        {/* Two-column layout with image on the left */}
         <div className="grid grid-cols-1 sm:grid-cols-2 gap-6 mt-4">
-          {/* Left Column for Image */}
           <div className="flex justify-center items-center">
             <img
               src="/images/Settings.svg"
@@ -93,7 +93,6 @@ const SettingsModal: React.FC<SettingsModalProps> = ({ isOpen, onClose }) => {
             />
           </div>
 
-          {/* Right Column for Settings */}
           <div className="flex flex-col">
             <div className="flex flex-col">
               <CustomSelect

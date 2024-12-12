@@ -33,7 +33,6 @@ const Home: React.FC = () => {
     }
 
     let settingsData = JSON.parse(localStorage.getItem("settings") || "{}");
-    console.log({ settingsData });
     if (
       !settingsData.language ||
       !settingsData.translation ||
@@ -41,7 +40,7 @@ const Home: React.FC = () => {
       !settingsData.readingSpeed
     ) {
       settingsData = {
-        language: "English",
+        languageData: { language: "english", rtl: false },
         translation: true,
         reading: true,
         readingSpeed: "normal",
