@@ -170,7 +170,8 @@ const Main = ({ url }: { url: string }) => {
   const speakText = (text: string) => {
     if ("speechSynthesis" in window) {
       const utterance = new SpeechSynthesisUtterance(text);
-      let lang = formatLanguage(bookLanguage);
+      const language = franc(selectedText!);
+      let lang = formatLanguage(language);
 
       utterance.lang = lang;
       utterance.pitch = 1.1; // Set pitch (range 0 to 2)
@@ -279,7 +280,7 @@ const Main = ({ url }: { url: string }) => {
       />
 
       {translation && (
-        <div className="absolute mt-10 bottom-1/4 left-10 z-10 sm:left-1/2 sm:transform sm:-translate-x-1/2 sm:-translate-y-0 md:bottom-1/4">
+        <div className="absolute mt-10 bottom-1/4 left-10 z-100 sm:left-1/2 sm:transform sm:-translate-x-1/2 sm:-translate-y-0 md:bottom-1/4">
           <TextCard
             text={translation}
             type="translation"
