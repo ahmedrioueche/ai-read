@@ -25,7 +25,8 @@ const TextCard: React.FC<TextCardProps> = ({
     <div
       className={`p-4 ${rtl ? "border-r-4" : "border-l-4"} rounded shadow-md ${
         typeColors[type]
-      } w-full max-w-md relative max-h-[90vh] overflow-y-auto`}
+      } w-[80vw] max-w-[80%] sm:w-[80%] md:w-[80%] relative max-h-[80vh] overflow-y-auto`}
+      style={{ marginTop: "5vh", marginBottom: "5vh" }}
     >
       {/* Close Button */}
       <button
