@@ -282,7 +282,7 @@ const Main = ({ url }: { url: string }) => {
       />
 
       {translation && (
-        <div className="absolute md:bottom-1/4 bottom-1/2 left-10 z-10 sm:left-1/2 sm:transform sm:-translate-x-1/2 sm:-translate-y-0">
+        <div className="absolute md:bottom-1/4 sm:bottom-1/2 left-10 z-10 sm:left-1/2 sm:transform sm:-translate-x-1/2 sm:-translate-y-0">
           <TextCard
             text={translation}
             type="translation"
@@ -293,7 +293,7 @@ const Main = ({ url }: { url: string }) => {
       )}
 
       {explanation && (
-        <div className="absolute md:bottom-1/4  bottom-1/2 left-10 z-10 sm:left-1/2 sm:transform sm:-translate-x-1/2 sm:-translate-y-0">
+        <div className="absolute md:bottom-1/4 sm:bottom-1/2 left-10 z-10 sm:left-1/2 sm:transform sm:-translate-x-1/2 sm:-translate-y-0">
           <TextCard
             text={explanation}
             type="explanation"
@@ -306,7 +306,7 @@ const Main = ({ url }: { url: string }) => {
       )}
 
       {summary && (
-        <div className="absolute md:bottom-1/4 bottom:1/2 left-10 z-10 sm:left-1/2 sm:transform sm:-translate-x-1/2 sm:-translate-y-0">
+        <div className="absolute md:bottom-1/4 sm:bottom:1/2 left-10 z-10 sm:left-1/2 sm:transform sm:-translate-x-1/2 sm:-translate-y-0">
           <TextCard
             text={summary}
             type="summary"
