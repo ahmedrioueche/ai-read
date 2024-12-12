@@ -4,6 +4,7 @@ import React, { useEffect, useState } from "react";
 import PDFViewer from "../components/Main";
 import Landing from "@/components/Landing";
 import Navbar from "@/components/Navbar";
+import Footer from "@/components/Footer";
 
 const Home: React.FC = () => {
   const [pdfFileUrl, setPdfFileUrl] = useState<string | null>(null);
@@ -69,6 +70,7 @@ const Home: React.FC = () => {
           <PDFViewer url={pdfFileUrl} />
         )}
       </div>
+      <Footer />
     </div>
   );
 };
