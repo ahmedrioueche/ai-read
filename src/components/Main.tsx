@@ -170,8 +170,10 @@ const Main = ({ url }: { url: string }) => {
   const speakText = (text: string) => {
     if ("speechSynthesis" in window) {
       const utterance = new SpeechSynthesisUtterance(text);
-      const textToUse = selectedText!.length < 20 ? bookLanguage : selectedText;
-      const language = franc(textToUse!);
+      const language =
+        selectedText && selectedText.length > 20
+          ? franc(selectedText)
+          : bookLanguage;
       let lang = formatLanguage(language);
 
       utterance.lang = lang;
