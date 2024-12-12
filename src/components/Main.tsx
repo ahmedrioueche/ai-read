@@ -170,6 +170,7 @@ const Main = ({ url }: { url: string }) => {
   const speakText = (text: string) => {
     if ("speechSynthesis" in window) {
       const utterance = new SpeechSynthesisUtterance(text);
+      //user book language on words, and detect the language on sentences.
       const language =
         selectedText && selectedText.length > 20
           ? franc(selectedText)
@@ -283,7 +284,7 @@ const Main = ({ url }: { url: string }) => {
       />
 
       {translation && (
-        <div className="absolute mt-10 bottom-1/4 left-10 z-100 sm:left-1/2 sm:transform sm:-translate-x-1/2 sm:-translate-y-0 md:bottom-1/4">
+        <div className="absolute mt-10 bottom-1/4 left-10 z-10 sm:left-1/2 sm:transform sm:-translate-x-1/2 sm:-translate-y-0 md:bottom-1/4">
           <TextCard
             text={translation}
             type="translation"
