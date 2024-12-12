@@ -6,6 +6,7 @@ import "@react-pdf-viewer/core/lib/styles/index.css";
 import { defaultLayoutPlugin } from "@react-pdf-viewer/default-layout";
 import "@react-pdf-viewer/default-layout/lib/styles/index.css";
 import { franc } from "franc-min";
+import pdfToText from "react-pdftotext";
 import { useState, useEffect } from "react";
 import TextCard from "./ui/TextCard";
 import { FileText, Info } from "lucide-react";
@@ -45,32 +46,33 @@ const Main = ({ url }: { url: string }) => {
     }
   };
 
-  //const extractText = async (fileUrl: string) => {
-  //  try {
-  //    // Fetch the entire PDF file
-  //    const response = await fetch(fileUrl);
-  //    const fileBlob = await response.blob();
-  //
-  //    const text = await pdfToText(fileBlob);
-  //
-  //    const limitedText = text.slice(0, 5000);
-  //
-  //    setBookContext(limitedText);
-  //
-  //    const detectedLanguage = franc(limitedText);
-  //
-  //    // Set the detected language
-  //    setBookLanguage(detectedLanguage);
-  //  } catch (error) {
-  //    console.error("Failed to extract text from PDF:", error);
-  //  }
-  //};
-  //useEffect(() => {
-  //  if (url) {
-  //    extractText(url);
-  //  }
-  //}, [url]);
-  //
+  const extractText = async (fileUrl: string) => {
+    try {
+      // Fetch the entire PDF file
+      const response = await fetch(fileUrl);
+      const fileBlob = await response.blob();
+
+      const text = await pdfToText(fileBlob);
+
+      const limitedText = text.slice(0, 5000);
+
+      setBookContext(limitedText);
+
+      const detectedLanguage = franc(limitedText);
+
+      // Set the detected language
+      setBookLanguage(detectedLanguage);
+    } catch (error) {
+      console.error("Failed to extract text from PDF:", error);
+    }
+  };
+
+  useEffect(() => {
+    if (url) {
+      extractText(url);
+    }
+  }, [url]);
+
   useEffect(() => {
     // Attach the event listener to handle selection
     window.addEventListener("mouseup", handleTextSelection);

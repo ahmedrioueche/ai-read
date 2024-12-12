@@ -2,6 +2,7 @@
 import React, { useState } from "react";
 import { Cog, Rocket } from "lucide-react";
 import SettingsModal from "./SettingsModal";
+import Image from "next/image";
 
 const Navbar: React.FC<{
   onUpload: (e: React.ChangeEvent<HTMLInputElement>) => void;
@@ -12,7 +13,13 @@ const Navbar: React.FC<{
     <nav className="flex items-center justify-between px-6 py-4 bg-dark-background text-dark-foreground shadow-md">
       {/* Logo */}
       <div className="flex flex-row items-center space-x-2">
-        <img src="/images/FireBall.svg" alt="" className="h-7 w-7" />
+        <Image
+          src="/images/FireBall.svg"
+          alt=""
+          className="h-7 w-7"
+          width={10}
+          height={10}
+        />
         <div className="text-xl font-bold font-dancing">AI-Read</div>
       </div>
 
