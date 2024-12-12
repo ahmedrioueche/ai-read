@@ -7,9 +7,10 @@ import { defaultLayoutPlugin } from "@react-pdf-viewer/default-layout";
 import "@react-pdf-viewer/default-layout/lib/styles/index.css";
 import { franc } from "franc-min";
 import pdfToText from "react-pdftotext";
-import { useState, useEffect, useCallback } from "react";
+import { useState, useEffect, useCallback, useRef } from "react";
 import TextCard from "./ui/TextCard";
-import { FileText, Info } from "lucide-react";
+import OptionsMenu from "./ui/OptionsMenu";
+import { pageNavigationPlugin } from "@react-pdf-viewer/page-navigation";
 
 const Main = ({ url }: { url: string }) => {
   const [selectedText, setSelectedText] = useState<string | null>(null);
@@ -19,9 +20,35 @@ const Main = ({ url }: { url: string }) => {
   const [bookContext, setBookContext] = useState<string | null>(null);
   const [bookLanguage, setBookLanguage] = useState<string | null>(null);
   const [readingSpeed, setReadingSpeed] = useState<number>(0.9);
+  const [isReading, setIsReading] = useState(false);
   const settingsData = JSON.parse(localStorage.getItem("settings") || "{}");
+  const viewerRef = useRef<any>(null);
+  const [lastPage, setLastPage] = useState<number>();
+  const [selectionTimeout, setSelectionTimeout] =
+    useState<NodeJS.Timeout | null>(null);
   const language = settingsData?.language || "English";
   const aiApi = new AiApi();
+  const pageNavigationPluginInstance = pageNavigationPlugin();
+  const defaultLayoutPluginInstance = defaultLayoutPlugin();
+
+  useEffect(() => {
+    const storedLastPage = localStorage.getItem("lastPage");
+    if (storedLastPage) {
+      const page = parseInt(storedLastPage, 10);
+      if (!isNaN(page)) {
+        setLastPage(page);
+      }
+    }
+  }, []);
+
+  useEffect(() => {
+    console.log("lastPage in useEffect", lastPage);
+  }, [lastPage]);
+
+  const handlePageChange = (e: any) => {
+    const newPage = e.currentPage;
+    localStorage.setItem("lastPage", newPage.toString());
+  };
 
   useEffect(() => {
     if (settingsData) {
@@ -38,36 +65,6 @@ const Main = ({ url }: { url: string }) => {
       }
     }
   }, [settingsData]);
-
-  const handleTextSelection = useCallback(() => {
-    let selection: string | null = null;
-
-    // Check for window selection (works on desktop and mobile)
-    if (window.getSelection) {
-      const selectedText = window.getSelection();
-      selection = selectedText ? selectedText.toString().trim() : null;
-    }
-
-    // Fallback for older browsers or additional mobile support
-    if (!selection) {
-      // Check if there's a current selection in the document
-      const activeElement = document.activeElement;
-      if (activeElement && "value" in activeElement) {
-        const inputElement = activeElement as HTMLInputElement;
-        selection = inputElement.value
-          .substring(
-            inputElement.selectionStart || 0,
-            inputElement.selectionEnd || 0
-          )
-          .trim();
-      }
-    }
-
-    // Set the selected text if it's not empty
-    if (selection && selection.length > 0) {
-      setSelectedText(selection);
-    }
-  }, []);
 
   const extractText = async (fileUrl: string) => {
     try {
@@ -96,6 +93,54 @@ const Main = ({ url }: { url: string }) => {
     }
   }, [url]);
 
+  const handleTextSelection = useCallback(() => {
+    let selection: string | null = null;
+
+    // Check for window selection (works on desktop and mobile)
+    if (window.getSelection) {
+      const selectedText = window.getSelection();
+      selection = selectedText ? selectedText.toString().trim() : null;
+    }
+
+    // Fallback for older browsers or additional mobile support
+    if (!selection) {
+      // Check if there's a current selection in the document
+      const activeElement = document.activeElement;
+      if (activeElement && "value" in activeElement) {
+        const inputElement = activeElement as HTMLInputElement;
+        selection = inputElement.value
+          .substring(
+            inputElement.selectionStart || 0,
+            inputElement.selectionEnd || 0
+          )
+          .trim();
+      }
+    }
+
+    // Only set a timeout if text is selected and meets minimum length
+    if (selection && selection.length > 10) {
+      // Clear the previous timeout if there is one
+      if (selectionTimeout) {
+        clearTimeout(selectionTimeout);
+      }
+
+      // Set a new timeout to finalize the selected text
+      setSelectionTimeout(
+        setTimeout(() => {
+          // Additional check to ensure the selection is still active
+          const currentSelection = window.getSelection();
+          const currentSelectedText = currentSelection
+            ? currentSelection.toString().trim()
+            : null;
+
+          if (currentSelectedText === selection) {
+            setSelectedText(selection);
+          }
+        }, 1000)
+      );
+    }
+  }, [selectionTimeout]);
+
   useEffect(() => {
     // Desktop events
     document.addEventListener("mouseup", handleTextSelection);
@@ -109,6 +154,11 @@ const Main = ({ url }: { url: string }) => {
       document.removeEventListener("mouseup", handleTextSelection);
       document.removeEventListener("selectionchange", handleTextSelection);
       document.removeEventListener("touchend", handleTextSelection);
+
+      // Clear timeout on cleanup
+      if (selectionTimeout) {
+        clearTimeout(selectionTimeout);
+      }
     };
   }, [handleTextSelection]);
 
@@ -129,6 +179,15 @@ const Main = ({ url }: { url: string }) => {
       utterance.pitch = 1.1; // Set pitch (range 0 to 2)
       utterance.rate = readingSpeed; // Set rate (range 0.1 to 10)
 
+      utterance.onstart = () => {
+        setIsReading(true);
+      };
+
+      utterance.onend = () => {
+        setIsReading(false);
+        setSelectedText(null);
+      };
+
       // Speak the text
       window.speechSynthesis.speak(utterance);
     } else {
@@ -144,7 +203,14 @@ const Main = ({ url }: { url: string }) => {
           setTranslation(response);
           setTimeout(() => {
             setTranslation(null);
-          }, 10000 + response.length * 300);
+            //if reading is disabled, then remove the selected text,
+            //but if it is not, check if it still reading first
+            if (settingsData.reading && !isReading) {
+              setSelectedText(null);
+            } else if (!settingsData.reading) {
+              setSelectedText(null);
+            }
+          }, 10000 + response.length * 500);
         }
       }
     };
@@ -189,7 +255,11 @@ const Main = ({ url }: { url: string }) => {
     }
   };
 
-  const defaultLayoutPluginInstance = defaultLayoutPlugin();
+  const stopReading = () => {
+    // Stop the speech synthesis manually
+    window.speechSynthesis.cancel();
+    setIsReading(false);
+  };
 
   return (
     <div
@@ -197,37 +267,25 @@ const Main = ({ url }: { url: string }) => {
       style={{ touchAction: "none" }}
     >
       <Worker workerUrl="https://cdnjs.cloudflare.com/ajax/libs/pdf.js/3.11.174/pdf.worker.min.js">
-        <Viewer fileUrl={url} plugins={[defaultLayoutPluginInstance]} />
+        <Viewer
+          fileUrl={url}
+          plugins={[pageNavigationPluginInstance]}
+          initialPage={lastPage}
+          onPageChange={handlePageChange}
+          ref={viewerRef}
+        />
       </Worker>
-      {selectedText && (
-        <div className="absolute bottom-32 right-16 bg-gray-200 border shadow-md rounded z-10 h-30 ">
-          <ul className="space-y-2">
-            <li
-              className="cursor-pointer text-center text-black hover:bg-gray-300 p-3 px-6"
-              onClick={getExplanation}
-            >
-              <div className="flex flex-row space-x-2">
-                <Info className="mr-2" />
-                Explain
-              </div>
-            </li>
-            {selectedText.length > 200 && (
-              <li
-                className="cursor-pointer text-center text-black hover:bg-gray-300 p-3 px-6"
-                onClick={getSummary}
-              >
-                <div className="flex flex-row space-x-2">
-                  <FileText className="mr-2" />
-                  Summarize
-                </div>
-              </li>
-            )}
-          </ul>
-        </div>
-      )}
+
+      <OptionsMenu
+        selectedText={selectedText}
+        getExplanation={getExplanation}
+        getSummary={getSummary}
+        stopReading={stopReading}
+        isReading={isReading}
+      />
 
       {translation && (
-        <div className="absolute top-10 left-20 z-10">
+        <div className="absolute bottom-10 left-10 z-10 sm:left-1/2 sm:transform sm:-translate-x-1/2 sm:-translate-y-0">
           <TextCard
             text={translation}
             type="translation"
@@ -237,7 +295,7 @@ const Main = ({ url }: { url: string }) => {
       )}
 
       {explanation && (
-        <div className="absolute top-10 right-20 z-10">
+        <div className="absolute bottom-10 left-10 z-10 sm:left-1/2 sm:transform sm:-translate-x-1/2 sm:-translate-y-0">
           <TextCard
             text={explanation}
             type="explanation"
@@ -249,7 +307,7 @@ const Main = ({ url }: { url: string }) => {
       )}
 
       {summary && (
-        <div className="absolute top-60 left-20 z-10">
+        <div className="absolute bottom-10 left-10 z-10 sm:left-1/2 sm:transform sm:-translate-x-1/2 sm:-translate-y-0">
           <TextCard
             text={summary}
             type="summary"

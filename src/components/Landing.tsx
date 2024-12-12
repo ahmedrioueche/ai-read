@@ -10,13 +10,7 @@ const Landing: React.FC<LandingProps> = ({ onFileChange }) => {
     <div className="flex flex-col items-center justify-center min-h-screen bg-dark-background p-2">
       <div className="bg-dark-background p-2 rounded-lg shadow-lg w-full max-w-lg">
         <div className="text-center mb-6 -mt-16">
-          <Image
-            src="/images/FireBall.svg"
-            alt=""
-            className="h-70 w-70"
-            width={50}
-            height={50}
-          />
+          <img src="/images/Fireball.svg" alt="" className="h-70 w-70" />
 
           <h1 className="text-3xl font-bold text-dark-foreground mb-2">
             Welcome to AI-Read

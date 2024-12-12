@@ -1,7 +1,6 @@
 import { Loader, Settings, X } from "lucide-react";
 import React, { useEffect, useState } from "react";
 import CustomSelect from "./ui/CustomSelect";
-import Image from "next/image";
 
 // Define options for Typing Modes
 const typingModes = [
@@ -87,12 +86,10 @@ const SettingsModal: React.FC<SettingsModalProps> = ({ isOpen, onClose }) => {
         <div className="grid grid-cols-1 sm:grid-cols-2 gap-6 mt-4">
           {/* Left Column for Image */}
           <div className="flex justify-center items-center">
-            <Image
+            <img
               src="/images/Settings.svg"
               alt="Settings"
               className="md:w-70 md:h-70 object-contains hidden md:block"
-              height={50}
-              width={50}
             />
           </div>
 
