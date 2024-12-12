@@ -23,10 +23,25 @@ const TextCard: React.FC<TextCardProps> = ({
 
   return (
     <div
-      className={`p-4 ${rtl ? "border-r-4" : "border-l-4"} rounded shadow-md ${
-        typeColors[type]
-      } w-[80vw] max-w-[80%] sm:w-[80%] md:w-[80%] relative max-h-[80vh] overflow-y-auto`}
-      style={{ marginTop: "5vh", marginBottom: "5vh" }}
+      className={`
+        p-4 
+        ${rtl ? "border-r-4" : "border-l-4"} 
+        rounded 
+        shadow-md 
+        ${typeColors[type]} 
+        w-full 
+        sm:w-[80vw] 
+        sm:max-w-[80%] 
+        relative 
+        max-h-[80vh] 
+        overflow-y-auto
+      `}
+      style={{
+        marginTop: "5vh",
+        marginBottom: "5vh",
+        width: "calc(100vw - 5rem)", // Full width on mobile minus some padding
+        maxWidth: "500px", // Reasonable max-width on larger screens
+      }}
     >
       {/* Close Button */}
       <button
