@@ -33,7 +33,7 @@ const TextCard: React.FC<TextCardProps> = ({
         sm:w-[80vw] 
         sm:max-w-[80%] 
         relative 
-        max-h-[80vh] 
+        max-h-[50vh] 
         overflow-y-auto
       `}
       style={{
