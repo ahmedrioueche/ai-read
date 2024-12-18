@@ -46,25 +46,27 @@ const TextCard: React.FC<TextCardProps> = ({
   return (
     <div
       className={`
-        fixed 
-        top-1/2 
-        left-1/2 
-        transform 
-        -translate-x-1/2 
-        -translate-y-1/2 
-        z-50 
         ${bgColor} 
         ${borderColor} 
         ${rtl ? "border-r-4" : "border-l-4"}
         rounded-xl 
-        shadow-2xl 
+        shadow-lg 
         overflow-hidden 
-        w-[90%] 
-        max-w-[500px]
+        transform 
+        transition-all 
+        duration-300 
+        hover:scale-[1.02]
+        w-full 
+        sm:max-w-[500px]
+        mx-auto
+        relative
         max-h-[80vh]
         overflow-y-auto
-        animate-fade-in
       `}
+      style={{
+        marginTop: "5vh",
+        marginBottom: "5vh",
+      }}
     >
       {/* Header with Icon and Close Button */}
       <div
