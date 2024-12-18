@@ -34,7 +34,7 @@ const Main = ({
   const [selectionTimeout, setSelectionTimeout] =
     useState<NodeJS.Timeout | null>(null);
   const languageData = settingsData?.languageData;
-  const language = languageData.language || "English";
+  const language = languageData?.language || "English";
   const aiApi = new AiApi();
   const pageNavigationPluginInstance = pageNavigationPlugin();
   const defaultLayoutPluginInstance = defaultLayoutPlugin();
