@@ -15,6 +15,7 @@
     "@react-pdf-viewer/page-navigation": "^3.12.0",
     "@react-pdf-viewer/zoom": "^3.12.0",
     "franc-min": "^6.2.0",
+    "idb": "^8.0.1",
     "lucide-react": "^0.468.0",
     "next": "^15.1.0",
     "pdf.js": "^0.1.0",

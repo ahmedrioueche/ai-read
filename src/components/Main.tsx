@@ -11,8 +11,15 @@ import { useState, useEffect, useCallback, useRef } from "react";
 import TextCard from "./ui/TextCard";
 import OptionsMenu from "./ui/OptionsMenu";
 import { pageNavigationPlugin } from "@react-pdf-viewer/page-navigation";
+import { Book } from "@/app/page";
 
-const Main = ({ url }: { url: string }) => {
+const Main = ({
+  book,
+  onLastPageChange,
+}: {
+  book: Book;
+  onLastPageChange: (lastPage: number) => void;
+}) => {
   const [selectedText, setSelectedText] = useState<string | null>(null);
   const [translation, setTranslation] = useState<string | null>(null);
   const [summary, setSummary] = useState<string | null>(null);
@@ -31,20 +38,20 @@ const Main = ({ url }: { url: string }) => {
   const aiApi = new AiApi();
   const pageNavigationPluginInstance = pageNavigationPlugin();
   const defaultLayoutPluginInstance = defaultLayoutPlugin();
+  const bookUrl = book?.fileUrl;
 
   useEffect(() => {
-    const storedLastPage = localStorage.getItem("lastPage");
-    if (storedLastPage) {
-      const page = parseInt(storedLastPage, 10);
-      if (!isNaN(page)) {
-        setLastPage(page);
+    if (book?.lastPage) {
+      const lastPage = book?.lastPage;
+      if (!isNaN(lastPage)) {
+        setLastPage(lastPage);
       }
     }
-  }, []);
+  }, [book]);
 
   const handlePageChange = (e: any) => {
     const newPage = e.currentPage;
-    localStorage.setItem("lastPage", newPage.toString());
+    onLastPageChange(parseInt(newPage, 10));
   };
 
   useEffect(() => {
@@ -85,10 +92,10 @@ const Main = ({ url }: { url: string }) => {
   };
 
   useEffect(() => {
-    if (url) {
-      extractText(url);
+    if (bookUrl) {
+      extractText(bookUrl);
     }
-  }, [url]);
+  }, [bookUrl]);
 
   const handleTextSelection = useCallback(() => {
     let selection: string | null = null;
@@ -267,7 +274,7 @@ const Main = ({ url }: { url: string }) => {
     >
       <Worker workerUrl="https://cdnjs.cloudflare.com/ajax/libs/pdf.js/3.11.174/pdf.worker.min.js">
         <Viewer
-          fileUrl={url}
+          fileUrl={bookUrl}
           plugins={[defaultLayoutPluginInstance]}
           initialPage={lastPage}
           onPageChange={handlePageChange}
