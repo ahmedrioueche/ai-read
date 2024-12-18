@@ -1,4 +1,5 @@
 import React from "react";
+import { X, BookOpen, Repeat2, FileText } from "lucide-react";
 
 interface TextCardProps {
   text: string;
@@ -13,50 +14,114 @@ const TextCard: React.FC<TextCardProps> = ({
   languageData,
   onClose,
 }) => {
-  // Define colors for each type
-  const typeColors: Record<typeof type, string> = {
-    translation: "bg-blue-100 border-blue-500",
-    explanation: "bg-green-100 border-green-500",
-    summary: "bg-pink-100 border-pink-500",
+  // Define comprehensive styling for each type
+  const typeStyles = {
+    translation: {
+      bgColor: "bg-sky-50",
+      borderColor: "border-sky-500",
+      iconBg: "bg-sky-100",
+      icon: <Repeat2 className="text-sky-600" />,
+      title: "Translation",
+    },
+    explanation: {
+      bgColor: "bg-emerald-50",
+      borderColor: "border-emerald-500",
+      iconBg: "bg-emerald-100",
+      icon: <BookOpen className="text-emerald-600" />,
+      title: "Explanation",
+    },
+    summary: {
+      bgColor: "bg-rose-50",
+      borderColor: "border-rose-500",
+      iconBg: "bg-rose-100",
+      icon: <FileText className="text-rose-600" />,
+      title: "Summary",
+    },
   };
+
+  const { bgColor, borderColor, iconBg, icon, title } = typeStyles[type];
+
   const rtl = languageData?.rtl;
 
   return (
     <div
       className={`
-        p-4 
-        ${rtl ? "border-r-4" : "border-l-4"} 
-        rounded 
-        shadow-md 
-        ${typeColors[type]} 
+        ${bgColor} 
+        ${borderColor} 
+        ${rtl ? "border-r-4" : "border-l-4"}
+        rounded-xl 
+        shadow-lg 
+        overflow-hidden 
+        transform 
+        transition-all 
+        duration-300 
+        hover:scale-[1.02]
         w-full 
-        sm:w-[80vw] 
-        sm:max-w-[80%] 
-        relative 
-        max-h-[70vh] 
+        sm:max-w-[500px]
+        mx-auto
+        relative
+        max-h-[70vh]
         overflow-y-auto
       `}
       style={{
         marginTop: "5vh",
         marginBottom: "5vh",
-        width: "calc(100vw - 3rem)", // Full width on mobile minus some padding
-        maxWidth: "500px", // Reasonable max-width on larger screens
       }}
     >
-      {/* Close Button */}
-      <button
-        className={`absolute top-1 ${
-          rtl ? "right-2" : "left-2"
-        } text-gray-600 hover:text-red-500`}
-        onClick={onClose}
-        aria-label="Close"
+      {/* Header with Icon and Close Button */}
+      <div
+        className={`
+          flex 
+          items-center 
+          justify-between 
+          p-4 
+          border-b 
+          ${borderColor}
+        `}
       >
-        &times;
-      </button>
+        <div className="flex items-center space-x-3">
+          <div
+            className={`
+              ${iconBg} 
+              p-2 
+              rounded-full 
+              flex 
+              items-center 
+              justify-center
+            `}
+          >
+            {icon}
+          </div>
+          <h2 className="text-lg font-semibold text-gray-800">{title}</h2>
+        </div>
+
+        <button
+          className={`
+            ${rtl ? "ml-2" : "mr-2"} 
+            text-gray-500 
+            hover:text-red-500 
+            transition 
+            duration-200 
+            rounded-full 
+            p-1 
+            hover:bg-red-50
+          `}
+          onClick={onClose}
+          aria-label="Close"
+        >
+          <X size={24} />
+        </button>
+      </div>
 
       {/* Content */}
-      <div className="text-gray-800">
-        <p className="mt-2">{text}</p>
+      <div
+        className={`
+          p-4 
+          text-gray-700 
+          ${languageData.rtl ? "text-right" : "text-left"}
+        `}
+      >
+        <p className="leading-relaxed">{text}</p>
       </div>
     </div>
   );
