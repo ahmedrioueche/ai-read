@@ -28,6 +28,7 @@ const Main = ({
   const [bookLanguage, setBookLanguage] = useState<string | null>(null);
   const [readingSpeed, setReadingSpeed] = useState<number>(0.9);
   const [isReading, setIsReading] = useState(false);
+  const [isHoverOver, setIsHoverOver] = useState(false);
   const settingsData = JSON.parse(localStorage.getItem("settings") || "{}");
   const viewerRef = useRef<any>(null);
   const [lastPage, setLastPage] = useState<number>();
@@ -210,12 +211,11 @@ const Main = ({
         const response = await aiApi.getTranslation(text, language);
         if (response) {
           setTranslation(response);
-          // if(selectedText.length < 50){
-          //
-          // }
           setTimeout(() => {
-            setTranslation(null);
-            setSelectedText(null);
+            if (!isHoverOver) {
+              setTranslation(null);
+              setSelectedText(null);
+            }
           }, 5000 + response.length * 200);
         }
       }
@@ -238,7 +238,9 @@ const Main = ({
       if (response) {
         setSummary(response);
         setTimeout(() => {
-          setSummary(null);
+          if (!isHoverOver) {
+            setSummary(null);
+          }
         }, 5000 + response.length * 200);
       }
     }
@@ -255,7 +257,9 @@ const Main = ({
       if (response) {
         setExplanation(response);
         setTimeout(() => {
-          setExplanation(null);
+          if (!isHoverOver) {
+            setExplanation(null);
+          }
         }, 5000 + response.length * 200);
       }
     }
@@ -291,7 +295,11 @@ const Main = ({
       />
 
       {translation && (
-        <div className="absolute mt-10 bottom-1/4 left-10 z-10 sm:left-1/2 sm:transform sm:-translate-x-1/2 sm:-translate-y-0 md:bottom-1/4">
+        <div
+          className="flex justify-center items-end w-full h-full"
+          onMouseEnter={() => setIsHoverOver(true)}
+          onMouseLeave={() => setIsHoverOver(false)}
+        >
           <TextCard
             text={translation}
             type="translation"
@@ -302,7 +310,11 @@ const Main = ({
       )}
 
       {explanation && (
-        <div className="absolute bottom-1/4 left-10 z-10 sm:left-1/2 sm:transform sm:-translate-x-1/2 sm:-translate-y-0 md:bottom-1/4">
+        <div
+          className="flex justify-center items-end w-full h-full"
+          onMouseEnter={() => setIsHoverOver(true)}
+          onMouseLeave={() => setIsHoverOver(false)}
+        >
           <TextCard
             text={explanation}
             type="explanation"
@@ -313,7 +325,11 @@ const Main = ({
       )}
 
       {summary && (
-        <div className="absolute bottom-1/4 left-10 z-10 sm:left-1/2 sm:transform sm:-translate-x-1/2 sm:-translate-y-0 md:bottom-1/4">
+        <div
+          className="flex justify-center items-end w-full h-full"
+          onMouseEnter={() => setIsHoverOver(true)}
+          onMouseLeave={() => setIsHoverOver(false)}
+        >
           <TextCard
             text={summary}
             type="summary"
