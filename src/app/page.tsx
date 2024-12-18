@@ -153,6 +153,26 @@ const Home: React.FC = () => {
     loadBooksFromDB();
   }, []);
 
+  useEffect(() => {
+    let settingsData = JSON.parse(localStorage.getItem("settings") || "{}");
+    if (
+      !settingsData.languageData ||
+      !settingsData.translation ||
+      !settingsData.reading ||
+      !settingsData.readingSpeed
+    ) {
+      settingsData = {
+        languageData: { language: "english", rtl: false },
+        translation: true,
+        reading: true,
+        readingSpeed: "normal",
+      };
+
+      // Save the default settings to localStorage
+      localStorage.setItem("settings", JSON.stringify(settingsData));
+    }
+  }, []);
+
   const currentBook = books.find((book) => book.id === currentBookId);
 
   return (
