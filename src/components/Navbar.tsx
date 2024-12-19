@@ -5,7 +5,8 @@ import SettingsModal from "./SettingsModal";
 
 const Navbar: React.FC<{
   onUpload: (e: React.ChangeEvent<HTMLInputElement>) => void;
-}> = ({ onUpload }) => {
+  onToggleSettingsModal: (isSettingModalOpen: boolean) => void;
+}> = ({ onUpload, onToggleSettingsModal }) => {
   const [isSettingModalOpen, setIsSettingModalOpen] = useState(false);
   const [isFullscreen, setIsFullscreen] = useState(false);
 
@@ -79,7 +80,10 @@ const Navbar: React.FC<{
           </div>
           {/* Settings Icon */}
           <button
-            onClick={() => setIsSettingModalOpen(true)}
+            onClick={() => {
+              setIsSettingModalOpen(true);
+              onToggleSettingsModal(true);
+            }}
             aria-label="Settings"
             className="hover:text-dark-secondary transition duration-300"
           >
@@ -98,7 +102,10 @@ const Navbar: React.FC<{
 
         <SettingsModal
           isOpen={isSettingModalOpen}
-          onClose={() => setIsSettingModalOpen(false)}
+          onClose={() => {
+            setIsSettingModalOpen(false);
+            onToggleSettingsModal(false);
+          }}
         />
       </nav>
 

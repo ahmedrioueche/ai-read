@@ -1,7 +1,6 @@
 import { GoogleGenerativeAI } from "@google/generative-ai";
-const REACT_APP_GEMINI_KEY = "AIzaSyBowicWyGh8ZaVtyc6h0a5qhv-Q6Yjicyk"; //shouldnt be here
 
-const API_KEY: string | undefined = REACT_APP_GEMINI_KEY;
+const API_KEY: string | undefined = process.env.NEXT_PUBLIC_GEMINI_KEY;
 const genAI = API_KEY ? new GoogleGenerativeAI(API_KEY) : null;
 const model = genAI?.getGenerativeModel({ model: "gemini-1.5-flash" });
 

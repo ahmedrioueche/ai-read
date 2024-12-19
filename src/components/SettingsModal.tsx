@@ -2,6 +2,7 @@ import { Loader, Settings, X } from "lucide-react";
 import React, { useEffect, useState } from "react";
 import CustomSelect from "./ui/CustomSelect";
 import useScreen from "@/hooks/useScreen";
+import { dict } from "@/utils/dict";
 
 // Define options for Typing Modes
 const typingModes = [
@@ -40,6 +41,8 @@ const SettingsModal: React.FC<SettingsModalProps> = ({ isOpen, onClose }) => {
   const [isTranslation, setIsTranslation] = useState<boolean>(false);
   const [readingSpeed, setReadingSpeed] = useState<string>("normal");
   const { isSmallScreen } = useScreen();
+  const text = dict["en"];
+
   useEffect(() => {
     console.log({ isSmallScreen });
   }, [isSmallScreen]);
@@ -80,7 +83,9 @@ const SettingsModal: React.FC<SettingsModalProps> = ({ isOpen, onClose }) => {
         <div className="flex justify-between items-center mb-1">
           <div className="flex items-center text-dark-foreground">
             <Settings className="mr-2" />
-            <h2 className="text-xl font-bold font-dancing">Settings</h2>
+            <h2 className="text-xl font-bold font-dancing">
+              {text.User.settings}
+            </h2>
           </div>
           <button
             onClick={onClose}
@@ -103,7 +108,7 @@ const SettingsModal: React.FC<SettingsModalProps> = ({ isOpen, onClose }) => {
           <div className="flex flex-col -mt-4 md:mt-0">
             <div className="flex flex-col">
               <CustomSelect
-                label="Translation Language"
+                label={text.General.translation_language}
                 options={languages}
                 selectedOption={language}
                 onChange={setLanguage}
@@ -112,7 +117,7 @@ const SettingsModal: React.FC<SettingsModalProps> = ({ isOpen, onClose }) => {
             <div className="flex flex-row justify-between space-x-2">
               <div className="mt-6">
                 <label className="font-semibold text-dark-foreground">
-                  Enable Translation
+                  {text.General.enable_translation}
                 </label>
                 <div className="flex items-center mt-2">
                   <label
@@ -142,7 +147,7 @@ const SettingsModal: React.FC<SettingsModalProps> = ({ isOpen, onClose }) => {
 
               <div className="mt-6">
                 <label className="font-semibold text-dark-foreground">
-                  Enable Reading
+                  {text.General.enable_reading}
                 </label>
                 <div className="flex items-center mt-2">
                   <label
@@ -173,7 +178,7 @@ const SettingsModal: React.FC<SettingsModalProps> = ({ isOpen, onClose }) => {
 
             <div className="flex flex-col mt-4">
               <CustomSelect
-                label="Reading Speed"
+                label={text.General.reading_speed}
                 options={[
                   { value: "slow", label: "Slow" },
                   { value: "normal", label: "Normal" },

@@ -12,13 +12,25 @@ import TextCard from "./ui/TextCard";
 import OptionsMenu from "./ui/OptionsMenu";
 import { pageNavigationPlugin } from "@react-pdf-viewer/page-navigation";
 import { Book } from "@/app/page";
+import { dict } from "@/utils/dict";
+
+const EXCLUDED_TEXT = [
+  "ai-read",
+  "translation",
+  "summary",
+  "explanation",
+  "explain",
+  "stop reading",
+];
 
 const Main = ({
   book,
   onLastPageChange,
+  isSettingsModalOpen,
 }: {
   book: Book;
   onLastPageChange: (lastPage: number) => void;
+  isSettingsModalOpen: boolean;
 }) => {
   const [selectedText, setSelectedText] = useState<string | null>(null);
   const [translation, setTranslation] = useState<string | null>(null);
@@ -29,13 +41,16 @@ const Main = ({
   const [readingSpeed, setReadingSpeed] = useState<number>(0.9);
   const [isReading, setIsReading] = useState(false);
   const [isHoverOver, setIsHoverOver] = useState(false);
+  const [activeTextCardContent, setActiveTextCardContent] = useState<
+    string | null
+  >(null);
   const settingsData = JSON.parse(localStorage.getItem("settings") || "{}");
   const viewerRef = useRef<any>(null);
   const [lastPage, setLastPage] = useState<number>();
   const [selectionTimeout, setSelectionTimeout] =
     useState<NodeJS.Timeout | null>(null);
   const languageData = settingsData?.languageData;
-  const language = languageData?.language || "English";
+  const translationLanguage = languageData?.language || "English";
   const aiApi = new AiApi();
   const pageNavigationPluginInstance = pageNavigationPlugin();
   const defaultLayoutPluginInstance = defaultLayoutPlugin();
@@ -147,6 +162,18 @@ const Main = ({
   }, [selectionTimeout]);
 
   useEffect(() => {
+    if (translation) {
+      setActiveTextCardContent(translation);
+    } else if (explanation) {
+      setActiveTextCardContent(explanation);
+    } else if (summary) {
+      setActiveTextCardContent(summary);
+    } else {
+      setActiveTextCardContent(null);
+    }
+  }, [translation, explanation, summary]);
+
+  useEffect(() => {
     // Desktop events
     document.addEventListener("mouseup", handleTextSelection);
     document.addEventListener("selectionchange", handleTextSelection);
@@ -178,13 +205,25 @@ const Main = ({
   const speakText = (text: string) => {
     if ("speechSynthesis" in window) {
       const utterance = new SpeechSynthesisUtterance(text);
-      //user book language on words, and detect the language on sentences.
-      const language =
-        selectedText && selectedText.length > 20
-          ? franc(selectedText)
-          : bookLanguage;
-      let lang = formatLanguage(language);
+      //use translation language on text from textCard, use book language on words, and detect the language on sentences.
+      const isInTextCard =
+        activeTextCardContent &&
+        activeTextCardContent.includes(selectedText || "");
+      console.log({ isInTextCard });
+      console.log({ translationLanguage });
 
+      const language = isInTextCard
+        ? formatLanguage(translationLanguage)
+        : formatLanguage(
+            selectedText && selectedText.length > 10
+              ? franc(selectedText)
+              : bookLanguage
+          ) || "en-US";
+
+      console.log({ language });
+
+      let lang = language || "en-US";
+      console.log({ lang });
       utterance.lang = lang;
       utterance.pitch = 1.1; // Set pitch (range 0 to 2)
       utterance.rate = readingSpeed; // Set rate (range 0.1 to 10)
@@ -207,25 +246,38 @@ const Main = ({
 
   useEffect(() => {
     const getTranslation = async (text: string) => {
-      if (selectedText && selectedText.trim() !== "") {
-        const response = await aiApi.getTranslation(text, language);
-        if (response) {
-          setTranslation(response);
-          setTimeout(() => {
-            if (!isHoverOver) {
-              setTranslation(null);
-              setSelectedText(null);
-            }
-          }, 5000 + response.length * 200);
-        }
+      if (!text.trim()) return; // Avoid processing empty strings
+      const response = await aiApi.getTranslation(text, translationLanguage);
+      if (response) {
+        setTranslation(response);
+        const displayDuration = 5000 + response.length * 200;
+
+        setTimeout(() => {
+          if (!isHoverOver) {
+            setTranslation(null);
+            setSelectedText(null);
+          }
+        }, displayDuration);
       }
     };
-    if (selectedText && selectedText.trim() !== "") {
+
+    const isValidText = (text: string): boolean => {
+      if (isSettingsModalOpen) return false;
+
+      // Check if text matches any excluded keywords
+      return !EXCLUDED_TEXT.some((excluded) => excluded === text.toLowerCase());
+    };
+
+    if (selectedText?.trim()) {
       const preprocessedText = preprocessText(selectedText);
-      if (settingsData && settingsData.reading) {
+
+      if (!isValidText(preprocessedText)) return;
+
+      if (settingsData?.reading) {
         speakText(preprocessedText);
       }
-      if (settingsData && settingsData.translation) {
+
+      if (settingsData?.translation) {
         getTranslation(preprocessedText);
       }
     }
@@ -234,7 +286,10 @@ const Main = ({
   const getSummary = async () => {
     if (selectedText && selectedText.trim() !== "") {
       const preprocessedText = preprocessText(selectedText);
-      const response = await aiApi.getSummary(preprocessedText, language);
+      const response = await aiApi.getSummary(
+        preprocessedText,
+        translationLanguage
+      );
       if (response) {
         setSummary(response);
         setTimeout(() => {
@@ -251,7 +306,7 @@ const Main = ({
       const preprocessedText = preprocessText(selectedText);
       const response = await aiApi.getExplantion(
         preprocessedText,
-        language,
+        translationLanguage,
         bookContext!
       );
       if (response) {

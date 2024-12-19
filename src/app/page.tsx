@@ -21,7 +21,9 @@ export interface Book {
 const Home: React.FC = () => {
   const [pdfFileUrl, setPdfFileUrl] = useState<string | null>(null);
   const [books, setBooks] = useState<Book[]>([]);
+  const [isSettingsModalOpen, setIsSettingModalOpen] = useState(false);
   const [currentBookId, setCurrentBookId] = useState<string | null>(null); // Track the currently opened book
+  const language = "en";
 
   // Fallback mechanism for storing the latest book in localStorage
   const saveToLocalStorage = (book: Book) => {
@@ -178,8 +180,10 @@ const Home: React.FC = () => {
   return (
     <div className="flex flex-col min-h-screen bg-dark-background">
       {/* Navbar */}
-      <Navbar onUpload={handleFileChange} />
-
+      <Navbar
+        onUpload={handleFileChange}
+        onToggleSettingsModal={(isOpen) => setIsSettingModalOpen(isOpen)}
+      />
       {/* Main Content */}
       <div
         className={`flex flex-col items-center z-10 ${
@@ -195,6 +199,7 @@ const Home: React.FC = () => {
               onLastPageChange={(lastPage: number) => {
                 updateLastPage(currentBook.id, lastPage);
               }}
+              isSettingsModalOpen={isSettingsModalOpen}
             />
           )
         )}
