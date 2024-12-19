@@ -15,7 +15,7 @@ import { Book } from "@/app/page";
 import { dict } from "@/utils/dict";
 
 const EXCLUDED_TEXT = [
-  "ai-read",
+  "AI-READ",
   "translation",
   "summary",
   "explanation",
@@ -246,21 +246,19 @@ const Main = ({
 
   useEffect(() => {
     const getTranslation = async (text: string) => {
-      if (!text.trim()) return; // Avoid processing empty strings
-      const response = await aiApi.getTranslation(text, translationLanguage);
-      if (response) {
-        setTranslation(response);
-        const displayDuration = 5000 + response.length * 200;
-
-        setTimeout(() => {
-          if (!isHoverOver) {
-            setTranslation(null);
-            setSelectedText(null);
-          }
-        }, displayDuration);
+      if (selectedText && selectedText.trim() !== "") {
+        const response = await aiApi.getTranslation(text, translationLanguage);
+        if (response) {
+          setTranslation(response);
+          setTimeout(() => {
+            if (!isHoverOver) {
+              setTranslation(null);
+              setSelectedText(null);
+            }
+          }, 5000 + response.length * 200);
+        }
       }
     };
-
     const isValidText = (text: string): boolean => {
       if (isSettingsModalOpen) return false;
 
@@ -268,16 +266,15 @@ const Main = ({
       return !EXCLUDED_TEXT.some((excluded) => excluded === text.toLowerCase());
     };
 
-    if (selectedText?.trim()) {
+    if (selectedText && selectedText.trim() !== "") {
       const preprocessedText = preprocessText(selectedText);
 
       if (!isValidText(preprocessedText)) return;
 
-      if (settingsData?.reading) {
+      if (settingsData && settingsData.reading) {
         speakText(preprocessedText);
       }
-
-      if (settingsData?.translation) {
+      if (settingsData && settingsData.translation) {
         getTranslation(preprocessedText);
       }
     }
