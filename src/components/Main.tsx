@@ -209,8 +209,6 @@ const Main = ({
       const isInTextCard =
         activeTextCardContent &&
         activeTextCardContent.includes(selectedText || "");
-      console.log({ isInTextCard });
-      console.log({ translationLanguage });
 
       const language = isInTextCard
         ? formatLanguage(translationLanguage)
@@ -220,10 +218,7 @@ const Main = ({
               : bookLanguage
           ) || "en-US";
 
-      console.log({ language });
-
       let lang = language || "en-US";
-      console.log({ lang });
       utterance.lang = lang;
       utterance.pitch = 1.1; // Set pitch (range 0 to 2)
       utterance.rate = readingSpeed; // Set rate (range 0.1 to 10)
@@ -246,8 +241,11 @@ const Main = ({
 
   useEffect(() => {
     const getTranslation = async (text: string) => {
+      console.log("getTranslation", text);
+
       if (selectedText && selectedText.trim() !== "") {
         const response = await aiApi.getTranslation(text, translationLanguage);
+        console.log({ response });
         if (response) {
           setTranslation(response);
           setTimeout(() => {
@@ -268,13 +266,15 @@ const Main = ({
 
     if (selectedText && selectedText.trim() !== "") {
       const preprocessedText = preprocessText(selectedText);
-
+      console.log({ settingsData });
       if (!isValidText(preprocessedText)) return;
 
       if (settingsData && settingsData.reading) {
         speakText(preprocessedText);
       }
       if (settingsData && settingsData.translation) {
+        console.log("getTranslation");
+
         getTranslation(preprocessedText);
       }
     }

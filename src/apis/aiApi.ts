@@ -25,6 +25,8 @@ export class AiApi {
   };
 
   getTranslation = async (text: string, language: string) => {
+    console.log("getTranslation api", text);
+
     const prompt = `${this.MAIN_PROMPT} Translate this text: "${text}" to this language: "${language}"
         you should use on the ${language} language and nothing else. `;
     try {
