@@ -266,15 +266,12 @@ const Main = ({
 
     if (selectedText && selectedText.trim() !== "") {
       const preprocessedText = preprocessText(selectedText);
-      console.log({ settingsData });
       if (!isValidText(preprocessedText)) return;
 
       if (settingsData && settingsData.reading) {
         speakText(preprocessedText);
       }
       if (settingsData && settingsData.translation) {
-        console.log("getTranslation");
-
         getTranslation(preprocessedText);
       }
     }
