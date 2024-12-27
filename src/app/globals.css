@@ -40,7 +40,7 @@ body {
 }
 
 .highlighted-text {
-  background-color: yellow;
+  background-color: #f59e0b;
   text-decoration: underline;
 }
 
@@ -85,7 +85,7 @@ body {
 }
 
 ::-webkit-scrollbar-thumb {
-  background-color: #007bff;
+  background-color: #f54f0b;
   border-radius: 5px;
 }
 
@@ -95,17 +95,4 @@ body {
 
 ::-webkit-scrollbar-corner {
   background-color: #fff;
-}
-
-@keyframes slide-up {
-  from {
-    transform: translateY(100%);
-  }
-  to {
-    transform: translateY(0);
-  }
-}
-
-.animate-slide-up {
-  animation: slide-up 0.3s ease-out;
 }

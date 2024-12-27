@@ -14,32 +14,39 @@ const TextCard: React.FC<TextCardProps> = ({
   languageData,
   onClose,
 }) => {
-  // Define comprehensive styling for each type
+  // Define styling variations with orange theme
   const typeStyles = {
     translation: {
-      bgColor: "bg-sky-50",
-      borderColor: "border-sky-500",
-      iconBg: "bg-sky-100",
-      icon: <Repeat2 className="text-sky-600" />,
+      bgColor: "bg-dark-background",
+      borderColor: "border-dark-accent", // Main orange
+      iconBg: "bg-dark-secondary/10",
+      iconColor: "text-dark-secondary",
+      headerBg: "bg-dark-background",
+      icon: <Repeat2 className="text-dark-accent" />,
       title: "Translation",
     },
     explanation: {
-      bgColor: "bg-emerald-50",
-      borderColor: "border-emerald-500",
-      iconBg: "bg-emerald-100",
-      icon: <BookOpen className="text-emerald-600" />,
+      bgColor: "bg-dark-background",
+      borderColor: "border-dark-secondary/75", // Slightly lighter orange
+      iconBg: "bg-dark-secondary/8",
+      iconColor: "text-dark-secondary/75",
+      headerBg: "bg-dark-background",
+      icon: <BookOpen className="text-dark-secondary/75" />,
       title: "Explanation",
     },
     summary: {
-      bgColor: "bg-rose-50",
-      borderColor: "border-rose-500",
-      iconBg: "bg-rose-100",
-      icon: <FileText className="text-rose-600" />,
+      bgColor: "bg-dark-background",
+      borderColor: "border-light-secondary", // Even lighter orange
+      iconBg: "bg-dark-secondary/6",
+      iconColor: "text-dark-secondary/60",
+      headerBg: "bg-dark-background",
+      icon: <FileText className="text-dark-secondary/60" />,
       title: "Summary",
     },
   };
 
-  const { bgColor, borderColor, iconBg, icon, title } = typeStyles[type];
+  const { bgColor, borderColor, iconBg, iconColor, headerBg, icon, title } =
+    typeStyles[type];
 
   const rtl = languageData?.rtl;
 
@@ -47,62 +54,66 @@ const TextCard: React.FC<TextCardProps> = ({
     <div
       className={`
         fixed 
-        top-1/2 
-        left-1/2 
-        transform 
-        -translate-x-1/2 
-        -translate-y-1/2 
-        z-50 
-        ${bgColor} 
-        ${borderColor} 
-        ${rtl ? "border-r-4" : "border-l-4"}
-        rounded-xl 
-        shadow-2xl 
-        overflow-hidden 
-        w-[90%] 
+        top-1/2
+        left-1/2
+        transform
+        -translate-x-1/2
+        -translate-y-1/2
+        z-50
+        ${bgColor}
+        border
+        ${borderColor}
+        rounded-xl
+        shadow-2xl
+        overflow-hidden
+        w-[90%]
         max-w-[500px]
         max-h-[80vh]
         overflow-y-auto
         animate-fade-in
       `}
     >
-      {/* Header with Icon and Close Button */}
+      {/* Header */}
       <div
         className={`
-          flex 
-          items-center 
-          justify-between 
-          p-4 
-          border-b 
+          flex
+          items-center
+          justify-between
+          p-4
+          ${headerBg}
+          border-b
           ${borderColor}
         `}
       >
         <div className="flex items-center space-x-3">
           <div
             className={`
-              ${iconBg} 
-              p-2 
-              rounded-full 
-              flex 
-              items-center 
+              ${iconBg}
+              ${iconColor}
+              p-2
+              rounded-lg
+              flex
+              items-center
               justify-center
             `}
           >
             {icon}
           </div>
-          <h2 className="text-lg font-semibold text-gray-800">{title}</h2>
+          <h2 className="text-lg font-semibold text-dark-foreground">
+            {title}
+          </h2>
         </div>
 
         <button
           className={`
-            ${rtl ? "ml-2" : "mr-2"} 
-            text-gray-500 
-            hover:text-red-500 
-            transition 
-            duration-200 
-            rounded-full 
-            p-1 
-            hover:bg-red-50
+            ${rtl ? "ml-2" : "mr-2"}
+            text-dark-foreground/60
+            hover:${borderColor}
+            transition
+            duration-200
+            rounded-full
+            p-1
+            hover:bg-dark-secondary/10
           `}
           onClick={onClose}
           aria-label="Close"
@@ -114,8 +125,8 @@ const TextCard: React.FC<TextCardProps> = ({
       {/* Content */}
       <div
         className={`
-          p-4 
-          text-gray-700 
+          p-6
+          text-dark-foreground
           ${languageData.rtl ? "text-right" : "text-left"}
         `}
       >

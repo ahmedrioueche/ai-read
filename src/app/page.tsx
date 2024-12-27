@@ -200,7 +200,7 @@ const Home: React.FC = () => {
         ) : (
           currentBook && (
             <Main
-              key={currentBookId} // Force re-render when the currentBookId changes
+              key={currentBookId}
               book={currentBook}
               onLastPageChange={(lastPage: number) => {
                 updateLastPage(currentBook.id, lastPage);
@@ -210,14 +210,16 @@ const Home: React.FC = () => {
             />
           )
         )}
-        <BookList
-          books={books}
-          currentBookId={currentBookId}
-          onBookSelect={(book) => {
-            setPdfFileUrl(book.fileUrl);
-            setCurrentBookId(book.id);
-          }}
-        />
+        {currentBook && (
+          <BookList
+            books={books}
+            currentBookId={currentBookId}
+            onBookSelect={(book) => {
+              setPdfFileUrl(book.fileUrl);
+              setCurrentBookId(book.id);
+            }}
+          />
+        )}
       </div>
       {!currentBook && <Footer />}
     </div>
