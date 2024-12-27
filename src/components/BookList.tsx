@@ -14,41 +14,7 @@ const BookList: React.FC<BookListProps> = ({
   onBookSelect,
 }) => {
   const [isOpen, setIsOpen] = useState(false);
-  const [startX, setStartX] = useState(0);
-  const [currentX, setCurrentX] = useState(0);
-  const [isDragging, setIsDragging] = useState(false);
   const panelRef = useRef<HTMLDivElement>(null);
-
-  const handleTouchStart = (e: TouchEvent) => {
-    setStartX(e.touches[0].clientX);
-    setIsDragging(true);
-  };
-
-  const handleTouchMove = (e: TouchEvent) => {
-    if (!isDragging) return;
-
-    const diff = e.touches[0].clientX - startX;
-    const panel = panelRef.current;
-    if (!panel) return;
-
-    if (isOpen) {
-      setCurrentX(Math.min(diff, panel.offsetWidth));
-    } else if (!isOpen && e.touches[0].clientX < 50) {
-      setCurrentX(Math.max(diff, -panel.offsetWidth));
-    }
-  };
-
-  const handleTouchEnd = () => {
-    setIsDragging(false);
-    const threshold = 100;
-
-    if (isOpen && currentX > threshold) {
-      setIsOpen(false);
-    } else if (!isOpen && currentX < -threshold) {
-      setIsOpen(true);
-    }
-    setCurrentX(0);
-  };
 
   const handleClickOutside = (e: MouseEvent) => {
     if (panelRef.current && !panelRef.current.contains(e.target as Node)) {
@@ -64,21 +30,6 @@ const BookList: React.FC<BookListProps> = ({
     };
   }, []);
 
-  useEffect(() => {
-    const panel = panelRef.current;
-    if (!panel) return;
-
-    panel.addEventListener("touchstart", handleTouchStart);
-    panel.addEventListener("touchmove", handleTouchMove);
-    panel.addEventListener("touchend", handleTouchEnd);
-
-    return () => {
-      panel.removeEventListener("touchstart", handleTouchStart);
-      panel.removeEventListener("touchmove", handleTouchMove);
-      panel.removeEventListener("touchend", handleTouchEnd);
-    };
-  }, [isOpen, isDragging]);
-
   return (
     <>
       {/* Overlay when panel is open */}
@@ -93,13 +44,8 @@ const BookList: React.FC<BookListProps> = ({
         <div
           ref={panelRef}
           style={{
-            transform: isDragging
-              ? `translateX(${currentX}px)`
-              : isOpen
-              ? "translateX(0)"
-              : "translateX(-100%)",
+            transform: isOpen ? "translateX(0)" : "translateX(-100%)",
             width: "300px",
-            touchAction: "pan-x",
             position: "absolute",
             left: 0,
             top: 0,

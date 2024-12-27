@@ -533,6 +533,7 @@ const Main = ({
             <MinimalCard
               text={translation}
               onClose={() => setTranslation(null)}
+              viewerRef={viewerRef}
             />
           </div>
         ) : (

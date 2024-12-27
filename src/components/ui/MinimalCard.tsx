@@ -4,33 +4,42 @@ import { X, Repeat2 } from "lucide-react";
 interface MinimalCardProps {
   text: string;
   onClose: () => void;
+  viewerRef: React.RefObject<HTMLDivElement>;
 }
 
-const MinimalCard: React.FC<MinimalCardProps> = ({ text, onClose }) => {
+const MinimalCard: React.FC<MinimalCardProps> = ({
+  text,
+  onClose,
+  viewerRef,
+}) => {
   const [isExiting, setIsExiting] = useState(false);
 
   useEffect(() => {
+    const viewer = viewerRef.current;
+    if (!viewer) return;
+
     const handleScroll = () => {
       setIsExiting(true);
       setTimeout(onClose, 300); // Wait for exit animation
     };
 
-    window.addEventListener("scroll", handleScroll);
+    // Add scroll listener to the PDF viewer instead of window
+    viewer.addEventListener("scroll", handleScroll);
     return () => {
-      window.removeEventListener("scroll", handleScroll);
+      viewer.removeEventListener("scroll", handleScroll);
     };
-  }, [onClose]);
+  }, [onClose, viewerRef]);
 
   const handleCloseClick = () => {
     setIsExiting(true);
-    setTimeout(onClose, 300); // Wait for exit animation
+    setTimeout(onClose, 300);
   };
 
   return (
     <div
       className={`
         fixed
-        bottom-6
+        bottom-[72px] // Position above Google's selection toolbar (usually ~60px)
         left-1/2
         -translate-x-1/2
         bg-gradient-to-r
@@ -52,10 +61,16 @@ const MinimalCard: React.FC<MinimalCardProps> = ({ text, onClose }) => {
         backdrop-blur-sm
         transition-all
         duration-300
+        z-[9999] // Ensure it's above Google's selection toolbar
         ${
           isExiting ? "opacity-0 translate-y-full" : "opacity-100 translate-y-0"
         }
       `}
+      style={{
+        // Additional styles to ensure it's above system UI
+        WebkitTransform: "translate(-50%, 0)",
+        transform: "translate(-50%, 0)",
+      }}
     >
       <div className="flex items-center gap-4 flex-1">
         <div className="flex-shrink-0">
@@ -81,7 +96,7 @@ const MinimalCard: React.FC<MinimalCardProps> = ({ text, onClose }) => {
   );
 };
 
-// Add this to your global CSS file or use a CSS-in-JS solution
+// Add this to your global CSS file
 const styles = `
 @keyframes progress-shrink {
   from {
