@@ -19,8 +19,8 @@ export default class VoiceApi {
     this.apiKey = process.env.NEXT_PUBLIC_ELEVENLABS_KEY || "";
 
     if (!this.apiKey) {
-      throw new Error(
-        "API key not found! Please set NEXT_PUBLIC_ELEVENLABS_KEY in your environment variables."
+      console.log(
+        "API key not found! Please set NEXT_PUBLIC_ELEVENLABS_KEY in your environment variables"
       );
     }
 
