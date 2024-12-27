@@ -39,6 +39,11 @@ body {
   }
 }
 
+.highlighted-text {
+  background-color: yellow;
+  text-decoration: underline;
+}
+
 /* Hide scrollbar for WebKit-based browsers */
 html::-webkit-scrollbar,
 body::-webkit-scrollbar {
@@ -90,4 +95,17 @@ body {
 
 ::-webkit-scrollbar-corner {
   background-color: #fff;
+}
+
+@keyframes slide-up {
+  from {
+    transform: translateY(100%);
+  }
+  to {
+    transform: translateY(0);
+  }
+}
+
+.animate-slide-up {
+  animation: slide-up 0.3s ease-out;
 }

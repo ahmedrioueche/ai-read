@@ -20,7 +20,7 @@ export class AiApi {
       const response = this.geminiGetAnswer(prompt);
       return response;
     } catch (e) {
-      console.log(`Failed to prompt AI`);
+      console.log(`Failed to prompt AI`, e);
     }
   };
 
@@ -31,7 +31,7 @@ export class AiApi {
       const response = await this.promptAi(prompt);
       return response;
     } catch (e) {
-      console.log("Failed to translate text");
+      console.log("Failed to translate text", e);
     }
   };
 
@@ -44,7 +44,7 @@ export class AiApi {
       const response = await this.promptAi(prompt);
       return response;
     } catch (e) {
-      console.log("Failed to summarize text");
+      console.log("Failed to summarize text", e);
     }
   };
 
@@ -61,7 +61,17 @@ export class AiApi {
       const response = await this.promptAi(prompt);
       return response;
     } catch (e) {
-      console.log("Failed to explain text");
+      console.log("Failed to explain text", e);
+    }
+  };
+
+  getBookTitle = async (bookContext: string) => {
+    const prompt = `${this.MAIN_PROMPT} Give the title of this book: "${bookContext}", only the title with nothing else.`;
+    try {
+      const response = await this.promptAi(prompt);
+      return response;
+    } catch (e) {
+      console.log("Failed to get book title", e);
     }
   };
 }

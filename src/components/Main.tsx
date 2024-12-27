@@ -12,7 +12,7 @@ import TextCard from "./ui/TextCard";
 import OptionsMenu from "./ui/OptionsMenu";
 import { pageNavigationPlugin } from "@react-pdf-viewer/page-navigation";
 import { Book } from "@/app/page";
-import { dict } from "@/utils/dict";
+import MinimalCard from "./ui/MinimalCard";
 
 const EXCLUDED_TEXT = [
   "AI-READ",
@@ -27,10 +27,12 @@ const Main = ({
   book,
   onLastPageChange,
   isSettingsModalOpen,
+  isFullScreen,
 }: {
   book: Book;
   onLastPageChange: (lastPage: number) => void;
   isSettingsModalOpen: boolean;
+  isFullScreen: boolean;
 }) => {
   const [selectedText, setSelectedText] = useState<string | null>(null);
   const [translation, setTranslation] = useState<string | null>(null);
@@ -40,10 +42,13 @@ const Main = ({
   const [bookLanguage, setBookLanguage] = useState<string | null>(null);
   const [readingSpeed, setReadingSpeed] = useState<number>(0.9);
   const [isReading, setIsReading] = useState(false);
+  const [isReadingClicked, setIsReadingClicked] = useState(false);
   const [isHoverOver, setIsHoverOver] = useState(false);
   const [activeTextCardContent, setActiveTextCardContent] = useState<
     string | null
   >(null);
+  const [visibleParagraphs, setVisibleParagraphs] = useState<string[]>([]);
+  const [fullText, setFullText] = useState<string>("");
   const settingsData = JSON.parse(localStorage.getItem("settings") || "{}");
   const viewerRef = useRef<any>(null);
   const [lastPage, setLastPage] = useState<number>();
@@ -55,6 +60,9 @@ const Main = ({
   const pageNavigationPluginInstance = pageNavigationPlugin();
   const defaultLayoutPluginInstance = defaultLayoutPlugin();
   const bookUrl = book?.fileUrl;
+  const rootRef = useRef<HTMLDivElement | null>(null);
+  const [scrollY, setScrollY] = useState(0);
+  const [isHighlighting, setIsHighlighting] = useState(false);
 
   useEffect(() => {
     if (book?.lastPage) {
@@ -86,6 +94,20 @@ const Main = ({
     }
   }, [settingsData]);
 
+  useEffect(() => {
+    const handleScroll = () => {
+      setScrollY(window.scrollY); // Update the vertical scroll position
+    };
+
+    // Add scroll event listener
+    window.addEventListener("scroll", handleScroll);
+
+    // Cleanup event listener on component unmount
+    return () => {
+      window.removeEventListener("scroll", handleScroll);
+    };
+  }, []);
+
   const extractText = async (fileUrl: string) => {
     try {
       // Fetch the entire PDF file
@@ -94,6 +116,7 @@ const Main = ({
 
       const text = await pdfToText(fileBlob);
 
+      setFullText(text); // Set the full text asynchronously
       const limitedText = text.slice(0, 5000);
 
       setBookContext(limitedText);
@@ -229,7 +252,6 @@ const Main = ({
 
       utterance.onend = () => {
         setIsReading(false);
-        setSelectedText(null);
       };
 
       // Speak the text
@@ -239,10 +261,92 @@ const Main = ({
     }
   };
 
+  const getTopOffset = () => {
+    return isFullScreen ? 60 : 120 - scrollY;
+  };
+
+  const getTextToSpeak = async (): Promise<{
+    text: string;
+    elements: HTMLElement[];
+  }> => {
+    if (!rootRef.current) {
+      console.log("Root ref is not available");
+      return { text: "", elements: [] };
+    }
+
+    try {
+      const container = rootRef.current.querySelector(".rpv-core__viewer");
+      if (!container) {
+        console.log("Viewer container not found");
+        return { text: "", elements: [] };
+      }
+
+      const textLayers = Array.from(
+        container.querySelectorAll(".rpv-core__text-layer")
+      );
+
+      if (textLayers.length === 0) {
+        console.log("No text layers found");
+        return { text: "", elements: [] };
+      }
+
+      let fullText = "";
+      const elementsToHighlight: HTMLElement[] = [];
+      const viewportHeight =
+        window.innerHeight || document.documentElement.clientHeight;
+      const viewportWidth =
+        window.innerWidth || document.documentElement.clientWidth;
+      const topOffset = getTopOffset();
+
+      for (const layer of textLayers) {
+        const layerRect = layer.getBoundingClientRect();
+
+        const isLayerVisible =
+          layerRect.top < viewportHeight &&
+          layerRect.bottom > topOffset &&
+          layerRect.left < viewportWidth &&
+          layerRect.right > 0;
+
+        if (!isLayerVisible) continue;
+
+        const textElements = Array.from(
+          layer.querySelectorAll(".rpv-core__text-layer-text")
+        );
+
+        const visibleTexts = textElements
+          .map((element) => {
+            const rect = element.getBoundingClientRect();
+            return {
+              element,
+              rect,
+              isVisible:
+                rect.top < viewportHeight &&
+                rect.bottom > topOffset &&
+                rect.left < viewportWidth &&
+                rect.right > 0,
+            };
+          })
+          .filter(({ isVisible }) => isVisible)
+          .sort((a, b) => a.rect.top - b.rect.top);
+
+        if (visibleTexts.length > 0) {
+          for (const { element } of visibleTexts) {
+            elementsToHighlight.push(element as HTMLElement);
+            const text = element.textContent || "";
+            fullText += text + " ";
+          }
+        }
+      }
+
+      return { text: fullText.trim(), elements: elementsToHighlight };
+    } catch (error) {
+      console.error("Error getting text to speak:", error);
+      return { text: "", elements: [] };
+    }
+  };
+
   useEffect(() => {
     const getTranslation = async (text: string) => {
-      console.log("getTranslation", text);
-
       if (selectedText && selectedText.trim() !== "") {
         const response = await aiApi.getTranslation(text, translationLanguage);
         console.log({ response });
@@ -251,7 +355,6 @@ const Main = ({
           setTimeout(() => {
             if (!isHoverOver) {
               setTranslation(null);
-              setSelectedText(null);
             }
           }, 5000 + response.length * 200);
         }
@@ -264,18 +367,77 @@ const Main = ({
       return !EXCLUDED_TEXT.some((excluded) => excluded === text.toLowerCase());
     };
 
-    if (selectedText && selectedText.trim() !== "") {
-      const preprocessedText = preprocessText(selectedText);
-      if (!isValidText(preprocessedText)) return;
+    const handleSelectedtext = async () => {
+      if (selectedText && selectedText.trim() !== "") {
+        const preprocessedText = preprocessText(selectedText);
+        if (!isValidText(preprocessedText)) return;
 
-      if (settingsData && settingsData.reading) {
-        speakText(preprocessedText);
+        if (settingsData && settingsData.reading) {
+          speakText(preprocessedText);
+        }
+        if (settingsData && settingsData.translation) {
+          getTranslation(preprocessedText);
+        }
       }
-      if (settingsData && settingsData.translation) {
-        getTranslation(preprocessedText);
+    };
+
+    handleSelectedtext();
+  }, [selectedText]);
+
+  const toggleHighlighting = (elements: HTMLElement[], stop = false) => {
+    if (stop) {
+      setIsHighlighting(false);
+
+      // Remove any highlight class from all elements
+      elements.forEach((el) => el.classList.remove("highlighted-text"));
+      return;
+    }
+
+    if (!isHighlighting) {
+      setIsHighlighting(true);
+      let currentIndex = 0;
+
+      const highlightNextElement = () => {
+        if (currentIndex > 0) {
+          elements[currentIndex - 1].classList.remove("highlighted-text");
+        }
+
+        if (currentIndex < elements.length) {
+          elements[currentIndex].classList.add("highlighted-text");
+          currentIndex++;
+          setTimeout(highlightNextElement, 200);
+        }
+      };
+
+      if (elements.length > 0) {
+        highlightNextElement();
+      } else {
+        setIsHighlighting(false);
       }
     }
-  }, [selectedText]);
+  };
+
+  useEffect(() => {
+    const startReading = async () => {
+      const { text, elements } = await getTextToSpeak();
+      console.log("text", text);
+      speakText(text);
+      //toggleHighlighting(elements);
+
+      setIsReadingClicked(false);
+    };
+
+    if (isReadingClicked) {
+      startReading();
+    }
+  }, [isReadingClicked]);
+
+  const stopHighlighting = () => {
+    const elements = Array.from(
+      document.querySelectorAll(".rpv-core__text-layer-text")
+    ) as HTMLElement[];
+    toggleHighlighting(elements, true);
+  };
 
   const getSummary = async () => {
     if (selectedText && selectedText.trim() !== "") {
@@ -314,14 +476,35 @@ const Main = ({
     }
   };
 
+  useEffect(() => {
+    const handleBeforeUnload = () => {
+      // Stop speech synthesis before the page unloads
+      stopReading();
+    };
+
+    // Add event listener to stop reading on page refresh or navigation
+    window.addEventListener("beforeunload", handleBeforeUnload);
+
+    return () => {
+      // Clean up event listener
+      window.removeEventListener("beforeunload", handleBeforeUnload);
+    };
+  }, []);
+
   const stopReading = () => {
     // Stop the speech synthesis manually
     window.speechSynthesis.cancel();
     setIsReading(false);
+    stopHighlighting();
+  };
+
+  const startReading = () => {
+    setIsReadingClicked(true);
   };
 
   return (
     <div
+      ref={rootRef}
       className="h-screen w-screen bg-gray-100 relative"
       style={{ touchAction: "none" }}
     >
@@ -340,23 +523,32 @@ const Main = ({
         getExplanation={getExplanation}
         getSummary={getSummary}
         stopReading={stopReading}
+        startReading={startReading}
         isReading={isReading}
       />
 
-      {translation && (
-        <div
-          className="flex justify-center items-end w-full h-full"
-          onMouseEnter={() => setIsHoverOver(true)}
-          onMouseLeave={() => setIsHoverOver(false)}
-        >
-          <TextCard
-            text={translation}
-            type="translation"
-            languageData={languageData}
-            onClose={() => setTranslation(null)}
-          />
-        </div>
-      )}
+      {translation &&
+        (selectedText && selectedText?.trim()?.split(" ")?.length < 2 ? (
+          <div className="flex justify-center items-center fixed bottom-0 left-1/2 transform -translate-x-1/2 md:w-[80%] w-full z-50">
+            <MinimalCard
+              text={translation}
+              onClose={() => setTranslation(null)}
+            />
+          </div>
+        ) : (
+          <div
+            className="flex justify-center items-end w-full h-full"
+            onMouseEnter={() => setIsHoverOver(true)}
+            onMouseLeave={() => setIsHoverOver(false)}
+          >
+            <TextCard
+              text={translation}
+              type="translation"
+              languageData={languageData}
+              onClose={() => setTranslation(null)}
+            />
+          </div>
+        ))}
 
       {explanation && (
         <div

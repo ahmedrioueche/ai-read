@@ -10,6 +10,7 @@ import {
   getBooksFromIndexedDB,
   deleteOldestBookFromIndexedDB,
 } from "@/utils/indexedDb";
+import BookList from "@/components/BookList";
 
 export interface Book {
   id: string; // Unique identifier for IndexedDB
@@ -23,7 +24,9 @@ const Home: React.FC = () => {
   const [books, setBooks] = useState<Book[]>([]);
   const [isSettingsModalOpen, setIsSettingModalOpen] = useState(false);
   const [currentBookId, setCurrentBookId] = useState<string | null>(null); // Track the currently opened book
+  const [isFullScreen, setIsFullScreen] = useState(false);
   const language = "en";
+  const BOOK_LIMIT = 5;
 
   // Fallback mechanism for storing the latest book in localStorage
   const saveToLocalStorage = (book: Book) => {
@@ -61,17 +64,16 @@ const Home: React.FC = () => {
           setPdfFileUrl(existingBook.fileUrl);
           setCurrentBookId(existingBook.id);
         } else {
-          // Add a new book with default lastPage = 1
           const newBook: Book = {
-            id: `${Date.now()}`, // Generate unique ID for the book
+            id: `${Date.now()}`,
             fileName,
             fileUrl,
-            lastPage: 1, // New book starts at the first page
+            lastPage: 0, // New book starts at the first page
           };
 
-          // Add the book to the IndexedDB and handle the 5-book limit
+          // Add the book to the IndexedDB and handle the book limit
           const updatedBooks = [...books, newBook];
-          if (updatedBooks.length > 5) {
+          if (updatedBooks.length > BOOK_LIMIT) {
             try {
               await deleteOldestBookFromIndexedDB();
               updatedBooks.shift();
@@ -183,6 +185,9 @@ const Home: React.FC = () => {
       <Navbar
         onUpload={handleFileChange}
         onToggleSettingsModal={(isOpen) => setIsSettingModalOpen(isOpen)}
+        onToggleFullScreen={(isFullScreen) => {
+          setIsFullScreen(isFullScreen);
+        }}
       />
       {/* Main Content */}
       <div
@@ -195,14 +200,24 @@ const Home: React.FC = () => {
         ) : (
           currentBook && (
             <Main
+              key={currentBookId} // Force re-render when the currentBookId changes
               book={currentBook}
               onLastPageChange={(lastPage: number) => {
                 updateLastPage(currentBook.id, lastPage);
               }}
               isSettingsModalOpen={isSettingsModalOpen}
+              isFullScreen={isFullScreen}
             />
           )
         )}
+        <BookList
+          books={books}
+          currentBookId={currentBookId}
+          onBookSelect={(book) => {
+            setPdfFileUrl(book.fileUrl);
+            setCurrentBookId(book.id);
+          }}
+        />
       </div>
       {!currentBook && <Footer />}
     </div>

@@ -180,9 +180,9 @@ const SettingsModal: React.FC<SettingsModalProps> = ({ isOpen, onClose }) => {
               <CustomSelect
                 label={text.General.reading_speed}
                 options={[
-                  { value: "slow", label: "Slow" },
-                  { value: "normal", label: "Normal" },
-                  { value: "fast", label: "Fast" },
+                  { value: "slow", label: text.General.slow },
+                  { value: "normal", label: text.General.normal },
+                  { value: "fast", label: text.General.fast },
                 ]}
                 selectedOption={readingSpeed}
                 onChange={setReadingSpeed}

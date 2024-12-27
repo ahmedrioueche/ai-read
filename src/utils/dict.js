@@ -1,138 +1,222 @@
 export const dict = {
-  "en": {
-    "Auth": {
-      "login": "Login",
-      "logout": "Logout",
-      "username": "Username",
-      "password": "Password",
-      "forgotPassword": "Forgot Password?",
-      "rememberMe": "Remember Me",
-      "signInWithGoogle": "Sign in with Google",
-      "signUp": "Sign Up",
-      "verify": "Verify"
+  en: {
+    App: {
+      allRightsReserved: "All rights reserved",
+      name: "AI Read",
+      welcomeTo: "Welcome to",
     },
-    "User": {
-      "profile": "User profile",
-      "settings": "User Settings"
+    Auth: {
+      login: "Login",
+      logout: "Logout",
+      username: "Username",
+      password: "Password",
+      forgotPassword: "Forgot Password?",
+      rememberMe: "Remember Me",
+      signInWithGoogle: "Sign in with Google",
+      signUp: "Sign Up",
+      verify: "Verify",
     },
-    "General": {
-      "translation_language": "Translation Language",
-      "enable_translation": "Enable translation",
-      "enable_reading": "Enable reading",
-      "reading_speed": "Reading speed"
+    User: {
+      profile: "User profile",
+      settings: "User Settings",
     },
-    "Actions": {
-      "add": "Add",
-      "clear": "Clear",
-      "clean": "Clean",
-      "confirm": "Confirm",
-      "close": "Close"
+    General: {
+      translation_language: "Translation Language",
+      enable_translation: "Enable translation",
+      enable_reading: "Enable reading",
+      reading_speed: "Reading speed",
+      slow: "Slow",
+      normal: "Normal",
+      fast: "Fast",
     },
-    "slice": "slice",
-    "replace": "replace",
-    "trim": "Trim",
-    "toLowerCase": "to Lower Case"
+    Actions: {
+      add: "Add",
+      clear: "Clear",
+      clean: "Clean",
+      confirm: "Confirm",
+      close: "Close",
+      uploadYourPdfToGetstarted: "Upload your PDF to get started",
+      uploadAPdf: "Upload PDF",
+    },
+    slice: "slice",
+    replace: "replace",
+    trim: "Trim",
+    toLowerCase: "to Lower Case",
   },
-  "ar": {
-    "Auth": {
-      "login": "تسجيل الدخول",
-      "logout": "تسجيل الخروج",
-      "username": "اسم المستخدم",
-      "password": "كلمة المرور",
-      "forgotPassword": "نسيت كلمة المرور؟",
-      "rememberMe": "تذكرني",
-      "signInWithGoogle": "تسجيل الدخول باستخدام جوجل",
-      "signUp": "اشتراك",
-      "verify": "التحقق"
+  ar: {
+    Auth: {
+      login: "تسجيل الدخول",
+      logout: "تسجيل الخروج",
+      username: "اسم المستخدم",
+      password: "كلمة المرور",
+      forgotPassword: "نسيت كلمة المرور؟",
+      rememberMe: "تذكرني",
+      signInWithGoogle: "تسجيل الدخول باستخدام جوجل",
+      signUp: "اشتراك",
+      verify: "التحقق",
     },
-    "User": {
-      "profile": "ملف المستخدم",
-      "settings": "الإعدادات"
+    User: {
+      profile: "ملف المستخدم",
+      settings: "الإعدادات",
     },
-    "General": {
-      "translation_language": "اللغة",
-      "enable_translation": "تمكين الترجمة",
-      "enable_reading": "تمكين القراءة",
-      "reading_speed": "سرعة القراءة"
+    General: {
+      translation_language: "اللغة",
+      enable_translation: "تمكين الترجمة",
+      enable_reading: "تمكين القراءة",
+      reading_speed: "سرعة القراءة",
+      slow: "بطيء",
+      normal: "عادي",
+      fast: "سريع",
     },
-    "Actions": {
-      "add": "إضافة",
-      "clear": "مسح",
-      "clean": "تعديل",
-      "confirm": "تأكيد",
-      "close": "اغلاق"
+    Actions: {
+      add: "إضافة",
+      clear: "مسح",
+      clean: "تعديل",
+      confirm: "تأكيد",
+      close: "اغلاق",
+      uploadYourPdfToGetstarted: "حمل ملف pdf الخاص بك للبدء",
+      uploadAPdf: "تحميل PDF",
     },
-    "slice": "شريحة",
-    "replace": "استبدال",
-    "trim": "اقتصاص",
-    "toLowerCase": "اخفض إلى الدرجة"
+    slice: "شريحة",
+    replace: "استبدال",
+    trim: "اقتصاص",
+    toLowerCase: "اخفض إلى الدرجة",
+    App: {
+      all_rights_reserved: "كل الحقوق محفوظة",
+      name: "اسم التطبيق",
+      welcomeTo: "مرحبا بك في",
+    },
   },
-  "fr": {
-    "Auth": {
-      "login": "Connexion",
-      "logout": "Déconnexion",
-      "username": "Nom d'utilisateur",
-      "password": "Mot de passe",
-      "forgotPassword": "Mot de passe oublié ?",
-      "rememberMe": "Se souvenir de moi",
-      "signInWithGoogle": "Se connecter avec Google",
-      "signUp": "S'inscrire",
-      "verify": "Vérifier"
+  fr: {
+    Auth: {
+      login: "Connexion",
+      logout: "Déconnexion",
+      username: "Nom d'utilisateur",
+      password: "Mot de passe",
+      forgotPassword: "Mot de passe oublié ?",
+      rememberMe: "Se souvenir de moi",
+      signInWithGoogle: "Se connecter avec Google",
+      signUp: "S'inscrire",
+      verify: "Vérifier",
     },
-    "User": {
-      "profile": "Profil utilisateur",
-      "settings": "Paramètres utilisateur"
+    User: {
+      profile: "Profil utilisateur",
+      settings: "Paramètres utilisateur",
     },
-    "General": {
-      "translation_language": "Langue de traduction",
-      "enable_translation": "Activer la traduction",
-      "enable_reading": "Activer la fonction de lecture",
-      "reading_speed": "Vitesse de lecture"
+    General: {
+      translation_language: "Langue de traduction",
+      enable_translation: "Activer la traduction",
+      enable_reading: "Activer la fonction de lecture",
+      reading_speed: "Vitesse de lecture",
+      slow: "Lent",
+      normal: "Normal",
+      fast: "Rapide",
     },
-    "Actions": {
-      "add": "Ajouter",
-      "clear": "Annuler",
-      "clean": "Effacer",
-      "confirm": "Confirmer",
-      "close": "Fermer"
+    Actions: {
+      add: "Ajouter",
+      clear: "Annuler",
+      clean: "Effacer",
+      confirm: "Confirmer",
+      close: "Fermer",
+      uploadYourPdfToGetstarted: "TTéléverser votre PDF pour commencer",
+      uploadAPdf: "Télécharger un PDF",
     },
-    "slice": "tranche",
-    "replace": "remplacer",
-    "trim": "Détourer",
-    "toLowerCase": "minuscules"
+    slice: "tranche",
+    replace: "remplacer",
+    trim: "Détourer",
+    toLowerCase: "minuscules",
+    App: {
+      all_rights_reserved: "Tous droits réservés",
+      name: "Pioche de personnages",
+      welcomeTo: "Bienvenue dans",
+    },
   },
-  "it": {
-    "Auth": {
-      "login": "Accedi",
-      "logout": "Esci",
-      "username": "Nome utente",
-      "password": "Password",
-      "forgotPassword": "Password dimenticata?",
-      "rememberMe": "Ricordami",
-      "signInWithGoogle": "Accedi con Google",
-      "signUp": "Iscriviti",
-      "verify": "Verifica"
+  it: {
+    Auth: {
+      login: "Accedi",
+      logout: "Esci",
+      username: "Nome utente",
+      password: "Password",
+      forgotPassword: "Password dimenticata?",
+      rememberMe: "Ricordami",
+      signInWithGoogle: "Accedi con Google",
+      signUp: "Iscriviti",
+      verify: "Verifica",
     },
-    "User": {
-      "profile": "Profilo utente",
-      "settings": "Impostazioni utente"
+    User: {
+      profile: "Profilo utente",
+      settings: "Impostazioni utente",
     },
-    "General": {
-      "translation_language": "Lingua di traduzione",
-      "enable_translation": "Abilita traduzione",
-      "enable_reading": "Abilita lettura",
-      "reading_speed": "Velocità di lettura"
+    General: {
+      translation_language: "Lingua di traduzione",
+      enable_translation: "Abilita traduzione",
+      enable_reading: "Abilita lettura",
+      reading_speed: "Velocità di lettura",
+      slow: "Lento",
+      normal: "Normale",
+      fast: "Veloce",
     },
-    "Actions": {
-      "add": "Aggiungi",
-      "clear": "Cancella",
-      "clean": "Pulisci",
-      "confirm": "Conferma",
-      "close": "Chiudi"
+    Actions: {
+      add: "Aggiungi",
+      clear: "Cancella",
+      clean: "Pulisci",
+      confirm: "Conferma",
+      close: "Chiudi",
+      uploadYourPdfToGetstarted: "Actions.uploadYourPdfToGetstarted",
+      uploadAPdf: "Carica un PDF",
     },
-    "slice": "Slice",
-    "replace": "Remplacer",
-    "trim": "修剪",
-    "toLowerCase": "to Lower Case"
-  }
+    slice: "fetta",
+    replace: "sostituisci",
+    trim: "Ritaglia",
+    toLowerCase: "minuscolo",
+    App: {
+      all_rights_reserved: "All rights reserved.",
+      name: "Co:nect",
+      welcomeTo: "¡Bienvenido a",
+    },
+  },
+  es: {
+    Auth: {
+      login: "Iniciar sesión",
+      logout: "Cerrar sesión",
+      username: "Nombre de usuario",
+      password: "Contraseña",
+      forgotPassword: "¿Contraseña olvidada?",
+      rememberMe: "Recordarme",
+      signInWithGoogle: "Iniciar sesión con Google",
+      signUp: "Registrarse",
+      verify: "Verificar",
+    },
+    User: {
+      profile: "Perfil de usuario",
+      settings: "Ajustes de usuario",
+    },
+    General: {
+      translation_language: "Idioma de traducción",
+      enable_translation: "Habilitar traducción",
+      enable_reading: "Habilitar lectura",
+      reading_speed: "Velocidad de lectura",
+      slow: "Lento",
+      normal: "Normal",
+      fast: "Rápido",
+    },
+    Actions: {
+      add: "Añadir",
+      clear: "Limpiar",
+      clean: "Limpiar",
+      confirm: "Confirmar",
+      close: "Cerrar",
+      uploadYourPdfToGetstarted: "Acciones.subeytupdfparaempezar",
+      uploadAPdf: "Actions.uploadAPdf",
+    },
+    slice: "rebanada",
+    replace: "reemplazar",
+    trim: "Recortar",
+    toLowerCase: "minúsculas",
+    App: {
+      all_rights_reserved: "Todos los derechos reservados",
+      name: "Foro de asistencia de GoDaddy",
+      welcomeTo: "¡Bienvenidos a",
+    },
+  },
 };
