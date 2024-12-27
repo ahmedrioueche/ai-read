@@ -13,6 +13,7 @@ import OptionsMenu from "./ui/OptionsMenu";
 import { pageNavigationPlugin } from "@react-pdf-viewer/page-navigation";
 import { Book } from "@/app/page";
 import MinimalCard from "./ui/MinimalCard";
+import VoiceApi from "@/apis/voiceApi";
 
 const EXCLUDED_TEXT = [
   "AI-READ",
@@ -57,12 +58,14 @@ const Main = ({
   const languageData = settingsData?.languageData;
   const translationLanguage = languageData?.language || "English";
   const aiApi = new AiApi();
+  const voiceApi = new VoiceApi();
   const pageNavigationPluginInstance = pageNavigationPlugin();
   const defaultLayoutPluginInstance = defaultLayoutPlugin();
   const bookUrl = book?.fileUrl;
   const rootRef = useRef<HTMLDivElement | null>(null);
   const [scrollY, setScrollY] = useState(0);
   const [isHighlighting, setIsHighlighting] = useState(false);
+  const [availabeVoicesIds, setAvailableVoicesIds] = useState<string[]>([]);
 
   useEffect(() => {
     if (book?.lastPage) {
@@ -360,6 +363,7 @@ const Main = ({
         }
       }
     };
+
     const isValidText = (text: string): boolean => {
       if (isSettingsModalOpen) return false;
 
@@ -373,7 +377,7 @@ const Main = ({
         if (!isValidText(preprocessedText)) return;
 
         if (settingsData && settingsData.reading) {
-          speakText(preprocessedText);
+          handleTextToSpeech(preprocessedText, settingsData);
         }
         if (settingsData && settingsData.translation) {
           getTranslation(preprocessedText);
@@ -383,6 +387,76 @@ const Main = ({
 
     handleSelectedtext();
   }, [selectedText]);
+
+  const handleTextToSpeech = async (text: string, settingsData: any) => {
+    let isVoiceApiSuccessful = true;
+    if (settingsData /*&& settingsData.pro*/) {
+      //only allow pro members to use TTS API
+      let voiceId;
+      /*if (settingsData.pro.selectedVoice) {
+        voiceId = settingsData.pro.selectedVoice;
+      } else {*/
+      if (availabeVoicesIds && availabeVoicesIds.length > 0) {
+        voiceId = availabeVoicesIds[0];
+      } else {
+        voiceId = "nPczCjzI2devNBz1zQrb";
+      }
+      //}
+      try {
+        const audioBuffer = await voiceApi.textToSpeech(
+          text,
+          voiceId || "nPczCjzI2devNBz1zQrb"
+        );
+        const audio = new Audio(URL.createObjectURL(new Blob([audioBuffer])));
+        audio.play();
+        setIsReadingClicked(false);
+        return;
+      } catch (e) {
+        isVoiceApiSuccessful = false;
+      }
+    } else {
+      isVoiceApiSuccessful = false;
+    }
+
+    if (!isVoiceApiSuccessful) {
+      isVoiceApiSuccessful = true;
+      speakText(text);
+      setIsReadingClicked(false);
+    }
+  };
+
+  useEffect(() => {
+    const getVoices = async () => {
+      try {
+        const response = await voiceApi.getVoices();
+        console.log("voices", response);
+
+        // Extract all voice_ids from the voices array
+        const voiceIds = response?.voices?.map(
+          (voice: { id: string }) => voice.id
+        );
+
+        // Set the voice_ids to the state
+        setAvailableVoicesIds(voiceIds);
+
+        // Store voiceIds in localStorage
+        localStorage.setItem("voicesIds", JSON.stringify(voiceIds));
+      } catch (error) {
+        console.error("Error fetching voices:", error);
+      }
+    };
+
+    // Check localStorage for existing voicesIds and set state if they exist
+    const voicesIds = localStorage.getItem("voicesIds");
+
+    if (!voicesIds) {
+      // If no voicesIds are found in localStorage, fetch them
+      getVoices();
+    } else {
+      // If voicesIds exist in localStorage, use them to set the state
+      setAvailableVoicesIds(JSON.parse(voicesIds));
+    }
+  }, []);
 
   const toggleHighlighting = (elements: HTMLElement[], stop = false) => {
     if (stop) {
@@ -420,11 +494,9 @@ const Main = ({
   useEffect(() => {
     const startReading = async () => {
       const { text, elements } = await getTextToSpeak();
-      console.log("text", text);
-      speakText(text);
+      console.log("text");
+      handleTextToSpeech(text, settingsData);
       //toggleHighlighting(elements);
-
-      setIsReadingClicked(false);
     };
 
     if (isReadingClicked) {

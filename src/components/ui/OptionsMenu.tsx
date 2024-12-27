@@ -33,7 +33,7 @@ const OptionsMenu: React.FC<{
     >
       <div
         className={`
-          absolute right-0 bottom-0 
+          absolute right-0 -bottom-4
           bg-white/90 backdrop-blur-sm 
           border border-gray-200 shadow-lg 
           flex flex-col items-start 

@@ -44,10 +44,6 @@ const SettingsModal: React.FC<SettingsModalProps> = ({ isOpen, onClose }) => {
   const text = dict["en"];
 
   useEffect(() => {
-    console.log({ isSmallScreen });
-  }, [isSmallScreen]);
-
-  useEffect(() => {
     let settingsData = JSON.parse(localStorage.getItem("settings") || "{}");
     if (settingsData) {
       setLanguage(settingsData.languageData?.language || "en");
