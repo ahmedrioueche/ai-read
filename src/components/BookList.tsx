@@ -56,26 +56,23 @@ const BookList: React.FC<BookListProps> = ({
             <div className="space-y-2">
               {books &&
                 books.length > 0 &&
-                books
-                  .slice()
-                  .reverse()
-                  .map((book) => (
-                    <div
-                      key={book.id}
-                      onClick={() => {
-                        onBookSelect(book);
-                        setIsOpen(false);
-                      }}
-                      className={`p-3 rounded cursor-pointer transition-colors ${
-                        book.id === currentBookId
-                          ? "bg-dark-secondary text-white"
-                          : "bg-dark-background text-dark-foreground hover:bg-dark-secondary/50"
-                      }`}
-                    >
-                      <p className="font-medium truncate">{book.fileName}</p>
-                      <p className="text-sm opacity-75">Page {book.lastPage}</p>
-                    </div>
-                  ))}
+                books.map((book) => (
+                  <div
+                    key={book.id}
+                    onClick={() => {
+                      onBookSelect(book);
+                      setIsOpen(false);
+                    }}
+                    className={`p-3 rounded cursor-pointer transition-colors ${
+                      book.id === currentBookId
+                        ? "bg-dark-secondary text-white"
+                        : "bg-dark-background text-dark-foreground hover:bg-dark-secondary/50"
+                    }`}
+                  >
+                    <p className="font-medium truncate">{book.fileName}</p>
+                    <p className="text-sm opacity-75">Page {book.lastPage}</p>
+                  </div>
+                ))}
             </div>
           </div>
         </div>

@@ -13,22 +13,22 @@ import {
 import BookList from "@/components/BookList";
 
 export interface Book {
-  id: string; // Unique identifier for IndexedDB
+  id: string;
   fileName: string;
   fileUrl: string;
   lastPage: number;
+  lastAccessed: number; // Add timestamp to track when book was last opened
 }
 
 const Home: React.FC = () => {
   const [pdfFileUrl, setPdfFileUrl] = useState<string | null>(null);
   const [books, setBooks] = useState<Book[]>([]);
   const [isSettingsModalOpen, setIsSettingModalOpen] = useState(false);
-  const [currentBookId, setCurrentBookId] = useState<string | null>(null); // Track the currently opened book
+  const [currentBookId, setCurrentBookId] = useState<string | null>(null);
   const [isFullScreen, setIsFullScreen] = useState(false);
   const language = "en";
   const BOOK_LIMIT = 5;
 
-  // Fallback mechanism for storing the latest book in localStorage
   const saveToLocalStorage = (book: Book) => {
     try {
       localStorage.setItem("latestBook", JSON.stringify(book));
@@ -47,6 +47,23 @@ const Home: React.FC = () => {
     }
   };
 
+  // Update book's lastAccessed timestamp and save to DB
+  const updateBookAccess = async (bookId: string) => {
+    const updatedBooks = books.map((book) =>
+      book.id === bookId ? { ...book, lastAccessed: Date.now() } : book
+    );
+
+    const updatedBook = updatedBooks.find((book) => book.id === bookId);
+    if (updatedBook) {
+      try {
+        await saveBookToIndexedDB(updatedBook);
+        setBooks(updatedBooks);
+      } catch (err) {
+        console.error("Failed to update book access time:", err);
+      }
+    }
+  };
+
   const handleFileChange = async (e: React.ChangeEvent<HTMLInputElement>) => {
     if (e.target.files?.[0]) {
       const file = e.target.files[0];
@@ -56,11 +73,10 @@ const Home: React.FC = () => {
         const fileUrl = reader.result as string;
         const fileName = file.name;
 
-        // Check if the book already exists
         const existingBook = books.find((book) => book.fileName === fileName);
 
         if (existingBook) {
-          // Open the existing book
+          await updateBookAccess(existingBook.id);
           setPdfFileUrl(existingBook.fileUrl);
           setCurrentBookId(existingBook.id);
         } else {
@@ -68,10 +84,10 @@ const Home: React.FC = () => {
             id: `${Date.now()}`,
             fileName,
             fileUrl,
-            lastPage: 0, // New book starts at the first page
+            lastPage: 0,
+            lastAccessed: Date.now(),
           };
 
-          // Add the book to the IndexedDB and handle the book limit
           const updatedBooks = [...books, newBook];
           if (updatedBooks.length > BOOK_LIMIT) {
             try {
@@ -84,7 +100,6 @@ const Home: React.FC = () => {
 
           setBooks(updatedBooks);
 
-          // Save to IndexedDB or fallback to localStorage
           try {
             await saveBookToIndexedDB(newBook);
           } catch (err) {
@@ -110,7 +125,7 @@ const Home: React.FC = () => {
 
   const updateLastPage = async (id: string, lastPage: number) => {
     const updatedBooks = books.map((book) =>
-      book.id === id ? { ...book, lastPage } : book
+      book.id === id ? { ...book, lastPage, lastAccessed: Date.now() } : book
     );
 
     const updatedBook = updatedBooks.find((book) => book.id === id);
@@ -130,13 +145,19 @@ const Home: React.FC = () => {
     const loadBooksFromDB = async () => {
       try {
         const savedBooks = await getBooksFromIndexedDB();
-        setBooks(savedBooks);
 
-        // Open the last accessed book, or start fresh
         if (savedBooks.length > 0) {
-          const lastOpenedBook = savedBooks[savedBooks.length - 1];
-          setPdfFileUrl(lastOpenedBook.fileUrl);
-          setCurrentBookId(lastOpenedBook.id);
+          // Sort books by lastAccessed timestamp to find the most recently opened book
+          const sortedBooks = savedBooks.sort(
+            (a, b) => (b.lastAccessed || 0) - (a.lastAccessed || 0)
+          );
+
+          setBooks(sortedBooks);
+
+          // Open the most recently accessed book
+          const mostRecentBook = sortedBooks[0];
+          setPdfFileUrl(mostRecentBook.fileUrl);
+          setCurrentBookId(mostRecentBook.id);
         }
       } catch (err) {
         console.error(
@@ -144,7 +165,6 @@ const Home: React.FC = () => {
           err
         );
 
-        // Fallback to localStorage
         const lastBook = loadFromLocalStorage();
         if (lastBook) {
           setBooks([lastBook]);
@@ -172,7 +192,6 @@ const Home: React.FC = () => {
         readingSpeed: "normal",
       };
 
-      // Save the default settings to localStorage
       localStorage.setItem("settings", JSON.stringify(settingsData));
     }
   }, []);
@@ -181,7 +200,6 @@ const Home: React.FC = () => {
 
   return (
     <div className="flex flex-col min-h-screen bg-dark-background">
-      {/* Navbar */}
       <Navbar
         onUpload={handleFileChange}
         onToggleSettingsModal={(isOpen) => setIsSettingModalOpen(isOpen)}
@@ -189,7 +207,6 @@ const Home: React.FC = () => {
           setIsFullScreen(isFullScreen);
         }}
       />
-      {/* Main Content */}
       <div
         className={`flex flex-col items-center z-10 ${
           !pdfFileUrl ? "-mt-10" : ""
@@ -214,7 +231,8 @@ const Home: React.FC = () => {
           <BookList
             books={books}
             currentBookId={currentBookId}
-            onBookSelect={(book) => {
+            onBookSelect={async (book) => {
+              await updateBookAccess(book.id); // Update lastAccessed when selecting a book
               setPdfFileUrl(book.fileUrl);
               setCurrentBookId(book.id);
             }}

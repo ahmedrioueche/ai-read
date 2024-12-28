@@ -448,14 +448,17 @@ const Main = ({
 
     // Check localStorage for existing voicesIds and set state if they exist
     const voicesIds = localStorage.getItem("voicesIds");
+    console.log("voicesIds", voicesIds);
 
-    if (!voicesIds) {
-      // If no voicesIds are found in localStorage, fetch them
+    //if (!voicesIds) {
+    // If no voicesIds are found in localStorage, fetch them
+    if (!availabeVoicesIds) {
       getVoices();
-    } else {
-      // If voicesIds exist in localStorage, use them to set the state
-      setAvailableVoicesIds(JSON.parse(voicesIds));
     }
+    //} else {
+    // If voicesIds exist in localStorage, use them to set the state
+    //setAvailableVoicesIds(JSON.parse(voicesIds));
+    // }
   }, []);
 
   const toggleHighlighting = (elements: HTMLElement[], stop = false) => {
@@ -494,7 +497,6 @@ const Main = ({
   useEffect(() => {
     const startReading = async () => {
       const { text, elements } = await getTextToSpeak();
-      console.log("text");
       handleTextToSpeech(text, settingsData);
       //toggleHighlighting(elements);
     };
@@ -573,11 +575,13 @@ const Main = ({
   const startReading = () => {
     setIsReadingClicked(true);
   };
-
+  const isDarkMode = false;
   return (
     <div
       ref={rootRef}
-      className="h-screen w-screen bg-gray-100 relative"
+      className={`h-screen w-screen bg-gray-100 relative ${
+        isDarkMode ? `dark-mode` : ""
+      }`}
       style={{ touchAction: "none" }}
     >
       <Worker workerUrl="https://cdnjs.cloudflare.com/ajax/libs/pdf.js/3.11.174/pdf.worker.min.js">

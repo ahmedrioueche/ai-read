@@ -57,19 +57,17 @@ export default class VoiceApi {
       },
       model_id: "eleven_multilingual_v2",
     };
-
     try {
       const response = await axios.post(url, payload, {
         headers: {
           "Content-Type": "application/json",
           "xi-api-key": this.apiKey,
         },
-        responseType: "arraybuffer", // Get the audio as binary data
+        responseType: "arraybuffer",
       });
 
       const audioBuffer = response.data;
 
-      // Return the audio buffer directly (for playback in your app)
       return audioBuffer;
     } catch (error) {
       console.error("Error generating speech:", error);
