@@ -267,6 +267,15 @@ const Main = ({
   const getTopOffset = () => {
     return isFullScreen ? 60 : 120 - scrollY;
   };
+  const findLastSentenceBoundary = (text: string): number => {
+    // Match periods, question marks, or exclamation marks followed by space or end of string
+    const matches = [...text.matchAll(/[.!?](?:\s+|$)/g)];
+    if (matches.length === 0) return -1;
+
+    // Get the index of the last match
+    const lastMatch = matches[matches.length - 1];
+    return lastMatch.index! + 1; // Include only the punctuation mark, not the following space
+  };
 
   const getTextToSpeak = async (): Promise<{
     text: string;
@@ -341,11 +350,93 @@ const Main = ({
         }
       }
 
-      return { text: fullText.trim(), elements: elementsToHighlight };
+      const trimmedText = fullText.trim();
+      const lastSentenceBoundary = findLastSentenceBoundary(trimmedText);
+
+      // If we found a sentence boundary, cut the text there, but keep the punctuation
+      const visibleText =
+        lastSentenceBoundary > -1
+          ? trimmedText.substring(0, lastSentenceBoundary + 1) // Include the punctuation mark
+          : trimmedText;
+
+      return { text: visibleText, elements: elementsToHighlight };
     } catch (error) {
       console.error("Error getting text to speak:", error);
       return { text: "", elements: [] };
     }
+  };
+
+  const findRemainingFullText = (
+    visibleText: string,
+    fullText: string
+  ): string => {
+    // Normalize texts while preserving meaningful structure
+    const normalizeText = (text: string) => {
+      return text
+        .trim()
+        .replace(/\s+/g, " ") // Normalize whitespace to single spaces
+        .replace(/["""]/g, '"') // Normalize quotes
+        .replace(/['']/g, "'"); // Normalize apostrophes
+    };
+
+    const cleanVisibleText = normalizeText(visibleText);
+    const cleanFullText = normalizeText(fullText);
+
+    // Take the last significant chunk of visible text to ensure unique matching
+    const lastChunkSize = Math.min(cleanVisibleText.length, 200);
+    const lastVisibleChunk = cleanVisibleText.slice(-lastChunkSize);
+
+    if (!lastVisibleChunk) {
+      console.error("Could not extract chunk from visible text");
+      return fullText;
+    }
+
+    // Find the exact position where this chunk appears in full text
+    const chunkPosition = cleanFullText.indexOf(lastVisibleChunk);
+
+    if (chunkPosition === -1) {
+      console.error("Could not find visible chunk in full text");
+      return fullText;
+    }
+
+    // Calculate the end position - this is where our visible text ends
+    const endPosition = chunkPosition + lastVisibleChunk.length;
+
+    // Convert position in normalized text to position in original text
+    let originalTextPosition = 0;
+    let normalizedTextPosition = 0;
+
+    // Align positions between normalized and original text
+    while (
+      normalizedTextPosition < endPosition &&
+      originalTextPosition < fullText.length
+    ) {
+      // Skip extra whitespace in original text
+      while (
+        originalTextPosition < fullText.length &&
+        /\s/.test(fullText[originalTextPosition])
+      ) {
+        originalTextPosition++;
+      }
+
+      // Skip extra whitespace in normalized text
+      while (
+        normalizedTextPosition < cleanFullText.length &&
+        /\s/.test(cleanFullText[normalizedTextPosition])
+      ) {
+        normalizedTextPosition++;
+      }
+
+      // Move both positions forward for regular characters
+      if (normalizedTextPosition < endPosition) {
+        originalTextPosition++;
+        normalizedTextPosition++;
+      }
+    }
+
+    // Return everything after the visible text position
+    // Start right after the last complete sentence in visible text
+    return fullText.slice(originalTextPosition).trim();
   };
 
   useEffect(() => {
@@ -461,6 +552,24 @@ const Main = ({
     // }
   }, []);
 
+  useEffect(() => {
+    const startReading = async () => {
+      const { text, elements } = await getTextToSpeak();
+      console.log({ text });
+
+      await handleTextToSpeech(text, settingsData);
+      const remainingFullText = findRemainingFullText(text, fullText);
+      console.log({ remainingFullText });
+      await handleTextToSpeech(remainingFullText, settingsData);
+
+      //toggleHighlighting(elements);
+    };
+
+    if (isReadingClicked) {
+      startReading();
+    }
+  }, [isReadingClicked]);
+
   const toggleHighlighting = (elements: HTMLElement[], stop = false) => {
     if (stop) {
       setIsHighlighting(false);
@@ -493,18 +602,6 @@ const Main = ({
       }
     }
   };
-
-  useEffect(() => {
-    const startReading = async () => {
-      const { text, elements } = await getTextToSpeak();
-      handleTextToSpeech(text, settingsData);
-      //toggleHighlighting(elements);
-    };
-
-    if (isReadingClicked) {
-      startReading();
-    }
-  }, [isReadingClicked]);
 
   const stopHighlighting = () => {
     const elements = Array.from(
