@@ -93,7 +93,7 @@ const SettingsModal: React.FC<SettingsModalProps> = ({ isOpen, onClose }) => {
         <div className="grid grid-cols-1 sm:grid-cols-2 gap-6 mt-4">
           <div className="flex justify-center items-center">
             <img
-              src="/images/Settings.svg"
+              src="/images/settings-story-set.svg"
               alt="Settings"
               className={`object-contain ${
                 isSmallScreen ? " w-36 h-36" : "w-50 h-50"
