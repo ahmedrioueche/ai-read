@@ -424,24 +424,86 @@ const Main = ({
     setReadingState("loading");
     autoReading.isActivated = true;
 
-    // Fetch text and elements
-    const { text, elements } = await getTextToRead();
-    const processedText = preprocessText(text);
-    // Call the first part of the text to be read
-    await handleTextToSpeech(processedText, settingsData);
+    try {
+      // Fetch text and elements
+      const { text, elements } = await getTextToRead();
 
-    // Find the remaining full text
-    const remainingFullText = findRemainingFullText(text, fullText);
-    const processedRemainingText = preprocessText(remainingFullText);
+      // Handle initial text-to-speech
+      await handleTextToSpeech(text, settingsData);
 
-    // Split the remaining full text into chunks
-    const chunks = splitTextIntoChunks(processedRemainingText, 1000);
+      // Find and process remaining text
+      const remainingFullText = findRemainingFullText(text, fullText);
 
-    // Add the chunks to the queue
-    readingQueue.push(...chunks);
+      if (remainingFullText) {
+        const processedRemainingText = preprocessText(remainingFullText);
 
-    // Start processing the queue
-    processReadingQueue(readingQueue);
+        if (processedRemainingText) {
+          // Split text into chunks and add to queue
+          const chunks = splitTextIntoChunks(processedRemainingText, 1000);
+          if (chunks.length > 0) {
+            readingQueue.push(...chunks);
+          }
+        }
+      }
+
+      processReadingQueue(readingQueue);
+    } catch (error) {
+      console.error("Error in startReading:", error);
+      autoReading.isActivated = false;
+    }
+  };
+
+  const splitTextIntoChunks = (text: string, maxLength: number): string[] => {
+    // Input validation
+    if (!text || maxLength <= 0) {
+      return [];
+    }
+
+    const chunks: string[] = [];
+    let currentIndex = 0;
+
+    while (currentIndex < text.length) {
+      // Determine the potential end of the current chunk
+      let endIndex = Math.min(currentIndex + maxLength, text.length);
+
+      // If we're not at the end of the text, look for a proper sentence ending
+      if (endIndex < text.length) {
+        // Look for the last sentence ending within the chunk
+        const lastPeriodIndex = text.lastIndexOf(".", endIndex);
+        const lastExclamationIndex = text.lastIndexOf("!", endIndex);
+        const lastQuestionIndex = text.lastIndexOf("?", endIndex);
+
+        // Find the latest sentence ending
+        const sentenceEndings = [
+          lastPeriodIndex,
+          lastExclamationIndex,
+          lastQuestionIndex,
+        ].filter((index) => index > currentIndex && index <= endIndex);
+
+        if (sentenceEndings.length > 0) {
+          endIndex = Math.max(...sentenceEndings) + 1;
+        } else {
+          // If no sentence ending is found, look for the last space
+          const lastSpaceIndex = text.lastIndexOf(" ", endIndex);
+          if (lastSpaceIndex > currentIndex) {
+            endIndex = lastSpaceIndex;
+          }
+        }
+      }
+
+      // Extract and clean the chunk
+      let chunk = text.slice(currentIndex, endIndex).trim();
+
+      // Only add non-empty chunks
+      if (chunk.length > 0) {
+        chunks.push(chunk);
+      }
+
+      // Move to the next chunk
+      currentIndex = endIndex;
+    }
+
+    return chunks;
   };
 
   // Function to process the queue
@@ -461,31 +523,6 @@ const Main = ({
       autoReading.isActivated = false;
       setReadingState("off");
     }
-  };
-
-  // Function to split text into chunks of a maximum length, ensuring chunks end with a full stop
-  const splitTextIntoChunks = (text: string, maxLength: number) => {
-    const chunks = [];
-    let startIndex = 0;
-
-    while (startIndex < text.length) {
-      let endIndex = startIndex + maxLength;
-
-      // Ensure the chunk doesn't break in the middle of a sentence
-      if (
-        endIndex < text.length &&
-        text[endIndex] !== "." &&
-        text.lastIndexOf(".", endIndex) !== -1
-      ) {
-        endIndex = text.lastIndexOf(".", endIndex) + 1; // Move to the last full stop before the chunk limit
-      }
-
-      const chunk = text.slice(startIndex, endIndex).trim();
-      chunks.push(chunk);
-      startIndex = endIndex; // Move the starting point to the end of the chunk
-    }
-
-    return chunks;
   };
 
   const stopReading = () => {

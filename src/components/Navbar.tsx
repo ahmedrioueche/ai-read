@@ -1,5 +1,5 @@
 import React, { useState, useEffect } from "react";
-import { Cog, Rocket, Maximize2, ChevronDown } from "lucide-react";
+import { Cog, Rocket, Maximize2, ChevronDown, User, User2 } from "lucide-react";
 import SettingsModal from "./SettingsModal";
 import { dict } from "@/utils/dict";
 
@@ -89,10 +89,10 @@ const Navbar: React.FC<{
               setIsSettingModalOpen(true);
               onToggleSettingsModal(true);
             }}
-            aria-label="Settings"
+            aria-label="User"
             className="hover:text-dark-secondary transition duration-300"
           >
-            <Cog size={24} />
+            <User2 size={24} />
           </button>
 
           <button
