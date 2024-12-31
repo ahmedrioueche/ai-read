@@ -12,7 +12,7 @@ import {
 } from "@/utils/indexedDb";
 import BookList from "@/components/BookList";
 
-export interface Book {
+export interface BookData {
   id: string;
   fileName: string;
   fileUrl: string;
@@ -22,14 +22,14 @@ export interface Book {
 
 const Home: React.FC = () => {
   const [pdfFileUrl, setPdfFileUrl] = useState<string | null>(null);
-  const [books, setBooks] = useState<Book[]>([]);
+  const [books, setBooks] = useState<BookData[]>([]);
   const [isSettingsModalOpen, setIsSettingModalOpen] = useState(false);
   const [currentBookId, setCurrentBookId] = useState<string | null>(null);
   const [isFullScreen, setIsFullScreen] = useState(false);
   const language = "en";
   const BOOK_LIMIT = 5;
 
-  const saveToLocalStorage = (book: Book) => {
+  const saveToLocalStorage = (book: BookData) => {
     try {
       localStorage.setItem("latestBook", JSON.stringify(book));
     } catch (e) {
@@ -37,7 +37,7 @@ const Home: React.FC = () => {
     }
   };
 
-  const loadFromLocalStorage = (): Book | null => {
+  const loadFromLocalStorage = (): BookData | null => {
     try {
       const storedBook = localStorage.getItem("latestBook");
       return storedBook ? JSON.parse(storedBook) : null;
@@ -80,7 +80,7 @@ const Home: React.FC = () => {
           setPdfFileUrl(existingBook.fileUrl);
           setCurrentBookId(existingBook.id);
         } else {
-          const newBook: Book = {
+          const newBook: BookData = {
             id: `${Date.now()}`,
             fileName,
             fileUrl,

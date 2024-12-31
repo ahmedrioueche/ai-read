@@ -61,8 +61,11 @@ const Navbar: React.FC<{
         } items-center justify-between px-6 py-4 z-50 bg-dark-background text-dark-foreground shadow-md`}
       >
         <div className="flex flex-row items-center space-x-2">
-          <img src="/images/Fireball.svg" alt="Logo" className="h-7 w-7" />
-          <div className="text-xl font-bold font-dancing">{text.App.name}</div>
+          <img src="/images/logo.png" alt="Logo" className="h-6 w-5" />
+          <div className="text-xl font-bold font-dancing">
+            <span className="text-dark-secondary">AI</span>
+            <span className="text-white">Read</span>
+          </div>
         </div>
 
         <div className="flex items-center space-x-6" onClick={handleIconClick}>

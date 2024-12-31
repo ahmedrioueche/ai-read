@@ -1,6 +1,6 @@
 "use client";
 import { AiApi } from "@/apis/aiApi";
-import { formatLanguage } from "@/utils/helper";
+import { formatLanguage, preprocessText } from "@/utils/helper";
 import { Viewer, Worker } from "@react-pdf-viewer/core";
 import "@react-pdf-viewer/core/lib/styles/index.css";
 import { defaultLayoutPlugin } from "@react-pdf-viewer/default-layout";
@@ -11,7 +11,7 @@ import { useState, useEffect, useCallback, useRef } from "react";
 import TextCard from "./ui/TextCard";
 import OptionsMenu from "./ui/OptionsMenu";
 import { pageNavigationPlugin } from "@react-pdf-viewer/page-navigation";
-import { Book } from "@/app/page";
+import { BookData } from "@/app/page";
 import MinimalCard from "./ui/MinimalCard";
 import VoiceApi from "@/apis/voiceApi";
 
@@ -30,7 +30,7 @@ const Main = ({
   isSettingsModalOpen,
   isFullScreen,
 }: {
-  book: Book;
+  book: BookData;
   onLastPageChange: (lastPage: number) => void;
   isSettingsModalOpen: boolean;
   isFullScreen: boolean;
@@ -78,6 +78,9 @@ const Main = ({
       if (!isNaN(lastPage)) {
         setLastPage(lastPage);
       }
+    }
+    if (book) {
+      stopReading();
     }
   }, [book]);
 
@@ -161,28 +164,6 @@ const Main = ({
       );
     }
   }, [selectionTimeout]);
-
-  const preprocessText = (text: string) => {
-    // Step 1: Remove inline annotations like "[22]" or similar
-    let cleanedText = text.replace(/\[\d+\]/g, "");
-
-    // Step 2: Add commas after titles that are followed by blank space
-    cleanedText = cleanedText.replace(
-      /^([A-Z][^\n]*?)([A-Za-z0-9])(\s*?\n\s+)/gm,
-      "$1$2,\n"
-    );
-
-    // Step 3: Replace multiple spaces within a sentence with a single space
-    cleanedText = cleanedText.replace(/([^\n\S]+|\s{2,})/g, " ");
-
-    // Step 4: Normalize line breaks for natural reading
-    cleanedText = cleanedText.replace(/(\s*\n\s*){2,}/g, "\n\n");
-
-    // Step 5: Trim extra spaces at the beginning and end
-    cleanedText = cleanedText.trim();
-
-    return cleanedText;
-  };
 
   const readText = (text: string) => {
     if ("speechSynthesis" in window) {
@@ -443,16 +424,14 @@ const Main = ({
     setReadingState("loading");
     autoReading.isActivated = true;
 
-    // Fetch text and elements (assuming getTextToRead() is already defined)
+    // Fetch text and elements
     const { text, elements } = await getTextToRead();
-    console.log({ text });
     const processedText = preprocessText(text);
     // Call the first part of the text to be read
     await handleTextToSpeech(processedText, settingsData);
 
     // Find the remaining full text
     const remainingFullText = findRemainingFullText(text, fullText);
-    console.log({ remainingFullText });
     const processedRemainingText = preprocessText(remainingFullText);
 
     // Split the remaining full text into chunks

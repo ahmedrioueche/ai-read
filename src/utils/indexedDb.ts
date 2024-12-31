@@ -1,4 +1,4 @@
-import { Book } from "@/app/page";
+import { BookData } from "@/app/page";
 import { openDB, IDBPDatabase } from "idb";
 
 const DB_NAME = "bookAppDB";
@@ -31,7 +31,7 @@ const initDB = async (): Promise<IDBPDatabase> => {
  * Save a book to IndexedDB.
  * @param book Book object to save.
  */
-export const saveBookToIndexedDB = async (book: Book): Promise<boolean> => {
+export const saveBookToIndexedDB = async (book: BookData): Promise<boolean> => {
   try {
     const db = await initDB();
     await db.put(STORE_NAME, book);
@@ -46,7 +46,7 @@ export const saveBookToIndexedDB = async (book: Book): Promise<boolean> => {
  * Retrieve all books from IndexedDB.
  * @returns Array of books.
  */
-export const getBooksFromIndexedDB = async (): Promise<Book[]> => {
+export const getBooksFromIndexedDB = async (): Promise<BookData[]> => {
   try {
     const db = await initDB();
     return (await db.getAll(STORE_NAME)) || [];

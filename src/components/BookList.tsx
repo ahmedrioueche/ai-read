@@ -1,11 +1,11 @@
 import React, { useState, useRef, useEffect } from "react";
 import { ChevronLeft, ChevronRight } from "lucide-react";
-import { Book } from "@/app/page";
+import { BookData } from "@/app/page";
 
 interface BookListProps {
-  books: Book[];
+  books: BookData[];
   currentBookId: string | null;
-  onBookSelect: (book: Book) => void;
+  onBookSelect: (book: BookData) => void;
 }
 
 const BookList: React.FC<BookListProps> = ({
@@ -52,6 +52,13 @@ const BookList: React.FC<BookListProps> = ({
           }}
           className="h-full bg-dark-background shadow-lg transition-transform duration-300 ease-in-out"
         >
+          <div className="flex flex-row items-center space-x-2 mt-4 ml-4 mb-2">
+            <img src="/images/logo.png" alt="Logo" className="h-6 w-5" />
+            <div className="text-xl font-bold font-dancing">
+              <span className="text-dark-secondary">AI</span>
+              <span className="text-white">Read</span>
+            </div>
+          </div>
           <div className="p-4 h-full overflow-y-auto">
             <div className="space-y-2">
               {books &&

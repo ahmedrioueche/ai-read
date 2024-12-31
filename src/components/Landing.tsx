@@ -12,12 +12,13 @@ const Landing: React.FC<LandingProps> = ({ onFileChange }) => {
   return (
     <div className="flex flex-col items-center justify-center min-h-screen bg-dark-background p-2">
       <div className="bg-dark-background p-2 rounded-lg shadow-lg w-full max-w-lg">
-        <div className="text-center mb-6 -mt-16">
-          <img src="/images/Fireball.svg" alt="" className="h-70 w-70" />
-
-          <h1 className="text-3xl font-bold text-dark-foreground mb-2">
-            {text.App.welcomeTo} {text.App.name}
-          </h1>
+        <div className="text-center mb-6 -mt-32">
+          <img src="/images/read-story-set.svg" alt="" className="h-70 w-70" />
+          <div className="flex flex-row md:text-5xl text-4xl font-dancing text-dark-foreground mb-4">
+            {text.App.welcomeTo}{" "}
+            <span className="text-dark-secondary ml-2">AI</span>
+            <span>Read</span>
+          </div>
           <p className="text-lg text-dark-foreground">
             {text.Actions.uploadYourPdfToGetstarted}
           </p>
