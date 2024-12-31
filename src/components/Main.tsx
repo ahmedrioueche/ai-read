@@ -42,8 +42,9 @@ const Main = ({
   const [bookContext, setBookContext] = useState<string | null>(null);
   const [bookLanguage, setBookLanguage] = useState<string | null>(null);
   const [readingSpeed, setReadingSpeed] = useState<number>(0.9);
-  const [isReading, setIsReading] = useState(false);
-  const [isReadingClicked, setIsReadingClicked] = useState(false);
+  const [readingState, setReadingState] = useState<
+    "loading" | "reading" | "off"
+  >("off");
   const [isHoverOver, setIsHoverOver] = useState(false);
   const [activeTextCardContent, setActiveTextCardContent] = useState<
     string | null
@@ -66,6 +67,10 @@ const Main = ({
   const [scrollY, setScrollY] = useState(0);
   const [isHighlighting, setIsHighlighting] = useState(false);
   const [availabeVoicesIds, setAvailableVoicesIds] = useState<string[]>([]);
+  let autoReading = {
+    isActivated: false,
+    isReading: false,
+  };
 
   useEffect(() => {
     if (book?.lastPage) {
@@ -80,36 +85,6 @@ const Main = ({
     const newPage = e.currentPage;
     onLastPageChange(parseInt(newPage, 10));
   };
-
-  useEffect(() => {
-    if (settingsData) {
-      switch (settingsData.readingSpeed) {
-        case "normal":
-          setReadingSpeed(0.9);
-          break;
-        case "slow":
-          setReadingSpeed(0.7);
-          break;
-        case "fast":
-          setReadingSpeed(1.2);
-          break;
-      }
-    }
-  }, [settingsData]);
-
-  useEffect(() => {
-    const handleScroll = () => {
-      setScrollY(window.scrollY); // Update the vertical scroll position
-    };
-
-    // Add scroll event listener
-    window.addEventListener("scroll", handleScroll);
-
-    // Cleanup event listener on component unmount
-    return () => {
-      window.removeEventListener("scroll", handleScroll);
-    };
-  }, []);
 
   const extractText = async (fileUrl: string) => {
     try {
@@ -187,51 +162,31 @@ const Main = ({
     }
   }, [selectionTimeout]);
 
-  useEffect(() => {
-    if (translation) {
-      setActiveTextCardContent(translation);
-    } else if (explanation) {
-      setActiveTextCardContent(explanation);
-    } else if (summary) {
-      setActiveTextCardContent(summary);
-    } else {
-      setActiveTextCardContent(null);
-    }
-  }, [translation, explanation, summary]);
-
-  useEffect(() => {
-    // Desktop events
-    document.addEventListener("mouseup", handleTextSelection);
-    document.addEventListener("selectionchange", handleTextSelection);
-
-    // Mobile touch events
-    document.addEventListener("touchend", handleTextSelection);
-
-    return () => {
-      // Cleanup event listeners
-      document.removeEventListener("mouseup", handleTextSelection);
-      document.removeEventListener("selectionchange", handleTextSelection);
-      document.removeEventListener("touchend", handleTextSelection);
-
-      // Clear timeout on cleanup
-      if (selectionTimeout) {
-        clearTimeout(selectionTimeout);
-      }
-    };
-  }, [handleTextSelection]);
-
-  // Function to preprocess the selected text (remove unnecessary line breaks)
   const preprocessText = (text: string) => {
-    // Replace multiple spaces or line breaks with a single space
-    const cleanedText = text.replace(/\s+/g, " ").trim();
+    // Step 1: Remove inline annotations like "[22]" or similar
+    let cleanedText = text.replace(/\[\d+\]/g, "");
+
+    // Step 2: Add commas after titles that are followed by blank space
+    cleanedText = cleanedText.replace(
+      /^([A-Z][^\n]*?)([A-Za-z0-9])(\s*?\n\s+)/gm,
+      "$1$2,\n"
+    );
+
+    // Step 3: Replace multiple spaces within a sentence with a single space
+    cleanedText = cleanedText.replace(/([^\n\S]+|\s{2,})/g, " ");
+
+    // Step 4: Normalize line breaks for natural reading
+    cleanedText = cleanedText.replace(/(\s*\n\s*){2,}/g, "\n\n");
+
+    // Step 5: Trim extra spaces at the beginning and end
+    cleanedText = cleanedText.trim();
+
     return cleanedText;
   };
 
-  // Function to convert text to speech
-  const speakText = (text: string) => {
+  const readText = (text: string) => {
     if ("speechSynthesis" in window) {
       const utterance = new SpeechSynthesisUtterance(text);
-      //use translation language on text from textCard, use book language on words, and detect the language on sentences.
       const isInTextCard =
         activeTextCardContent &&
         activeTextCardContent.includes(selectedText || "");
@@ -250,11 +205,15 @@ const Main = ({
       utterance.rate = readingSpeed; // Set rate (range 0.1 to 10)
 
       utterance.onstart = () => {
-        setIsReading(true);
+        setReadingState("reading");
+        autoReading.isReading = true;
       };
 
       utterance.onend = () => {
-        setIsReading(false);
+        if (!autoReading.isActivated) {
+          setReadingState("off");
+        }
+        autoReading.isReading = false;
       };
 
       // Speak the text
@@ -277,7 +236,7 @@ const Main = ({
     return lastMatch.index! + 1; // Include only the punctuation mark, not the following space
   };
 
-  const getTextToSpeak = async (): Promise<{
+  const getTextToRead = async (): Promise<{
     text: string;
     elements: HTMLElement[];
   }> => {
@@ -439,6 +398,126 @@ const Main = ({
     return fullText.slice(originalTextPosition).trim();
   };
 
+  const handleTextToSpeech = async (text: string, settingsData: any) => {
+    let isVoiceApiSuccessful = true;
+    if (settingsData /*&& settingsData.pro*/) {
+      //only allow pro members to use TTS API
+      let voiceId;
+      /*if (settingsData.pro.selectedVoice) {
+        voiceId = settingsData.pro.selectedVoice;
+      } else {*/
+      if (availabeVoicesIds && availabeVoicesIds.length > 0) {
+        voiceId = availabeVoicesIds[0];
+      } else {
+        voiceId = "nPczCjzI2devNBz1zQrb";
+      }
+      //}
+      try {
+        const audioBuffer = await voiceApi.textToSpeech(
+          text,
+          voiceId || "nPczCjzI2devNBz1zQrb"
+        );
+        setReadingState("reading");
+        const audio = new Audio(URL.createObjectURL(new Blob([audioBuffer])));
+        audio.play();
+        audio.onended = () => {
+          setReadingState("off");
+        };
+
+        return;
+      } catch (e) {
+        isVoiceApiSuccessful = false;
+      }
+    } else {
+      isVoiceApiSuccessful = false;
+    }
+
+    if (!isVoiceApiSuccessful) {
+      isVoiceApiSuccessful = true;
+      readText(text);
+    }
+  };
+
+  const startReading = async () => {
+    const readingQueue: string[] = [];
+    setReadingState("loading");
+    autoReading.isActivated = true;
+
+    // Fetch text and elements (assuming getTextToRead() is already defined)
+    const { text, elements } = await getTextToRead();
+    console.log({ text });
+    const processedText = preprocessText(text);
+    // Call the first part of the text to be read
+    await handleTextToSpeech(processedText, settingsData);
+
+    // Find the remaining full text
+    const remainingFullText = findRemainingFullText(text, fullText);
+    console.log({ remainingFullText });
+    const processedRemainingText = preprocessText(remainingFullText);
+
+    // Split the remaining full text into chunks
+    const chunks = splitTextIntoChunks(processedRemainingText, 1000);
+
+    // Add the chunks to the queue
+    readingQueue.push(...chunks);
+
+    // Start processing the queue
+    processReadingQueue(readingQueue);
+  };
+
+  // Function to process the queue
+  const processReadingQueue = (queue: string[]) => {
+    // If there are chunks in the queue and not currently reading, start reading the next chunk
+    if (queue.length > 0 && autoReading.isActivated && !autoReading.isReading) {
+      const nextChunk = queue.shift(); // Get the next chunk from the queue
+
+      if (nextChunk) {
+        handleTextToSpeech(nextChunk, settingsData); // Read the chunk
+      }
+    }
+
+    if (queue.length > 0) {
+      setTimeout(() => processReadingQueue(queue), 200); // Process next chunk when possible
+    } else {
+      autoReading.isActivated = false;
+      setReadingState("off");
+    }
+  };
+
+  // Function to split text into chunks of a maximum length, ensuring chunks end with a full stop
+  const splitTextIntoChunks = (text: string, maxLength: number) => {
+    const chunks = [];
+    let startIndex = 0;
+
+    while (startIndex < text.length) {
+      let endIndex = startIndex + maxLength;
+
+      // Ensure the chunk doesn't break in the middle of a sentence
+      if (
+        endIndex < text.length &&
+        text[endIndex] !== "." &&
+        text.lastIndexOf(".", endIndex) !== -1
+      ) {
+        endIndex = text.lastIndexOf(".", endIndex) + 1; // Move to the last full stop before the chunk limit
+      }
+
+      const chunk = text.slice(startIndex, endIndex).trim();
+      chunks.push(chunk);
+      startIndex = endIndex; // Move the starting point to the end of the chunk
+    }
+
+    return chunks;
+  };
+
+  const stopReading = () => {
+    // Stop the speech synthesis manually
+    window.speechSynthesis.cancel();
+    autoReading.isActivated = false;
+    autoReading.isReading = false;
+    setReadingState("off");
+    stopHighlighting();
+  };
+
   useEffect(() => {
     const getTranslation = async (text: string) => {
       if (selectedText && selectedText.trim() !== "") {
@@ -479,40 +558,40 @@ const Main = ({
     handleSelectedtext();
   }, [selectedText]);
 
-  const handleTextToSpeech = async (text: string, settingsData: any) => {
-    let isVoiceApiSuccessful = true;
-    if (settingsData /*&& settingsData.pro*/) {
-      //only allow pro members to use TTS API
-      let voiceId;
-      /*if (settingsData.pro.selectedVoice) {
-        voiceId = settingsData.pro.selectedVoice;
-      } else {*/
-      if (availabeVoicesIds && availabeVoicesIds.length > 0) {
-        voiceId = availabeVoicesIds[0];
-      } else {
-        voiceId = "nPczCjzI2devNBz1zQrb";
+  const getSummary = async () => {
+    if (selectedText && selectedText.trim() !== "") {
+      const preprocessedText = preprocessText(selectedText);
+      const response = await aiApi.getSummary(
+        preprocessedText,
+        translationLanguage
+      );
+      if (response) {
+        setSummary(response);
+        setTimeout(() => {
+          if (!isHoverOver) {
+            setSummary(null);
+          }
+        }, 5000 + response.length * 200);
       }
-      //}
-      try {
-        const audioBuffer = await voiceApi.textToSpeech(
-          text,
-          voiceId || "nPczCjzI2devNBz1zQrb"
-        );
-        const audio = new Audio(URL.createObjectURL(new Blob([audioBuffer])));
-        audio.play();
-        setIsReadingClicked(false);
-        return;
-      } catch (e) {
-        isVoiceApiSuccessful = false;
-      }
-    } else {
-      isVoiceApiSuccessful = false;
     }
+  };
 
-    if (!isVoiceApiSuccessful) {
-      isVoiceApiSuccessful = true;
-      speakText(text);
-      setIsReadingClicked(false);
+  const getExplanation = async () => {
+    if (selectedText && selectedText.trim() !== "") {
+      const preprocessedText = preprocessText(selectedText);
+      const response = await aiApi.getExplantion(
+        preprocessedText,
+        translationLanguage,
+        bookContext!
+      );
+      if (response) {
+        setExplanation(response);
+        setTimeout(() => {
+          if (!isHoverOver) {
+            setExplanation(null);
+          }
+        }, 5000 + response.length * 200);
+      }
     }
   };
 
@@ -551,24 +630,6 @@ const Main = ({
     //setAvailableVoicesIds(JSON.parse(voicesIds));
     // }
   }, []);
-
-  useEffect(() => {
-    const startReading = async () => {
-      const { text, elements } = await getTextToSpeak();
-      console.log({ text });
-
-      await handleTextToSpeech(text, settingsData);
-      const remainingFullText = findRemainingFullText(text, fullText);
-      console.log({ remainingFullText });
-      await handleTextToSpeech(remainingFullText, settingsData);
-
-      //toggleHighlighting(elements);
-    };
-
-    if (isReadingClicked) {
-      startReading();
-    }
-  }, [isReadingClicked]);
 
   const toggleHighlighting = (elements: HTMLElement[], stop = false) => {
     if (stop) {
@@ -610,42 +671,35 @@ const Main = ({
     toggleHighlighting(elements, true);
   };
 
-  const getSummary = async () => {
-    if (selectedText && selectedText.trim() !== "") {
-      const preprocessedText = preprocessText(selectedText);
-      const response = await aiApi.getSummary(
-        preprocessedText,
-        translationLanguage
-      );
-      if (response) {
-        setSummary(response);
-        setTimeout(() => {
-          if (!isHoverOver) {
-            setSummary(null);
-          }
-        }, 5000 + response.length * 200);
+  useEffect(() => {
+    if (settingsData) {
+      switch (settingsData.readingSpeed) {
+        case "normal":
+          setReadingSpeed(0.9);
+          break;
+        case "slow":
+          setReadingSpeed(0.7);
+          break;
+        case "fast":
+          setReadingSpeed(1.2);
+          break;
       }
     }
-  };
+  }, [settingsData]);
 
-  const getExplanation = async () => {
-    if (selectedText && selectedText.trim() !== "") {
-      const preprocessedText = preprocessText(selectedText);
-      const response = await aiApi.getExplantion(
-        preprocessedText,
-        translationLanguage,
-        bookContext!
-      );
-      if (response) {
-        setExplanation(response);
-        setTimeout(() => {
-          if (!isHoverOver) {
-            setExplanation(null);
-          }
-        }, 5000 + response.length * 200);
-      }
-    }
-  };
+  useEffect(() => {
+    const handleScroll = () => {
+      setScrollY(window.scrollY); // Update the vertical scroll position
+    };
+
+    // Add scroll event listener
+    window.addEventListener("scroll", handleScroll);
+
+    // Cleanup event listener on component unmount
+    return () => {
+      window.removeEventListener("scroll", handleScroll);
+    };
+  }, []);
 
   useEffect(() => {
     const handleBeforeUnload = () => {
@@ -662,16 +716,39 @@ const Main = ({
     };
   }, []);
 
-  const stopReading = () => {
-    // Stop the speech synthesis manually
-    window.speechSynthesis.cancel();
-    setIsReading(false);
-    stopHighlighting();
-  };
+  useEffect(() => {
+    if (translation) {
+      setActiveTextCardContent(translation);
+    } else if (explanation) {
+      setActiveTextCardContent(explanation);
+    } else if (summary) {
+      setActiveTextCardContent(summary);
+    } else {
+      setActiveTextCardContent(null);
+    }
+  }, [translation, explanation, summary]);
 
-  const startReading = () => {
-    setIsReadingClicked(true);
-  };
+  useEffect(() => {
+    // Desktop events
+    document.addEventListener("mouseup", handleTextSelection);
+    document.addEventListener("selectionchange", handleTextSelection);
+
+    // Mobile touch events
+    document.addEventListener("touchend", handleTextSelection);
+
+    return () => {
+      // Cleanup event listeners
+      document.removeEventListener("mouseup", handleTextSelection);
+      document.removeEventListener("selectionchange", handleTextSelection);
+      document.removeEventListener("touchend", handleTextSelection);
+
+      // Clear timeout on cleanup
+      if (selectionTimeout) {
+        clearTimeout(selectionTimeout);
+      }
+    };
+  }, [handleTextSelection]);
+
   const isDarkMode = false;
   return (
     <div
@@ -697,7 +774,7 @@ const Main = ({
         getSummary={getSummary}
         stopReading={stopReading}
         startReading={startReading}
-        isReading={isReading}
+        readingState={readingState}
       />
 
       {translation &&

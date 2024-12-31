@@ -1,5 +1,5 @@
 import React, { useEffect, useState } from "react";
-import { Info, FileText, StopCircle } from "lucide-react";
+import { Info, FileText, StopCircle, Loader } from "lucide-react";
 
 const OptionsMenu: React.FC<{
   selectedText: string | null;
@@ -7,23 +7,23 @@ const OptionsMenu: React.FC<{
   getSummary: () => void;
   stopReading: () => void;
   startReading: () => void;
-  isReading: boolean;
+  readingState: "loading" | "reading" | "off";
 }> = ({
   selectedText,
   getExplanation,
   getSummary,
   stopReading,
   startReading,
-  isReading,
+  readingState,
 }) => {
   const [isExpanded, setIsExpanded] = useState(false);
   const [isStartReadingClicked, setIsStartReadingClicked] = useState(false);
 
   useEffect(() => {
-    if (isReading) {
+    if (readingState === "reading") {
       setIsStartReadingClicked(false);
     }
-  }, [isReading]);
+  }, [readingState]);
 
   return (
     <div
@@ -84,8 +84,7 @@ const OptionsMenu: React.FC<{
             </div>
           )}
 
-          {/* Stop Reading Icon (conditional) */}
-          {isReading && (
+          {readingState === "reading" && (
             <div
               className={`
                 cursor-pointer px-2 py-1 rounded-full 
@@ -103,7 +102,7 @@ const OptionsMenu: React.FC<{
               )}
             </div>
           )}
-          {!isReading && (
+          {readingState === "off" && (
             <div
               className={`
                 cursor-pointer px-2 py-1 rounded-full 
@@ -123,6 +122,20 @@ const OptionsMenu: React.FC<{
                 <span className="ml-2 text-xs text-green-600">
                   Start Reading
                 </span>
+              )}
+            </div>
+          )}
+          {readingState === "loading" && (
+            <div
+              className={`
+                cursor-pointer px-2 py-1 rounded-full 
+                hover:bg-gray-100 transition-all
+                flex items-center w-full
+              `}
+            >
+              <Loader className="animate-spin w-5 h-5 text-blue-500 " />
+              {isExpanded && (
+                <span className="ml-2 text-xs text-blue-600">Loading....</span>
               )}
             </div>
           )}
