@@ -11,12 +11,12 @@ import { useState, useEffect, useCallback, useRef } from "react";
 import TextCard from "./ui/TextCard";
 import OptionsMenu from "./ui/OptionsMenu";
 import { pageNavigationPlugin } from "@react-pdf-viewer/page-navigation";
-import { BookData } from "@/app/page";
+import { BookData } from "@/components/Home";
 import MinimalCard from "./ui/MinimalCard";
 import VoiceApi from "@/apis/voiceApi";
 
 const EXCLUDED_TEXT = [
-  "AI-READ",
+  "AIREAD",
   "translation",
   "summary",
   "explanation",
@@ -40,6 +40,7 @@ const Main = ({
   const [summary, setSummary] = useState<string | null>(null);
   const [explanation, setExplanation] = useState<string | null>(null);
   const [bookContext, setBookContext] = useState<string | null>(null);
+  const [currentBookId, setCurrentBookId] = useState("");
   const [bookLanguage, setBookLanguage] = useState<string | null>(null);
   const [readingSpeed, setReadingSpeed] = useState<number>(0.9);
   const [readingState, setReadingState] = useState<
@@ -73,14 +74,21 @@ const Main = ({
   };
 
   useEffect(() => {
+    if (book && !currentBookId) {
+      setCurrentBookId(book.id);
+    }
+
     if (book?.lastPage) {
       const lastPage = book?.lastPage;
       if (!isNaN(lastPage)) {
         setLastPage(lastPage);
       }
     }
-    if (book) {
+
+    if (book && book.id !== currentBookId) {
+      //a new book was opened
       stopReading();
+      setCurrentBookId(book.id);
     }
   }, [book]);
 
@@ -527,6 +535,7 @@ const Main = ({
 
   const stopReading = () => {
     // Stop the speech synthesis manually
+    console.log("stopReading");
     window.speechSynthesis.cancel();
     autoReading.isActivated = false;
     autoReading.isReading = false;
@@ -720,6 +729,7 @@ const Main = ({
   useEffect(() => {
     const handleBeforeUnload = () => {
       // Stop speech synthesis before the page unloads
+      console.log("handleBeforeUnload");
       stopReading();
     };
 
