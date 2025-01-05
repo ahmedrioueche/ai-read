@@ -133,7 +133,7 @@ const OptionsMenu: React.FC<{
                 flex items-center w-full
               `}
             >
-              <Loader className="animate-spin w-5 h-5 text-blue-500 " />
+              <Loader className="w-5 h-5 text-blue-500 animate-spin" />
               {isExpanded && (
                 <span className="ml-2 text-xs text-blue-600">Loading....</span>
               )}

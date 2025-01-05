@@ -1,3 +1,5 @@
+"use client";
+import { AuthProvider } from "@/context/AuthContext";
 import "./globals.css";
 
 export default function RootLayout({
@@ -16,7 +18,9 @@ export default function RootLayout({
         <meta name="theme-color" content="#000000" />
         <link rel="icon" href="/images/Fireball.svg" type="image/svg+xml" />
       </head>
-      <body className="bg-dark-background">{children}</body>
+      <body className="bg-dark-background">
+        <AuthProvider>{children}</AuthProvider>
+      </body>
     </html>
   );
 }

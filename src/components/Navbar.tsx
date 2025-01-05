@@ -1,17 +1,47 @@
-import React, { useState, useEffect } from "react";
-import { Cog, Rocket, Maximize2, ChevronDown, User, User2 } from "lucide-react";
-import SettingsModal from "./SettingsModal";
+import React, { useState, useEffect, useRef, Suspense, lazy } from "react";
+import {
+  Maximize2,
+  ChevronDown,
+  User2,
+  InfoIcon,
+  LogInIcon,
+  ArrowUpCircle,
+  UserPlus,
+  CogIcon,
+  LogOutIcon,
+  CreditCard,
+  Mail,
+  Book,
+} from "lucide-react";
 import { dict } from "@/utils/dict";
+import Link from "next/link";
+import { useRouter } from "next/navigation";
+import { useAuth } from "@/context/AuthContext";
+
+const SettingsModal = lazy(() => import("@/components/SettingsModal"));
+const FeaturesModal = lazy(() => import("@/components/FeaturesModal"));
 
 const Navbar: React.FC<{
   onUpload: (e: React.ChangeEvent<HTMLInputElement>) => void;
   onToggleSettingsModal: (isSettingModalOpen: boolean) => void;
   onToggleFullScreen: (isFullScreen: boolean) => void;
-}> = ({ onUpload, onToggleSettingsModal, onToggleFullScreen }) => {
+  bookLanguage: string;
+}> = ({
+  onUpload,
+  onToggleSettingsModal,
+  onToggleFullScreen,
+  bookLanguage,
+}) => {
   const [isSettingModalOpen, setIsSettingModalOpen] = useState(false);
+  const [isFeaturesModalOpen, setIsFeaturesModalOpen] = useState(false);
   const [isFullscreen, setIsFullscreen] = useState(false);
+  const [isMenuOpen, setIsMenuOpen] = useState(false);
+  const dropdownRef = useRef<HTMLDivElement | null>(null);
+  const router = useRouter();
   const language = "en";
   const text = dict[language];
+  const { user, signOut } = useAuth();
+  const isPremium = user?.isPremium;
 
   const checkFullscreen = () => {
     if (document.fullscreenElement) {
@@ -39,6 +69,11 @@ const Navbar: React.FC<{
     e.stopPropagation(); // Prevent event from bubbling up
   };
 
+  const handleLogout = () => {
+    signOut();
+    window.location.reload();
+  };
+
   useEffect(() => {
     document.addEventListener("fullscreenchange", checkFullscreen);
     document.addEventListener("webkitfullscreenchange", checkFullscreen);
@@ -50,6 +85,22 @@ const Navbar: React.FC<{
       document.removeEventListener("webkitfullscreenchange", checkFullscreen);
       document.removeEventListener("mozfullscreenchange", checkFullscreen);
       document.removeEventListener("MSFullscreenChange", checkFullscreen);
+    };
+  }, []);
+
+  useEffect(() => {
+    const handleClickOutside = (event: MouseEvent) => {
+      if (
+        dropdownRef.current &&
+        !dropdownRef.current.contains(event.target as Node)
+      ) {
+        setIsMenuOpen(false);
+      }
+    };
+
+    document.addEventListener("mousedown", handleClickOutside);
+    return () => {
+      document.removeEventListener("mousedown", handleClickOutside);
     };
   }, []);
 
@@ -74,7 +125,7 @@ const Navbar: React.FC<{
               htmlFor="file-upload"
               className="flex items-center cursor-pointer"
             >
-              <Rocket />
+              <Book />
               <input
                 id="file-upload"
                 type="file"
@@ -86,8 +137,7 @@ const Navbar: React.FC<{
           </div>
           <button
             onClick={() => {
-              setIsSettingModalOpen(true);
-              onToggleSettingsModal(true);
+              setIsMenuOpen(true);
             }}
             aria-label="User"
             className="hover:text-dark-secondary transition duration-300"
@@ -104,13 +154,118 @@ const Navbar: React.FC<{
           </button>
         </div>
 
-        <SettingsModal
-          isOpen={isSettingModalOpen}
-          onClose={() => {
-            setIsSettingModalOpen(false);
-            onToggleSettingsModal(false);
-          }}
-        />
+        {isMenuOpen && (
+          <div
+            className="overflow-y-auto mt-5 z-[100] absolute top-[2.4rem] right-0 w-[18rem] bg-dark-background border border-gray-600 rounded-lg shadow-lg flex flex-col p-2 space-y-4"
+            ref={dropdownRef}
+          >
+            {user && (
+              <div>
+                <div className="flex items-center px-2 py-2 w-full cursor-auto text-lg font-medium font-satisfy text-light-text dark:text-dark-text hover:bg-dark-secondary transition-colors duration-300">
+                  <Mail className="mr-3 text-lg" />
+                  {user.email}
+                </div>
+                <hr className="w-full border-b border-gray-400 my-2" />
+              </div>
+            )}
+            {[
+              {
+                name: "Features",
+                icon: InfoIcon,
+                onClick: () => {
+                  setIsFeaturesModalOpen(true);
+                  setIsMenuOpen(false);
+                },
+              },
+              {
+                name: "Settings",
+                icon: CogIcon,
+                onClick: () => {
+                  setIsSettingModalOpen(true);
+                  setIsMenuOpen(false);
+                },
+              },
+              {
+                name: isPremium ? "Manage Subscription" : "Upgrade",
+                icon: isPremium ? CreditCard : ArrowUpCircle,
+                onClick: () => {
+                  if (!user) {
+                    router.push("/login?redirect=/payment");
+                  } else {
+                    if (isPremium) {
+                      router.push("/subscription");
+                    } else {
+                      router.push("/payment");
+                    }
+                  }
+                  setIsMenuOpen(false);
+                },
+              },
+            ].map((item, index) => (
+              <div
+                key={index}
+                className="flex items-center px-4 py-2 w-full cursor-pointer text-lg font-medium font-satisfy text-light-text dark:text-dark-text hover:bg-dark-secondary transition-colors duration-300"
+                onClick={item.onClick}
+              >
+                <item.icon className="mr-3 text-lg" />
+                {item.name}
+              </div>
+            ))}
+
+            <hr className="w-full border-t border-gray-300 my-1" />
+            {!user ? (
+              <>
+                <Link
+                  href="/login"
+                  className="flex items-center px-4 py-2 w-full text-lg font-medium font-satisfy text-light-text dark:text-dark-text hover:bg-dark-secondary transition-colors duration-300"
+                  onClick={() => setIsMenuOpen(false)}
+                >
+                  <LogInIcon className="mr-3 text-lg" />
+                  Login
+                </Link>
+                <Link
+                  href="/register"
+                  className="flex items-center px-4 py-2 w-full text-lg font-medium font-satisfy text-light-text dark:text-dark-text hover:bg-dark-secondary transition-colors duration-300"
+                  onClick={() => setIsMenuOpen(false)}
+                >
+                  <UserPlus className="mr-3 text-lg" />
+                  Signup
+                </Link>
+              </>
+            ) : (
+              <div
+                className="flex items-center px-4 py-2 w-full cursor-pointer text-lg font-medium font-satisfy text-light-text dark:text-dark-text hover:bg-dark-secondary transition-colors duration-300"
+                onClick={() => {
+                  handleLogout();
+                  setIsMenuOpen(false);
+                }}
+              >
+                <LogOutIcon className="mr-3 text-lg" />
+                Logout
+              </div>
+            )}
+          </div>
+        )}
+
+        <Suspense fallback={null}>
+          <SettingsModal
+            user={user}
+            isOpen={isSettingModalOpen}
+            onClose={() => {
+              setIsSettingModalOpen(false);
+              onToggleSettingsModal(false);
+            }}
+          />
+        </Suspense>
+        <Suspense fallback={null}>
+          <FeaturesModal
+            user={user}
+            isOpen={isFeaturesModalOpen}
+            onClose={() => {
+              setIsFeaturesModalOpen(false);
+            }}
+          />
+        </Suspense>
       </nav>
 
       {isFullscreen && (

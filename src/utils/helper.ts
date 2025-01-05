@@ -34,6 +34,45 @@ export const formatLanguage = (language: string | null): string => {
   }
 };
 
+export const getLanguageName = (isoCode: string): string => {
+  const languageMap: { [key: string]: string } = {
+    eng: "English",
+    fra: "French",
+    arb: "Arabic",
+    spa: "Spanish",
+    deu: "German",
+    ita: "Italian",
+    rus: "Russian",
+    zho: "Chinese",
+    jpn: "Japanese",
+    hin: "Hindi",
+    por: "Portuguese",
+    nld: "Dutch",
+    swe: "Swedish",
+    tur: "Turkish",
+    kor: "Korean",
+    pol: "Polish",
+    ukr: "Ukrainian",
+    vie: "Vietnamese",
+    tha: "Thai",
+    ind: "Indonesian",
+    hun: "Hungarian",
+    ces: "Czech",
+    ron: "Romanian",
+    dan: "Danish",
+    nor: "Norwegian",
+    fin: "Finnish",
+    slk: "Slovak",
+    ell: "Greek",
+    heb: "Hebrew",
+    tam: "Tamil",
+    ben: "Bengali",
+    urd: "Urdu",
+  };
+
+  return languageMap[isoCode] || "Unknown Language";
+};
+
 export function getLanguages(dict: Record<string, any>): string[] {
   return Object.keys(dict);
 }
@@ -58,4 +97,60 @@ export const preprocessText = (text: string) => {
   cleanedText = cleanedText.trim();
 
   return cleanedText;
+};
+
+export const splitTextIntoChunks = (
+  text: string,
+  maxLength: number
+): string[] => {
+  // Input validation
+  if (!text || maxLength <= 0) {
+    return [];
+  }
+
+  const chunks: string[] = [];
+  let currentIndex = 0;
+
+  while (currentIndex < text.length) {
+    // Determine the potential end of the current chunk
+    let endIndex = Math.min(currentIndex + maxLength, text.length);
+
+    // If we're not at the end of the text, look for a proper sentence ending
+    if (endIndex < text.length) {
+      // Look for the last sentence ending within the chunk
+      const lastPeriodIndex = text.lastIndexOf(".", endIndex);
+      const lastExclamationIndex = text.lastIndexOf("!", endIndex);
+      const lastQuestionIndex = text.lastIndexOf("?", endIndex);
+
+      // Find the latest sentence ending
+      const sentenceEndings = [
+        lastPeriodIndex,
+        lastExclamationIndex,
+        lastQuestionIndex,
+      ].filter((index) => index > currentIndex && index <= endIndex);
+
+      if (sentenceEndings.length > 0) {
+        endIndex = Math.max(...sentenceEndings) + 1;
+      } else {
+        // If no sentence ending is found, look for the last space
+        const lastSpaceIndex = text.lastIndexOf(" ", endIndex);
+        if (lastSpaceIndex > currentIndex) {
+          endIndex = lastSpaceIndex;
+        }
+      }
+    }
+
+    // Extract and clean the chunk
+    let chunk = text.slice(currentIndex, endIndex).trim();
+
+    // Only add non-empty chunks
+    if (chunk.length > 0) {
+      chunks.push(chunk);
+    }
+
+    // Move to the next chunk
+    currentIndex = endIndex;
+  }
+
+  return chunks;
 };

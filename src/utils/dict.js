@@ -22,9 +22,9 @@ export const dict = {
     },
     General: {
       translation_language: "Translation Language",
-      enable_translation: "Enable translation",
-      enable_reading: "Enable reading",
-      reading_speed: "Reading speed",
+      enable_translation: "Enable Translation",
+      enable_reading: "Enable Reading",
+      reading_speed: "Reading Speed",
       slow: "Slow",
       normal: "Normal",
       fast: "Fast",

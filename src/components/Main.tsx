@@ -1,6 +1,11 @@
 "use client";
 import { AiApi } from "@/apis/aiApi";
-import { formatLanguage, preprocessText } from "@/utils/helper";
+import {
+  formatLanguage,
+  getLanguageName,
+  preprocessText,
+  splitTextIntoChunks,
+} from "@/utils/helper";
 import { Viewer, Worker } from "@react-pdf-viewer/core";
 import "@react-pdf-viewer/core/lib/styles/index.css";
 import { defaultLayoutPlugin } from "@react-pdf-viewer/default-layout";
@@ -14,6 +19,8 @@ import { pageNavigationPlugin } from "@react-pdf-viewer/page-navigation";
 import { BookData } from "@/components/Home";
 import MinimalCard from "./ui/MinimalCard";
 import VoiceApi from "@/apis/voiceApi";
+import { Settings } from "@/utils/types";
+import { useSettings } from "@/context/SettingsContext";
 
 const EXCLUDED_TEXT = [
   "AIREAD",
@@ -29,11 +36,13 @@ const Main = ({
   onLastPageChange,
   isSettingsModalOpen,
   isFullScreen,
+  onBookLanguage,
 }: {
   book: BookData;
   onLastPageChange: (lastPage: number) => void;
   isSettingsModalOpen: boolean;
   isFullScreen: boolean;
+  onBookLanguage: (bookLanguage: string) => void;
 }) => {
   const [selectedText, setSelectedText] = useState<string | null>(null);
   const [translation, setTranslation] = useState<string | null>(null);
@@ -50,15 +59,13 @@ const Main = ({
   const [activeTextCardContent, setActiveTextCardContent] = useState<
     string | null
   >(null);
-  const [visibleParagraphs, setVisibleParagraphs] = useState<string[]>([]);
   const [fullText, setFullText] = useState<string>("");
-  const settingsData = JSON.parse(localStorage.getItem("settings") || "{}");
+  const { settings, updateSettings } = useSettings();
+  const translationLanguageData = settings.translationLanguage;
   const viewerRef = useRef<any>(null);
   const [lastPage, setLastPage] = useState<number>();
   const [selectionTimeout, setSelectionTimeout] =
     useState<NodeJS.Timeout | null>(null);
-  const languageData = settingsData?.languageData;
-  const translationLanguage = languageData?.language || "English";
   const aiApi = new AiApi();
   const voiceApi = new VoiceApi();
   const pageNavigationPluginInstance = pageNavigationPlugin();
@@ -68,10 +75,31 @@ const Main = ({
   const [scrollY, setScrollY] = useState(0);
   const [isHighlighting, setIsHighlighting] = useState(false);
   const [availabeVoicesIds, setAvailableVoicesIds] = useState<string[]>([]);
-  let autoReading = {
-    isActivated: false,
-    isReading: false,
-  };
+  const [scrollIntervalId, setScrollIntervalId] = useState<number>();
+  const SCROLL_INTERVAL = 1800;
+  const [scrollSpeed, setScrollSpeed] = useState(SCROLL_INTERVAL);
+  const [currentPremiumAudio, setCurrentPremiumAudio] =
+    useState<HTMLAudioElement | null>(null);
+  const [autoReading, setAutoReading] = useState<{
+    isActivated: Boolean;
+    isReading: Boolean;
+  }>({ isActivated: false, isReading: false });
+  const [translationLanguage, setTranslationLanguage] = useState("");
+  const [ttsType, setTtsType] = useState<"premium" | "basic">("basic");
+  const [ttsVoice, setTtsVoice] = useState("");
+  const [enableAutoScrolling, setEnableAutoScrolling] = useState(false);
+  const [enableHighlighting, setEnableHighlighting] = useState(false);
+  let audioQueue: Blob[] = [];
+
+  useEffect(() => {
+    const translationLanguage =
+      settings?.translationLanguage?.language || "English";
+    setTranslationLanguage(translationLanguage);
+    setTtsType(settings?.ttsType);
+    setTtsVoice(settings?.ttsVoice);
+    setEnableAutoScrolling(settings?.enableAutoScrolling);
+    setEnableHighlighting(settings?.enableHighlighting);
+  }, [settings]);
 
   useEffect(() => {
     if (book && !currentBookId) {
@@ -114,6 +142,9 @@ const Main = ({
 
       // Set the detected language
       setBookLanguage(detectedLanguage);
+      const bookLanguage = getLanguageName(detectedLanguage);
+      settings.bookLanguage = bookLanguage;
+      updateSettings(settings);
     } catch (error) {
       console.error("Failed to extract text from PDF:", error);
     }
@@ -180,6 +211,10 @@ const Main = ({
         activeTextCardContent &&
         activeTextCardContent.includes(selectedText || "");
 
+      const selectedVoice = window.speechSynthesis
+        .getVoices()
+        .find((voice) => voice.name === ttsVoice);
+
       const language = isInTextCard
         ? formatLanguage(translationLanguage)
         : formatLanguage(
@@ -192,7 +227,9 @@ const Main = ({
       utterance.lang = lang;
       utterance.pitch = 1.1; // Set pitch (range 0 to 2)
       utterance.rate = readingSpeed; // Set rate (range 0.1 to 10)
-
+      if (selectedVoice) {
+        utterance.voice = selectedVoice;
+      }
       utterance.onstart = () => {
         setReadingState("reading");
         autoReading.isReading = true;
@@ -212,9 +249,23 @@ const Main = ({
     }
   };
 
+  const getTtsVoiceId = (): string => {
+    if (availabeVoicesIds && availabeVoicesIds.length > 0) {
+      return availabeVoicesIds[0];
+    }
+    return "nPczCjzI2devNBz1zQrb"; // Default voice ID
+  };
+
+  const fetchTtsAudio = async (text: string): Promise<Blob> => {
+    const voiceId = getTtsVoiceId();
+    const audioBuffer = await voiceApi.textToSpeech(text, voiceId);
+    return new Blob([audioBuffer], { type: "audio/mpeg" });
+  };
+
   const getTopOffset = () => {
     return isFullScreen ? 60 : 120 - scrollY;
   };
+
   const findLastSentenceBoundary = (text: string): number => {
     // Match periods, question marks, or exclamation marks followed by space or end of string
     const matches = [...text.matchAll(/[.!?](?:\s+|$)/g)];
@@ -387,131 +438,137 @@ const Main = ({
     return fullText.slice(originalTextPosition).trim();
   };
 
-  const handleTextToSpeech = async (text: string, settingsData: any) => {
-    let isVoiceApiSuccessful = true;
-    if (settingsData /*&& settingsData.pro*/) {
-      //only allow pro members to use TTS API
-      let voiceId;
-      /*if (settingsData.pro.selectedVoice) {
-        voiceId = settingsData.pro.selectedVoice;
-      } else {*/
-      if (availabeVoicesIds && availabeVoicesIds.length > 0) {
-        voiceId = availabeVoicesIds[0];
-      } else {
-        voiceId = "nPczCjzI2devNBz1zQrb";
-      }
-      //}
-      try {
-        const audioBuffer = await voiceApi.textToSpeech(
-          text,
-          voiceId || "nPczCjzI2devNBz1zQrb"
-        );
-        setReadingState("reading");
-        const audio = new Audio(URL.createObjectURL(new Blob([audioBuffer])));
-        audio.play();
-        audio.onended = () => {
-          setReadingState("off");
-        };
+  const delay = (ms: number) =>
+    new Promise((resolve) => setTimeout(resolve, ms));
 
-        return;
-      } catch (e) {
-        isVoiceApiSuccessful = false;
+  const calculateChunkDuration = (text: string): number => {
+    const length = text.length; // Estimate word count
+    return length * 10; // Convert to milliseconds
+  };
+
+  const handleTextToSpeech = async (text: string) => {
+    const chunks = splitTextIntoChunks(text, ttsType === "premium" ? 200 : 400); // Split text into chunks
+
+    if (ttsType === "premium") {
+      // TTS API is enabled
+      try {
+        // Fetch and store audio for the first chunk
+        const firstChunk = chunks[0];
+        if (firstChunk) {
+          if (autoReading.isActivated) {
+            const audioBlob = await fetchTtsAudio(firstChunk);
+            audioQueue.push(audioBlob); // Add the first chunk to the queue
+            playNextAudio(); // Start playback immediately
+          }
+        }
+
+        // Fetch and store audio for the remaining chunks in the background
+        for (let i = 1; i < chunks.length; i++) {
+          if (autoReading.isActivated) {
+            //delay to not fetch audio that might not be used (user stops autoread)
+            const previousChunk = chunks[i - 1];
+            const delayDuration = calculateChunkDuration(previousChunk);
+            await delay(delayDuration);
+
+            const chunk = chunks[i];
+            try {
+              const audioBlob = await fetchTtsAudio(chunk);
+              audioQueue.push(audioBlob); // Add to the queue
+              console.log("Audio blob added for chunk:", chunk);
+            } catch (error) {
+              console.error("Error fetching audio for chunk:", chunk, error);
+            }
+          }
+        }
+      } catch (error) {
+        console.error("Error fetching TTS API audio:", error);
+        // Fallback to built-in TTS if TTS API fails
+        for (const chunk of chunks) {
+          if (!autoReading.isReading) {
+            readText(chunk);
+          }
+        }
       }
     } else {
-      isVoiceApiSuccessful = false;
-    }
-
-    if (!isVoiceApiSuccessful) {
-      isVoiceApiSuccessful = true;
-      readText(text);
+      // TTS API is disabled, use built-in TTS
+      for (const chunk of chunks) {
+        if (!autoReading.isReading) {
+          readText(chunk);
+        }
+      }
     }
   };
 
+  const playAudio = (audioBlob: Blob) => {
+    console.log("playAudio");
+    const audio = new Audio(URL.createObjectURL(audioBlob));
+    audio.play();
+    setCurrentPremiumAudio(audio);
+    audio.onended = () => {
+      autoReading.isReading = false; // Update reading state
+      playNextAudio(); // Play the next audio in the queue
+    };
+    autoReading.isReading = true; // Update reading state
+  };
+
+  const playNextAudio = () => {
+    console.log("autoReading in playNextAudio", autoReading);
+
+    if (audioQueue.length > 0) {
+      if (autoReading.isActivated && !autoReading.isReading) {
+        setReadingState("reading");
+        const audioBlob = audioQueue.shift(); // Get the next audio from the queue
+        if (audioBlob) {
+          playAudio(audioBlob);
+        }
+      }
+    } else {
+      stopReading();
+    }
+  };
+
+  const startScrolling = () => {
+    if (enableAutoScrolling) {
+      const id = scrollPDF();
+      if (id) setScrollIntervalId(id);
+    }
+  };
+
+  const stopScrolling = () => {
+    if (scrollIntervalId) {
+      clearInterval(scrollIntervalId);
+    }
+  };
+
+  useEffect(() => {
+    if (readingState === "reading") {
+      startScrolling();
+    } else {
+      stopScrolling();
+    }
+  }, [readingState]);
+
   const startReading = async () => {
-    const readingQueue: string[] = [];
     setReadingState("loading");
     autoReading.isActivated = true;
 
     try {
       // Fetch text and elements
       const { text, elements } = await getTextToRead();
+      const processedText = preprocessText(text);
+      await handleTextToSpeech(processedText);
 
-      // Handle initial text-to-speech
-      await handleTextToSpeech(text, settingsData);
-
-      // Find and process remaining text
+      // Find and process remaining text in parallel
       const remainingFullText = findRemainingFullText(text, fullText);
 
       if (remainingFullText) {
         const processedRemainingText = preprocessText(remainingFullText);
-
-        if (processedRemainingText) {
-          // Split text into chunks and add to queue
-          const chunks = splitTextIntoChunks(processedRemainingText, 1000);
-          if (chunks.length > 0) {
-            readingQueue.push(...chunks);
-          }
-        }
+        await handleTextToSpeech(processedRemainingText);
       }
-
-      processReadingQueue(readingQueue);
     } catch (error) {
       console.error("Error in startReading:", error);
       autoReading.isActivated = false;
     }
-  };
-
-  const splitTextIntoChunks = (text: string, maxLength: number): string[] => {
-    // Input validation
-    if (!text || maxLength <= 0) {
-      return [];
-    }
-
-    const chunks: string[] = [];
-    let currentIndex = 0;
-
-    while (currentIndex < text.length) {
-      // Determine the potential end of the current chunk
-      let endIndex = Math.min(currentIndex + maxLength, text.length);
-
-      // If we're not at the end of the text, look for a proper sentence ending
-      if (endIndex < text.length) {
-        // Look for the last sentence ending within the chunk
-        const lastPeriodIndex = text.lastIndexOf(".", endIndex);
-        const lastExclamationIndex = text.lastIndexOf("!", endIndex);
-        const lastQuestionIndex = text.lastIndexOf("?", endIndex);
-
-        // Find the latest sentence ending
-        const sentenceEndings = [
-          lastPeriodIndex,
-          lastExclamationIndex,
-          lastQuestionIndex,
-        ].filter((index) => index > currentIndex && index <= endIndex);
-
-        if (sentenceEndings.length > 0) {
-          endIndex = Math.max(...sentenceEndings) + 1;
-        } else {
-          // If no sentence ending is found, look for the last space
-          const lastSpaceIndex = text.lastIndexOf(" ", endIndex);
-          if (lastSpaceIndex > currentIndex) {
-            endIndex = lastSpaceIndex;
-          }
-        }
-      }
-
-      // Extract and clean the chunk
-      let chunk = text.slice(currentIndex, endIndex).trim();
-
-      // Only add non-empty chunks
-      if (chunk.length > 0) {
-        chunks.push(chunk);
-      }
-
-      // Move to the next chunk
-      currentIndex = endIndex;
-    }
-
-    return chunks;
   };
 
   // Function to process the queue
@@ -521,7 +578,7 @@ const Main = ({
       const nextChunk = queue.shift(); // Get the next chunk from the queue
 
       if (nextChunk) {
-        handleTextToSpeech(nextChunk, settingsData); // Read the chunk
+        handleTextToSpeech(nextChunk); // Read the chunk
       }
     }
 
@@ -533,14 +590,24 @@ const Main = ({
     }
   };
 
+  const stopPremiumAudio = () => {
+    if (currentPremiumAudio) {
+      currentPremiumAudio.pause();
+      currentPremiumAudio.currentTime = 0;
+      currentPremiumAudio.onended = null; // Remove the onended handler to prevent further actions
+      setCurrentPremiumAudio(null);
+    }
+    audioQueue = []; // Clear the audio queue
+  };
+
   const stopReading = () => {
-    // Stop the speech synthesis manually
-    console.log("stopReading");
+    stopPremiumAudio();
     window.speechSynthesis.cancel();
-    autoReading.isActivated = false;
-    autoReading.isReading = false;
+    setAutoReading({ isActivated: false, isReading: false });
+    autoReading.isActivated = false; ///dont ask my why
     setReadingState("off");
     stopHighlighting();
+    stopScrolling();
   };
 
   useEffect(() => {
@@ -571,10 +638,10 @@ const Main = ({
         const preprocessedText = preprocessText(selectedText);
         if (!isValidText(preprocessedText)) return;
 
-        if (settingsData && settingsData.reading) {
-          handleTextToSpeech(preprocessedText, settingsData);
+        if (settings && settings.enableReading) {
+          handleTextToSpeech(preprocessedText);
         }
-        if (settingsData && settingsData.translation) {
+        if (settings && settings.enableTranslation) {
           getTranslation(preprocessedText);
         }
       }
@@ -620,41 +687,31 @@ const Main = ({
     }
   };
 
-  useEffect(() => {
-    const getVoices = async () => {
-      try {
-        const response = await voiceApi.getVoices();
-        console.log("voices", response);
-
-        // Extract all voice_ids from the voices array
-        const voiceIds = response?.voices?.map(
-          (voice: { id: string }) => voice.id
-        );
-
-        // Set the voice_ids to the state
-        setAvailableVoicesIds(voiceIds);
-
-        // Store voiceIds in localStorage
-        localStorage.setItem("voicesIds", JSON.stringify(voiceIds));
-      } catch (error) {
-        console.error("Error fetching voices:", error);
-      }
-    };
-
-    // Check localStorage for existing voicesIds and set state if they exist
-    const voicesIds = localStorage.getItem("voicesIds");
-    console.log("voicesIds", voicesIds);
-
-    //if (!voicesIds) {
-    // If no voicesIds are found in localStorage, fetch them
-    if (!availabeVoicesIds) {
-      getVoices();
+  const scrollPDF = (): number | null => {
+    const container = document.querySelector(".rpv-core__inner-pages");
+    if (!container) {
+      console.log("Scroll container not found");
+      return null;
     }
-    //} else {
-    // If voicesIds exist in localStorage, use them to set the state
-    //setAvailableVoicesIds(JSON.parse(voicesIds));
-    // }
-  }, []);
+
+    const intervalId = window.setInterval(() => {
+      container.scrollBy({
+        top: 5,
+        behavior: "smooth",
+      });
+
+      // Check if we've reached the end of the container
+      if (
+        container.scrollTop + container.clientHeight >=
+        container.scrollHeight
+      ) {
+        clearInterval(intervalId);
+        console.log("Reached the end of the document");
+      }
+    }, scrollSpeed);
+
+    return intervalId;
+  };
 
   const toggleHighlighting = (elements: HTMLElement[], stop = false) => {
     if (stop) {
@@ -697,20 +754,24 @@ const Main = ({
   };
 
   useEffect(() => {
-    if (settingsData) {
-      switch (settingsData.readingSpeed) {
+    if (settings) {
+      switch (settings.readingSpeed) {
         case "normal":
           setReadingSpeed(0.9);
+          setScrollSpeed(SCROLL_INTERVAL);
           break;
         case "slow":
           setReadingSpeed(0.7);
+          setScrollSpeed(SCROLL_INTERVAL - 500);
+
           break;
         case "fast":
           setReadingSpeed(1.2);
+          setScrollSpeed(SCROLL_INTERVAL + 500);
           break;
       }
     }
-  }, [settingsData]);
+  }, [settings]);
 
   useEffect(() => {
     const handleScroll = () => {
@@ -729,7 +790,6 @@ const Main = ({
   useEffect(() => {
     const handleBeforeUnload = () => {
       // Stop speech synthesis before the page unloads
-      console.log("handleBeforeUnload");
       stopReading();
     };
 
@@ -821,7 +881,7 @@ const Main = ({
             <TextCard
               text={translation}
               type="translation"
-              languageData={languageData}
+              languageData={translationLanguageData}
               onClose={() => setTranslation(null)}
             />
           </div>
@@ -836,7 +896,7 @@ const Main = ({
           <TextCard
             text={explanation}
             type="explanation"
-            languageData={languageData}
+            languageData={translationLanguageData}
             onClose={() => setExplanation(null)}
           />
         </div>
@@ -851,7 +911,7 @@ const Main = ({
           <TextCard
             text={summary}
             type="summary"
-            languageData={languageData}
+            languageData={translationLanguageData}
             onClose={() => setSummary(null)}
           />
         </div>

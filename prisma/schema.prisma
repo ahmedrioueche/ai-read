@@ -1,70 +1,36 @@
-  datasource db {
-    provider  = "postgresql"
-    url       = env("DATABASE_URL")
-    directUrl = env("DIRECT_URL")
-  }
+datasource db {
+  provider  = "postgresql"
+  url       = env("DATABASE_URL")
+  directUrl = env("DIRECT_URL")
+}
 
-  generator client {
-    provider = "prisma-client-js"
-  }
+generator client {
+  provider = "prisma-client-js"
+}
 
-  model User {
-    id            Int          @id @default(autoincrement())
-    username      String       @unique
-    password      String?
-    createdAt     DateTime     @default(now()) 
-    rank          Int?         
-    speed         Int?         
-    lastEntryDate DateTime?    
-    typingStats   TypingStat[] 
-    skillLevel    String    @default("noob")
-    stars         Int       @default(0)
-    settings      Settings?    
-    rooms         Room[]      
-    search        Search?     
-  }
+model User {
+  id            String         @id
+  email         String         @unique
+  password      String
+  isPremium     Boolean        @default(false)
+  createdAt     DateTime       @default(now())
+  lastPaymentDate DateTime?      
+  analytics     Analytics?  
+  settings      Settings?
+}
 
-  model TypingStat {
-    id       Int    @id @default(autoincrement())
-    accuracy Float? 
-    speed    Int    
-    userId   Int    
-    user     User   @relation(fields: [userId], references: [id])
-  }
+model Analytics {
+  id              String      @id @default(cuid())
+  user            User        @relation(fields: [userId], references: [id])
+  userId          String      @unique
+  totalReadingTime Float
+}
 
-  model Settings {
-    id              Int      @id @default(autoincrement())
-    language        String?  
-    mode            String?  
-    difficultyLevel String?  
-    textLength      Int?     
-    soundEffects    Boolean? 
-    userId          Int      @unique
-    user            User     @relation(fields: [userId], references: [id])
-  }
-
-  model Room {
-    id         Int      @id @default(autoincrement()) 
-    roomId     String   @unique
-    createdAt  DateTime @default(now()) 
-    status     String   
-    maxPlayers Int      
-    players    User[]   
-    settings   RoomSettings?
-  }
-
-  model Search {
-    id                 Int      @id @default(autoincrement()) 
-    user               User   @relation(fields: [userId], references: [id])
-    userId             Int    @unique   
-    prefLanguage       String?
-    prefTextMaxLength  Int?
-  }
-
-  model RoomSettings {
-    id            Int      @id @default(autoincrement())
-    language      String?  
-    maxTextLength Int?     
-    roomId        Int      @unique
-    room          Room     @relation(fields: [roomId], references: [id])
-  }
+model Settings {
+  id              String      @id @default(cuid())
+  user            User        @relation(fields: [userId], references: [id])
+  userId          String      @unique
+  theme           String      @default("dark")
+  voiceId         String
+  readingReminder Float
+}
