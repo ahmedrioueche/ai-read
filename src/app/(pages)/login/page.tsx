@@ -1,9 +1,10 @@
 import Login from "@/components/Login";
+import LoadingPage from "@/components/ui/LoadingPage";
 import React, { Suspense } from "react";
 
 function LoginPage() {
   return (
-    <Suspense fallback={<div>Loading...</div>}>
+    <Suspense fallback={<LoadingPage />}>
       <Login />
     </Suspense>
   );

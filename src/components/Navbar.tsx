@@ -157,16 +157,16 @@ const Navbar: React.FC<{
 
         {isMenuOpen && (
           <div
-            className="overflow-y-auto mt-5 z-[100] absolute top-[2.4rem] right-0 w-[18rem] bg-dark-background border border-gray-600 rounded-lg shadow-lg flex flex-col p-2 space-y-4"
+            className="overflow-y-auto mt-2 z-[100] absolute top-[3.2rem] right-0 w-[12rem] bg-dark-background border border-gray-600 rounded-lg shadow-lg flex flex-col p-1.5 space-y-2"
             ref={dropdownRef}
           >
             {isAuth && (
               <div>
-                <div className="flex items-center px-2 py-2 w-full cursor-auto text-lg font-medium font-satisfy text-light-text dark:text-dark-text hover:bg-dark-secondary transition-colors duration-300">
-                  <Mail className="mr-3 text-lg" />
-                  {user.email}
+                <div className="flex items-center px-2 py-1.5 w-full cursor-auto text-sm font-medium font-satisfy text-light-text dark:text-dark-text hover:bg-dark-secondary transition-colors duration-300">
+                  <Mail className="mr-2 h-4 w-4" />
+                  <span className="truncate">{user.email}</span>
                 </div>
-                <hr className="w-full border-b border-gray-400 my-2" />
+                <hr className="w-full border-b border-gray-400 my-1" />
               </div>
             )}
             {[
@@ -205,10 +205,10 @@ const Navbar: React.FC<{
             ].map((item, index) => (
               <div
                 key={index}
-                className="flex items-center px-4 py-2 w-full cursor-pointer text-lg font-medium font-satisfy text-light-text dark:text-dark-text hover:bg-dark-secondary transition-colors duration-300"
+                className="flex items-center px-2 py-1.5 w-full cursor-pointer text-sm font-medium font-satisfy text-light-text dark:text-dark-text hover:bg-dark-secondary transition-colors duration-300"
                 onClick={item.onClick}
               >
-                <item.icon className="mr-3 text-lg" />
+                <item.icon className="mr-2 h-4 w-4" />
                 {item.name}
               </div>
             ))}
@@ -218,30 +218,30 @@ const Navbar: React.FC<{
               <>
                 <Link
                   href="/login"
-                  className="flex items-center px-4 py-2 w-full text-lg font-medium font-satisfy text-light-text dark:text-dark-text hover:bg-dark-secondary transition-colors duration-300"
+                  className="flex items-center px-2 py-1.5 w-full text-sm font-medium font-satisfy text-light-text dark:text-dark-text hover:bg-dark-secondary transition-colors duration-300"
                   onClick={() => setIsMenuOpen(false)}
                 >
-                  <LogInIcon className="mr-3 text-lg" />
+                  <LogInIcon className="mr-2 h-4 w-4" />
                   Login
                 </Link>
                 <Link
                   href="/register"
-                  className="flex items-center px-4 py-2 w-full text-lg font-medium font-satisfy text-light-text dark:text-dark-text hover:bg-dark-secondary transition-colors duration-300"
+                  className="flex items-center px-2 py-1.5 w-full text-sm font-medium font-satisfy text-light-text dark:text-dark-text hover:bg-dark-secondary transition-colors duration-300"
                   onClick={() => setIsMenuOpen(false)}
                 >
-                  <UserPlus className="mr-3 text-lg" />
+                  <UserPlus className="mr-2 h-4 w-4" />
                   Signup
                 </Link>
               </>
             ) : (
               <div
-                className="flex items-center px-4 py-2 w-full cursor-pointer text-lg font-medium font-satisfy text-light-text dark:text-dark-text hover:bg-dark-secondary transition-colors duration-300"
+                className="flex items-center px-2 py-1.5 w-full cursor-pointer text-sm font-medium font-satisfy text-light-text dark:text-dark-text hover:bg-dark-secondary transition-colors duration-300"
                 onClick={() => {
                   handleLogout();
                   setIsMenuOpen(false);
                 }}
               >
-                <LogOutIcon className="mr-3 text-lg" />
+                <LogOutIcon className="mr-2 h-4 w-4" />
                 Logout
               </div>
             )}

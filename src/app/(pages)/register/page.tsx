@@ -1,9 +1,10 @@
 import Register from "@/components/Register";
+import LoadingPage from "@/components/ui/LoadingPage";
 import React, { Suspense } from "react";
 
 function RegisterPage() {
   return (
-    <Suspense fallback={<div>Loading...</div>}>
+    <Suspense fallback={<LoadingPage />}>
       <Register />
     </Suspense>
   );
