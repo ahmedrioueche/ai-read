@@ -1,4 +1,5 @@
 "use client";
+
 import { AuthProvider } from "@/context/AuthContext";
 import "./globals.css";
 
@@ -10,15 +11,11 @@ export default function RootLayout({
   return (
     <html lang="en">
       <head>
-        <meta name="AI Read" content="AI-Read" />
-        <meta
-          name="description"
-          content="AI Read is a powerful PDF reader powered by AI."
-        />
-        <meta name="theme-color" content="#000000" />
-        <link rel="icon" href="/images/Fireball.svg" type="image/svg+xml" />
+        <title>AIRead</title>
+        <link rel="icon" href="/logo.png" />
+        <meta name="viewport" content="width=device-width, initial-scale=1" />
       </head>
-      <body className="bg-dark-background">
+      <body>
         <AuthProvider>{children}</AuthProvider>
       </body>
     </html>
