@@ -41,6 +41,8 @@ const Navbar: React.FC<{
   const language = "en";
   const text = dict[language];
   const { user, signOut } = useAuth();
+  console.log({ user });
+  const isAuth = user?.email?.trim() !== "";
   const isPremium = user?.isPremium;
 
   const checkFullscreen = () => {
@@ -159,7 +161,7 @@ const Navbar: React.FC<{
             className="overflow-y-auto mt-5 z-[100] absolute top-[2.4rem] right-0 w-[18rem] bg-dark-background border border-gray-600 rounded-lg shadow-lg flex flex-col p-2 space-y-4"
             ref={dropdownRef}
           >
-            {user && (
+            {isAuth && (
               <div>
                 <div className="flex items-center px-2 py-2 w-full cursor-auto text-lg font-medium font-satisfy text-light-text dark:text-dark-text hover:bg-dark-secondary transition-colors duration-300">
                   <Mail className="mr-3 text-lg" />
@@ -189,7 +191,7 @@ const Navbar: React.FC<{
                 name: isPremium ? "Manage Subscription" : "Upgrade",
                 icon: isPremium ? CreditCard : ArrowUpCircle,
                 onClick: () => {
-                  if (!user) {
+                  if (!isAuth) {
                     router.push("/login?redirect=/payment");
                   } else {
                     if (isPremium) {
@@ -213,7 +215,7 @@ const Navbar: React.FC<{
             ))}
 
             <hr className="w-full border-t border-gray-300 my-1" />
-            {!user ? (
+            {!isAuth ? (
               <>
                 <Link
                   href="/login"

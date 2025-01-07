@@ -293,7 +293,7 @@ const SettingsModal: React.FC<SettingsModalProps> = ({
         isOpen ? "scale-100 opacity-100" : "scale-0 opacity-0"
       }`}
     >
-      <div className="bg-dark-background text-dark-foreground rounded-lg shadow-lg p-5 w-full sm:w-[90%] max-w-4xl md:max-h-[80vh] md:h-[80vh] h-[95vh] overflow-y-auto hide-scrollbar">
+      <div className="bg-dark-background text-dark-foreground rounded-lg shadow-lg p-5 w-full sm:w-[90%] max-w-4xl md:max-h-[95vh] md:h-[95vh] h-[95vh] overflow-y-auto hide-scrollbar">
         <div className="flex justify-between items-center mb-1">
           <div className="flex items-center text-dark-foreground">
             <SettingsIcon className="mr-2" />
