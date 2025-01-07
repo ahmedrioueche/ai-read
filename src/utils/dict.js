@@ -36,7 +36,7 @@ export const dict = {
       confirm: "Confirm",
       close: "Close",
       uploadYourPdfToGetstarted: "Upload your PDF to get started",
-      uploadAPdf: "Upload PDF",
+      openPdf: "Open PDF",
     },
     slice: "slice",
     replace: "replace",

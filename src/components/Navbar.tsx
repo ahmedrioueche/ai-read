@@ -41,7 +41,6 @@ const Navbar: React.FC<{
   const language = "en";
   const text = dict[language];
   const { user, signOut } = useAuth();
-  console.log({ user });
   const isAuth = user?.email?.trim() !== "";
   const isPremium = user?.isPremium;
 

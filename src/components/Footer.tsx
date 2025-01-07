@@ -11,7 +11,7 @@ const Footer: React.FC = () => {
     <footer className="flex items-center justify-between px-6 py-4 bg-dark-background text-dark-foreground shadow-md">
       {/* Left section (optional text or logo) */}
       <div className="text-sm font-dancing">
-        <p>&copy; 2024 AI-Read. {text.App.allRightsReserved}.</p>
+        <p>&copy; 2024 AIRead. {text.App.allRightsReserved}.</p>
       </div>
 
       {/* Right section (LinkedIn icon) */}

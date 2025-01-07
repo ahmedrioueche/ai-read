@@ -32,7 +32,7 @@ const Landing: React.FC<LandingProps> = ({ onFileChange }) => {
           htmlFor="file-upload"
           className="cursor-pointer block text-center py-3 px-6 bg-dark-primary hover:bg-dark-secondary duration-300 text-dark-foreground font-semibold rounded-lg shadow-md transition"
         >
-          <span>{text.Actions.uploadAPdf}</span>
+          <span>{text.Actions.openPdf}</span>
         </label>
 
         <input

@@ -8,7 +8,26 @@ import { AiApi } from "@/apis/aiApi";
 import { Settings } from "@/utils/types";
 import { useSettings } from "@/context/SettingsContext";
 
-// Include the 15 most used languages
+// Types
+type BasicVoice = {
+  value: string;
+  label: string;
+  lang: string;
+};
+
+type PremiumVoice = {
+  value: string;
+  label: string;
+};
+
+type Voice = BasicVoice | PremiumVoice;
+
+interface SettingsModalProps {
+  user: User;
+  isOpen: boolean;
+  onClose: () => void;
+}
+
 const languages = [
   { value: "english", label: "English", rtl: false },
   { value: "arabic", label: "Arabic", rtl: true },
@@ -26,26 +45,7 @@ const languages = [
   { value: "polish", label: "Polish", rtl: false },
 ];
 
-type BasicVoice = {
-  value: string; // Voice name
-  label: string; // Display name
-  lang: string; // Language code
-};
-
-type PremiumVoice = {
-  value: string; // Voice ID
-  label: string; // Display name
-};
-
-type Voice = BasicVoice | PremiumVoice;
-
-interface SettingsModalProps {
-  user: User;
-  isOpen: boolean;
-  onClose: () => void;
-}
-
-const SettingsModal: React.FC<SettingsModalProps> = ({
+export const SettingsModal: React.FC<SettingsModalProps> = ({
   user,
   isOpen,
   onClose,
@@ -61,28 +61,29 @@ const SettingsModal: React.FC<SettingsModalProps> = ({
   const [appLanguage, setAppLanguage] = useState("english");
   const [ttsType, setTtsType] = useState<"premium" | "basic">("basic");
   const [ttsVoice, setTtsVoice] = useState<string>("");
-  const [bookLanguage, setBookLanguage] = useState("English");
+  const [bookLanguage, setBookLanguage] = useState("english");
   const [autoScroll, setAutoScroll] = useState<boolean>(true);
   const [highlighting, setHighlighting] = useState<boolean>(true);
   const [basicVoices, setBasicVoices] = useState<Voice[]>([]);
   const [premiumVoices, setPremiumVoices] = useState<Voice[]>([]);
   const [voicesLoading, setVoicesLoading] = useState<boolean>(false);
-
+  const [isPlayLoading, setIsPlayLoading] = useState(false);
   const [sampleText, setSampleText] = useState(
     "Welcome to AIRead, the best AI-powered reading platform."
   );
+
+  const voiceApi = new VoiceApi();
+  const aiApi = new AiApi();
+  const text = dict["en"];
+
+  const isAndroid = /android/i.test(navigator.userAgent);
   const isChrome =
     navigator.userAgent.includes("Chrome") &&
     !navigator.userAgent.includes("Edg");
 
-  const text = dict["en"];
-  const voiceApi = new VoiceApi();
-  const aiApi = new AiApi();
-  const [isPlayLoading, setIsPlayLoading] = useState(false);
-
   useEffect(() => {
     if (settings) {
-      setLanguage(settings.translationLanguage?.language || "en");
+      setLanguage(settings.translationLanguage?.language || "english");
       setIsTranslation(settings.enableTranslation || false);
       setIsReading(settings.enableReading || false);
       setReadingSpeed(settings.readingSpeed || "normal");
@@ -95,33 +96,13 @@ const SettingsModal: React.FC<SettingsModalProps> = ({
     }
   }, [settings]);
 
-  const handleSave = () => {
-    const selectedLanguage = languages.find((lang) => lang.value === language);
-    const settings: Settings = {
-      translationLanguage: {
-        language: selectedLanguage?.value!,
-        rtl: selectedLanguage?.rtl!,
-      },
-      enableTranslation: isTranslation,
-      enableReading: isReading,
-      readingSpeed: readingSpeed,
-      appLanguage: appLanguage,
-      ttsType: ttsType,
-      ttsVoice: ttsVoice,
-      bookLanguage: bookLanguage,
-      enableAutoScrolling: autoScroll,
-      enableHighlighting: highlighting,
-    };
-
-    updateSettings(settings);
-    onClose();
-  };
-
   const fetchBuiltInVoices = () => {
     const voices = window.speechSynthesis.getVoices();
     if (voices.length > 0) {
+      const validVoices = voices.filter((voice) => voice && voice.name);
+
       setBasicVoices(
-        voices.map((voice) => {
+        validVoices.map((voice) => {
           let cleanName = voice.name
             .replace(/^Microsoft\s*/i, "")
             .replace(/\s*Online \(Natural\)\s*/i, "")
@@ -129,15 +110,14 @@ const SettingsModal: React.FC<SettingsModalProps> = ({
             .trim()
             .replace(/\s*-\s*/, " - ");
 
-          // For Chrome, append the language code to the label
-          if (isChrome) {
+          if (isAndroid || isChrome) {
             cleanName = `${cleanName} (${voice.lang})`;
           }
 
           return {
             value: voice.name,
             label: cleanName,
-            lang: voice.lang, // Include the lang property for filtering
+            lang: voice.lang,
           };
         })
       );
@@ -147,15 +127,12 @@ const SettingsModal: React.FC<SettingsModalProps> = ({
   const fetchPremiumVoices = async () => {
     try {
       const response = await voiceApi.getVoices();
-
       if (response?.voices && Array.isArray(response.voices)) {
         const apiVoices = response.voices.map((voice: any) => ({
           value: voice.voice_id,
           label: voice.name,
         }));
         setPremiumVoices(apiVoices);
-      } else {
-        console.error("Invalid API response structure:", response);
       }
     } catch (error) {
       console.error("Failed to fetch API voices:", error);
@@ -165,16 +142,12 @@ const SettingsModal: React.FC<SettingsModalProps> = ({
   useEffect(() => {
     const fetchVoices = async () => {
       setVoicesLoading(true);
-      setTtsVoice(""); // Reset ttsVoice when fetching new voices
 
       if (ttsType === "basic") {
-        fetchBuiltInVoices();
-        const voicesChangedHandler = () => {
-          if (ttsType === "basic") {
-            fetchBuiltInVoices();
-          }
-        };
-        window.speechSynthesis.onvoiceschanged = voicesChangedHandler;
+        if ("speechSynthesis" in window) {
+          fetchBuiltInVoices();
+          window.speechSynthesis.onvoiceschanged = fetchBuiltInVoices;
+        }
       } else {
         await fetchPremiumVoices();
       }
@@ -191,37 +164,37 @@ const SettingsModal: React.FC<SettingsModalProps> = ({
     };
   }, [ttsType]);
 
-  // Set default voice based on book language after voices are fetched
-
   useEffect(() => {
     if (!voicesLoading) {
       const currentVoices = ttsType === "basic" ? basicVoices : premiumVoices;
 
-      // If ttsVoice is already set, do not override it
-      if (ttsVoice) {
-        return;
-      }
-
-      // Set default voice only if ttsVoice is not selected
-      if (currentVoices.length > 0) {
+      if (!ttsVoice && currentVoices.length > 0) {
         let defaultVoice: Voice | undefined;
 
         if (ttsType === "basic") {
-          // For built-in voices, find a voice that matches the bookLanguage
-          defaultVoice = (currentVoices as BasicVoice[]).find((voice) =>
-            voice.lang.toLowerCase().includes(bookLanguage.toLowerCase())
-          );
+          // For Android, prefer default voice or language-matched voice
+          if (isAndroid) {
+            const voices = window.speechSynthesis.getVoices();
+            defaultVoice = (basicVoices as BasicVoice[]).find((voice) => {
+              const sysVoice = voices.find((v) => v.name === voice.value);
+              return (
+                sysVoice?.default ||
+                voice.lang.toLowerCase().includes(bookLanguage.toLowerCase())
+              );
+            });
+          } else {
+            defaultVoice = (currentVoices as BasicVoice[]).find((voice) =>
+              voice.lang.toLowerCase().includes(bookLanguage.toLowerCase())
+            );
+          }
         } else {
-          // For premium voices, use the first voice as the default
           defaultVoice = currentVoices[0];
         }
 
-        // Set the default voice if found
         if (defaultVoice) {
           setTtsVoice(defaultVoice.value);
-        } else {
-          // Fallback to the first voice if no matching voice is found
-          setTtsVoice(currentVoices[0]?.value || "");
+        } else if (currentVoices[0]) {
+          setTtsVoice(currentVoices[0].value);
         }
       }
     }
@@ -232,51 +205,52 @@ const SettingsModal: React.FC<SettingsModalProps> = ({
     ttsType,
     voicesLoading,
     ttsVoice,
+    isAndroid,
   ]);
 
-  const filteredVoices =
-    ttsType === "basic"
-      ? (basicVoices as BasicVoice[]).filter((voice) => {
-          if (isChrome) {
-            // For Chrome, do not filter voices (show all voices)
-            return true;
-          } else {
-            // For Edge, filter using the label (name) property
-            return voice.label
-              .toLowerCase()
-              .includes(bookLanguage.toLowerCase());
-          }
-        })
-      : premiumVoices; // No filtering for premium voices
-
-  // Play sample text using the selected voice
   const playSampleText = async () => {
     setIsPlayLoading(true);
+
     if (ttsType === "basic") {
+      // Cancel any ongoing speech
+      window.speechSynthesis.cancel();
+
       const utterance = new SpeechSynthesisUtterance(sampleText);
-      const selectedVoice = window.speechSynthesis
-        .getVoices()
-        .find((voice) => voice.name === ttsVoice);
+      const voices = window.speechSynthesis.getVoices();
+      const selectedVoice = voices.find((voice) => voice.name === ttsVoice);
+
       if (selectedVoice) {
         utterance.voice = selectedVoice;
-        window.speechSynthesis.speak(utterance);
+        utterance.rate =
+          readingSpeed === "slow" ? 0.8 : readingSpeed === "fast" ? 1.2 : 1;
+        utterance.pitch = 1;
+        utterance.volume = 1;
+
+        try {
+          await new Promise((resolve, reject) => {
+            utterance.onend = resolve;
+            utterance.onerror = reject;
+            window.speechSynthesis.speak(utterance);
+          });
+        } catch (error) {
+          console.error("Speech synthesis failed:", error);
+        }
       }
     } else {
       try {
         const audio = await voiceApi.textToSpeech(sampleText, ttsVoice);
-        const audioBlop = new Blob([audio], { type: "audio/mpeg" });
-        playAudio(audioBlop);
+        const audioBlob = new Blob([audio], { type: "audio/mpeg" });
+        const audioUrl = URL.createObjectURL(audioBlob);
+        const audioElement = new Audio(audioUrl);
+        audioElement.play();
+        audioElement.onended = () => {
+          URL.revokeObjectURL(audioUrl);
+        };
       } catch (error) {
         console.error("Failed to play sample text using API:", error);
       }
     }
     setIsPlayLoading(false);
-  };
-
-  const playAudio = (audioBlob: Blob) => {
-    const audio = new Audio(URL.createObjectURL(audioBlob));
-    audio.play();
-    audio.onended = () => {};
   };
 
   useEffect(() => {
@@ -286,6 +260,41 @@ const SettingsModal: React.FC<SettingsModalProps> = ({
     };
     getSampleText();
   }, [bookLanguage]);
+
+  const handleSave = () => {
+    const selectedLanguage = languages.find((lang) => lang.value === language);
+    const newSettings: Settings = {
+      translationLanguage: {
+        language: selectedLanguage?.value!,
+        rtl: selectedLanguage?.rtl!,
+      },
+      enableTranslation: isTranslation,
+      enableReading: isReading,
+      readingSpeed: readingSpeed,
+      appLanguage: appLanguage,
+      ttsType: ttsType,
+      ttsVoice: ttsVoice,
+      bookLanguage: bookLanguage,
+      enableAutoScrolling: autoScroll,
+      enableHighlighting: highlighting,
+    };
+
+    updateSettings(newSettings);
+    onClose();
+  };
+
+  const filteredVoices =
+    ttsType === "basic"
+      ? (basicVoices as BasicVoice[]).filter((voice) => {
+          if (isChrome || isAndroid) {
+            return true;
+          } else {
+            return voice.label
+              .toLowerCase()
+              .includes(bookLanguage.toLowerCase());
+          }
+        })
+      : premiumVoices;
 
   return (
     <div
