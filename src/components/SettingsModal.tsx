@@ -8,13 +8,6 @@ import { AiApi } from "@/apis/aiApi";
 import { Settings } from "@/utils/types";
 import { useSettings } from "@/context/SettingsContext";
 
-// Define options for Typing Modes
-const typingModes = [
-  { value: "normal", label: "Normal" },
-  { value: "fast", label: "Fast" },
-  { value: "slow", label: "Slow" },
-];
-
 // Include the 15 most used languages
 const languages = [
   { value: "english", label: "English", rtl: false },

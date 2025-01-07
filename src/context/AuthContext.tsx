@@ -11,7 +11,7 @@ import bcrypt from "bcryptjs";
 import { User } from "@prisma/client";
 
 interface AuthState {
-  user: User | null;
+  user: User;
   authUser: SupabaseUser | null;
   loading: boolean;
   error: Error | null;
@@ -43,9 +43,17 @@ export function useAuth() {
   return context;
 }
 
+const initUser: User = {
+  id: "",
+  email: "",
+  password: "",
+  isPremium: false,
+  createdAt: new Date(),
+  lastPaymentDate: null,
+};
 export function AuthProvider({ children }: { children: ReactNode }) {
   const [authState, setAuthState] = useState<AuthState>({
-    user: null,
+    user: initUser,
     authUser: null,
     loading: true,
     error: null,
@@ -82,7 +90,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
       });
     } catch (error) {
       setAuthState({
-        user: null,
+        user: initUser,
         authUser: null,
         loading: false,
         error: error as Error,
