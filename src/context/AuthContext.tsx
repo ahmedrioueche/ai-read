@@ -6,9 +6,9 @@ import {
   ReactNode,
 } from "react";
 import { User as SupabaseUser } from "@supabase/supabase-js";
-import { User } from "../utils/types";
 import supabase from "../utils/supabase";
 import bcrypt from "bcryptjs";
+import { User } from "@prisma/client";
 
 interface AuthState {
   user: User | null;
