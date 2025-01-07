@@ -12,7 +12,7 @@ export default function RootLayout({
     <html lang="en">
       <head>
         <title>AIRead</title>
-        <link rel="icon" href="/logo.png" />
+        <link rel="icon" href="/images/logo.png" />
         <meta name="viewport" content="width=device-width, initial-scale=1" />
       </head>
       <body>
