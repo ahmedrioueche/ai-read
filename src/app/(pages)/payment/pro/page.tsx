@@ -2,7 +2,7 @@
 import React, { useState } from "react";
 import { PayPalButtons } from "@paypal/react-paypal-js";
 import PaypalProvider from "@/components/PaypalProvider";
-import { plans } from "@/utils/constants";
+import { plans, pricing } from "@/utils/constants";
 import Link from "next/link";
 import { UserApi } from "@/apis/userApi";
 import { useAuth } from "@/context/AuthContext";
@@ -11,7 +11,7 @@ import { User } from "@prisma/client";
 import Alert from "@/components/ui/Alert";
 import { CheckCircle, Loader, LucideIcon, XCircle } from "lucide-react";
 
-const plan = plans.find((plan) => plan.name === "Premium");
+const plan = plans.find((plan) => plan.name === "Pro");
 
 const Payment: React.FC = () => {
   const { user } = useAuth();
@@ -35,12 +35,12 @@ const Payment: React.FC = () => {
     setIsAlertOpen(true);
 
     const userData: Partial<User> = {
-      isPremium: true,
+      plan: "pro",
       lastPaymentDate: new Date(),
     };
 
     try {
-      await userApi.updateUserData(user?.email, userData);
+      await userApi.updateUser(user?.email, userData);
       setStatus({
         status: "Success",
         message: "Payment successful! You are now a Premium member!.",
@@ -74,7 +74,7 @@ const Payment: React.FC = () => {
               <span className="text-dark-secondary ml-2">AI</span>
               <span>Read</span>
             </Link>
-            <h1 className="text-xl mb-1">Upgrade to Premium</h1>
+            <h1 className="text-xl mb-1">Upgrade to {plan?.name}</h1>
             <p className="text-sm text-dark-foreground/70">
               Get unlimited access to all features
             </p>
@@ -120,7 +120,7 @@ const Payment: React.FC = () => {
                   return actions.order.create({
                     purchase_units: [
                       {
-                        amount: { value: "10.00" },
+                        amount: { value: pricing.pro },
                       },
                     ],
                   });

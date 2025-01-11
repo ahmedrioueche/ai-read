@@ -17,7 +17,10 @@ export default class VoiceApi {
 
   constructor() {
     // Define the API keys from environment variables
-    this.apiKeys = [process.env.NEXT_PUBLIC_ELEVENLABS_KEY_8 || ""];
+    this.apiKeys = [
+      process.env.NEXT_PUBLIC_ELEVENLABS_KEY_8 || "",
+      process.env.NEXT_PUBLIC_ELEVENLABS_KEY_9 || "",
+    ];
 
     this.apiUrl = "https://api.elevenlabs.io/v1";
   }

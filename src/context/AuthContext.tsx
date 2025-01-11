@@ -47,9 +47,12 @@ const initUser: User = {
   id: "",
   email: "",
   password: "",
-  isPremium: false,
   createdAt: new Date(),
   lastPaymentDate: null,
+  plan: "",
+  lastPaymentValue: null,
+  freeTrialStartDate: new Date(),
+  freeTrialShownAt: null,
 };
 export function AuthProvider({ children }: { children: ReactNode }) {
   const [authState, setAuthState] = useState<AuthState>({
@@ -107,19 +110,16 @@ export function AuthProvider({ children }: { children: ReactNode }) {
       });
 
       if (error) {
-        console.log("SignIn error:", error);
         setAuthState((prev) => ({ ...prev, loading: false, error }));
         return { data: null, error };
       }
 
       if (authData.user) {
-        console.log("User signed in. Fetching user data...");
         await fetchUserData(authData.user);
       }
 
       return { data: authData, error: null };
     } catch (error) {
-      console.log("SignIn function encountered an error:", error);
       setAuthState((prev) => ({
         ...prev,
         loading: false,
@@ -142,15 +142,11 @@ export function AuthProvider({ children }: { children: ReactNode }) {
       });
 
       if (authError) {
-        console.log("Supabase auth signUp error:", authError);
         setAuthState((prev) => ({ ...prev, loading: false, error: authError }));
         return { data: null, error: authError };
       }
 
       if (authData.user) {
-        console.log(
-          "User created in Supabase auth. Inserting user data into the database..."
-        );
         const hashedPassword = await bcrypt.hash(password, 10);
         const { error: dbError } = await supabase.from("User").insert([
           {
@@ -162,18 +158,15 @@ export function AuthProvider({ children }: { children: ReactNode }) {
         ]);
 
         if (dbError) {
-          console.log("Database insertion error:", dbError);
           setAuthState((prev) => ({ ...prev, loading: false, error: dbError }));
           return { data: null, error: dbError };
         }
 
-        console.log("User data successfully inserted into database");
         await fetchUserData(authData.user);
       }
 
       return { data: authData, error: null };
     } catch (error) {
-      console.log("SignUp function encountered an error:", error);
       setAuthState((prev) => ({
         ...prev,
         loading: false,

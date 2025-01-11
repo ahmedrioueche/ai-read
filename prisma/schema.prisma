@@ -9,14 +9,27 @@ generator client {
 }
 
 model User {
-  id            String         @id
-  email         String         @unique
-  password      String
-  isPremium     Boolean        @default(false)
-  createdAt     DateTime       @default(now())
-  lastPaymentDate DateTime?      
-  analytics     Analytics?  
-  settings      Settings?
+  id                 String         @id @default(cuid())
+  email              String         @unique
+  password           String   
+  createdAt          DateTime       @default(now())
+  plan               String         @default("free-trial")
+  lastPaymentDate    DateTime?
+  lastPaymentValue   Float?        
+  freeTrialStartDate DateTime       @default(now())
+  freeTrialShownAt   DateTime?  
+  analytics          Analytics?
+  settings           Settings?
+}
+
+model Visitor {
+  id                 String        @id @default(cuid())
+  fingerprint        String        @unique
+  createdAt          DateTime      @default(now())
+  isFreeTrial        Boolean       @default(true)
+  freeTrialStartDate DateTime      @default(now())
+  freeTrialShownAt   DateTime?  
+  settings           Settings?
 }
 
 model Analytics {
@@ -27,10 +40,19 @@ model Analytics {
 }
 
 model Settings {
-  id              String      @id @default(cuid())
-  user            User        @relation(fields: [userId], references: [id])
-  userId          String      @unique
-  theme           String      @default("dark")
-  voiceId         String
-  readingReminder Float
+  id                String      @id @default(cuid())
+  user              User?       @relation(fields: [userId], references: [id])
+  visitor           Visitor?    @relation(fields: [visitorId], references: [id])
+  userId            String?     @unique
+  visitorId         String?     @unique
+  appLanguage       String      @default("english")
+  translationLanguage Json      @default("{\"language\": \"english\", \"rtl\": false}") // Store as JSON
+  bookLanguage      String      @default("english")
+  enableTranslation Boolean     @default(false)
+  enableReading     Boolean     @default(true)
+  readingSpeed      String      @default("normal") // "slow" | "normal" | "fast"
+  ttsType           String      @default("basic") // "premium" | "basic"
+  ttsVoice          String      @default("")
+  enableAutoScrolling Boolean   @default(true)
+  enableHighlighting Boolean    @default(true)
 }

@@ -11,14 +11,18 @@ import {
   deleteOldestBookFromIndexedDB,
 } from "@/utils/indexedDb";
 import BookList from "@/components/BookList";
-import { Settings } from "@/utils/types";
+import { useAuth } from "@/context/AuthContext";
+import FreeTrialModal from "./FreeTrialModal";
+import { usePlan } from "@/context/PlanContext";
+import { useVisitor } from "@/context/VisitorContext";
+import { UserApi } from "@/apis/userApi";
 
 export interface BookData {
   id: string;
   fileName: string;
   fileUrl: string;
   lastPage: number;
-  lastAccessed: number; // Add timestamp to track when book was last opened
+  lastAccessed: number;
 }
 
 const Home: React.FC = () => {
@@ -29,6 +33,55 @@ const Home: React.FC = () => {
   const [isFullScreen, setIsFullScreen] = useState(false);
   const [bookLanguage, setBookLanguage] = useState("");
   const BOOK_LIMIT = 5;
+  const { user } = useAuth();
+  const userApi = new UserApi();
+  const { visitor, initializeVisitor } = useVisitor();
+  const {
+    init: initPlan,
+    isFreeTrial,
+    isFreeTrialActive,
+    isFreeTrialModalOpen,
+    setIsFreeTrialModalOpen,
+    freeTrialEndDate,
+  } = usePlan();
+
+  useEffect(() => {
+    initializeVisitor();
+  }, []);
+
+  useEffect(() => {
+    if (visitor) {
+      initPlan(visitor);
+    }
+  }, [visitor]);
+
+  //update new user's free trial period to visitor's (no new free trial on every account creation on same machine)
+  useEffect(() => {
+    const updateUser = async () => {
+      if (user && user?.email?.trim() !== "" && visitor) {
+        // Normalize both dates to UTC
+        const userDateUTC = new Date(user.freeTrialStartDate).toISOString();
+        const visitorDateUTC = new Date(
+          visitor.freeTrialStartDate
+        ).toISOString();
+
+        // Compare the normalized UTC dates
+        if (userDateUTC !== visitorDateUTC) {
+          // Add 1 hour offset to have a correct comparision later
+          const adjustedVisitorDate = new Date(visitor.freeTrialStartDate);
+          adjustedVisitorDate.setHours(adjustedVisitorDate.getHours() + 1);
+          try {
+            await userApi.updateUser(user.email, {
+              freeTrialStartDate: adjustedVisitorDate,
+            });
+          } catch (e) {
+            console.log(e);
+          }
+        }
+      }
+    };
+    updateUser();
+  }, [user, visitor]);
 
   const saveToLocalStorage = (book: BookData) => {
     try {
@@ -178,34 +231,6 @@ const Home: React.FC = () => {
     loadBooksFromDB();
   }, []);
 
-  useEffect(() => {
-    let settingsData: Settings = JSON.parse(
-      localStorage.getItem("settings") || "{}"
-    );
-    if (
-      !settingsData.translationLanguage ||
-      !settingsData.readingSpeed ||
-      !settingsData.bookLanguage ||
-      !settingsData.ttsType ||
-      !settingsData.ttsVoice
-    ) {
-      settingsData = {
-        appLanguage: "english",
-        translationLanguage: { language: "english", rtl: false },
-        enableTranslation: true,
-        enableReading: true,
-        readingSpeed: "normal",
-        bookLanguage: "english",
-        ttsType: "premium",
-        ttsVoice: "nPczCjzI2devNBz1zQrb", //default voice id
-        enableAutoScrolling: true,
-        enableHighlighting: true,
-      };
-
-      localStorage.setItem("settings", JSON.stringify(settingsData));
-    }
-  }, []);
-
   const currentBook = books.find((book) => book.id === currentBookId);
 
   return (
@@ -217,6 +242,7 @@ const Home: React.FC = () => {
           setIsFullScreen(isFullScreen);
         }}
         bookLanguage={bookLanguage}
+        onFreeTrialClick={() => setIsFreeTrialModalOpen(true)}
       />
       <div
         className={`flex flex-col items-center z-0 ${!pdfFileUrl ? "" : ""}`}
@@ -249,6 +275,13 @@ const Home: React.FC = () => {
           />
         )}
       </div>
+      <FreeTrialModal
+        user={user}
+        isOpen={isFreeTrialModalOpen}
+        onClose={() => setIsFreeTrialModalOpen(false)}
+        isTrialActive={isFreeTrialActive}
+        trialEndDate={freeTrialEndDate!}
+      />
       {!currentBook && <Footer />}
     </div>
   );

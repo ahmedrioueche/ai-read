@@ -74,10 +74,8 @@ const Main = ({
   const rootRef = useRef<HTMLDivElement | null>(null);
   const [scrollY, setScrollY] = useState(0);
   const [isHighlighting, setIsHighlighting] = useState(false);
-  const [availabeVoicesIds, setAvailableVoicesIds] = useState<string[]>([]);
   const [scrollIntervalId, setScrollIntervalId] = useState<number>();
-  const SCROLL_INTERVAL = 1800;
-  const [scrollSpeed, setScrollSpeed] = useState(SCROLL_INTERVAL);
+  const SCROLL_INTERVAL = 5250;
   const [currentPremiumAudio, setCurrentPremiumAudio] =
     useState<HTMLAudioElement | null>(null);
   const [autoReading, setAutoReading] = useState<{
@@ -90,6 +88,8 @@ const Main = ({
   const [enableAutoScrolling, setEnableAutoScrolling] = useState(false);
   const [enableHighlighting, setEnableHighlighting] = useState(false);
   let audioQueue: Blob[] = [];
+  const [currentTextChunk, setCurrentTextChunk] = useState("");
+  const [visibleText, setVisibleText] = useState("");
 
   useEffect(() => {
     const translationLanguage =
@@ -210,7 +210,6 @@ const Main = ({
       const isInTextCard =
         activeTextCardContent &&
         activeTextCardContent.includes(selectedText || "");
-
       const selectedVoice = window.speechSynthesis
         .getVoices()
         .find((voice) => voice.name === ttsVoice);
@@ -230,6 +229,7 @@ const Main = ({
       if (selectedVoice) {
         utterance.voice = selectedVoice;
       }
+
       utterance.onstart = () => {
         setReadingState("reading");
         autoReading.isReading = true;
@@ -250,8 +250,8 @@ const Main = ({
   };
 
   const getTtsVoiceId = (): string => {
-    if (availabeVoicesIds && availabeVoicesIds.length > 0) {
-      return availabeVoicesIds[0];
+    if (ttsVoice) {
+      return ttsVoice;
     }
     return "nPczCjzI2devNBz1zQrb"; // Default voice ID
   };
@@ -276,7 +276,7 @@ const Main = ({
     return lastMatch.index! + 1; // Include only the punctuation mark, not the following space
   };
 
-  const getTextToRead = async (): Promise<{
+  const getVisibleText = async (): Promise<{
     text: string;
     elements: HTMLElement[];
   }> => {
@@ -459,6 +459,7 @@ const Main = ({
             const audioBlob = await fetchTtsAudio(firstChunk);
             audioQueue.push(audioBlob); // Add the first chunk to the queue
             playNextAudio(); // Start playback immediately
+            setCurrentTextChunk(firstChunk);
           }
         }
 
@@ -474,6 +475,8 @@ const Main = ({
             try {
               const audioBlob = await fetchTtsAudio(chunk);
               audioQueue.push(audioBlob); // Add to the queue
+              setCurrentTextChunk(chunk);
+
               console.log("Audio blob added for chunk:", chunk);
             } catch (error) {
               console.error("Error fetching audio for chunk:", chunk, error);
@@ -486,6 +489,7 @@ const Main = ({
         for (const chunk of chunks) {
           if (!autoReading.isReading) {
             readText(chunk);
+            setCurrentTextChunk(chunk);
           }
         }
       }
@@ -494,6 +498,7 @@ const Main = ({
       for (const chunk of chunks) {
         if (!autoReading.isReading) {
           readText(chunk);
+          setCurrentTextChunk(chunk);
         }
       }
     }
@@ -529,7 +534,7 @@ const Main = ({
 
   const startScrolling = () => {
     if (enableAutoScrolling) {
-      const id = scrollPDF();
+      const id = scrollPDF(SCROLL_INTERVAL);
       if (id) setScrollIntervalId(id);
     }
   };
@@ -554,7 +559,7 @@ const Main = ({
 
     try {
       // Fetch text and elements
-      const { text, elements } = await getTextToRead();
+      const { text, elements } = await getVisibleText();
       const processedText = preprocessText(text);
       await handleTextToSpeech(processedText);
 
@@ -568,25 +573,6 @@ const Main = ({
     } catch (error) {
       console.error("Error in startReading:", error);
       autoReading.isActivated = false;
-    }
-  };
-
-  // Function to process the queue
-  const processReadingQueue = (queue: string[]) => {
-    // If there are chunks in the queue and not currently reading, start reading the next chunk
-    if (queue.length > 0 && autoReading.isActivated && !autoReading.isReading) {
-      const nextChunk = queue.shift(); // Get the next chunk from the queue
-
-      if (nextChunk) {
-        handleTextToSpeech(nextChunk); // Read the chunk
-      }
-    }
-
-    if (queue.length > 0) {
-      setTimeout(() => processReadingQueue(queue), 200); // Process next chunk when possible
-    } else {
-      autoReading.isActivated = false;
-      setReadingState("off");
     }
   };
 
@@ -687,30 +673,94 @@ const Main = ({
     }
   };
 
-  const scrollPDF = (): number | null => {
-    const container = document.querySelector(".rpv-core__inner-pages");
+  const scrollPDF = (scrollSpeed: number): number | null => {
+    const container = document.querySelector(
+      ".rpv-core__inner-pages"
+    ) as HTMLElement;
     if (!container) {
       console.log("Scroll container not found");
       return null;
     }
 
-    const intervalId = window.setInterval(() => {
-      container.scrollBy({
-        top: 5,
-        behavior: "smooth",
-      });
+    let lastVisibleTextLength = 0; // Track the length of the last visible text
+    let lastScrollOffset = 30 * readingSpeed; // Track the last scroll offset
 
-      // Check if we've reached the end of the container
+    const intervalId = window.setInterval(async () => {
+      // Check if we've reached the end of the document
       if (
         container.scrollTop + container.clientHeight >=
         container.scrollHeight
       ) {
         clearInterval(intervalId);
         console.log("Reached the end of the document");
+        return;
       }
+
+      // Get the currently visible text using the existing getVisibleText function
+      const { text: visibleText } = await getVisibleText();
+      setVisibleText(visibleText);
+      // Calculate the scroll offset based on visible text length
+      const currentVisibleTextLength = visibleText.length;
+      console.log("currentVisibleTextLength", currentVisibleTextLength);
+
+      // Calculate the scroll offset dynamically
+      const scrollOffset = calculateScrollOffset(
+        currentVisibleTextLength,
+        lastVisibleTextLength,
+        lastScrollOffset,
+        readingSpeed
+      );
+
+      console.log("current scrollOffset", scrollOffset);
+
+      // Update the last visible text length and scroll offset
+      lastVisibleTextLength = currentVisibleTextLength;
+      lastScrollOffset = scrollOffset;
+
+      // Scroll downward with the calculated offset
+      container.scrollBy({
+        top: scrollOffset,
+        behavior: "smooth",
+      });
     }, scrollSpeed);
 
     return intervalId;
+  };
+
+  const calculateScrollOffset = (
+    currentTextLength: number,
+    lastTextLength: number,
+    lastScrollOffset: number,
+    readingSpeed: number
+  ): number => {
+    const baselineOffset = 22; // Baseline scroll offset
+    const minOffset = baselineOffset * readingSpeed; // Minimum scroll offset
+    const maxOffset = baselineOffset * 20; // Maximum scroll offset (e.g., 600)
+    // Calculate the difference between current and last text length
+    const textLengthDifference = lastTextLength - currentTextLength;
+
+    // If text length is above 1000, reset to baseline offset
+    if (currentTextLength > 1000) {
+      return baselineOffset * readingSpeed;
+    }
+
+    // Adjust the scroll offset linearly based on the text length difference
+    let scrollOffset = lastScrollOffset;
+
+    if (textLengthDifference > 0) {
+      // If text length is decreasing, increase the scroll offset linearly
+      const increaseFactor = textLengthDifference / lastTextLength; // Normalized difference
+      scrollOffset = lastScrollOffset * (1 + increaseFactor);
+    } else if (textLengthDifference < 0) {
+      // If text length is increasing, decrease the scroll offset linearly
+      const decreaseFactor = -textLengthDifference / lastTextLength; // Normalized difference
+      scrollOffset = lastScrollOffset * (1 - decreaseFactor);
+    }
+
+    // Ensure the scroll offset stays within reasonable bounds
+    scrollOffset = Math.max(minOffset, Math.min(scrollOffset, maxOffset));
+
+    return scrollOffset;
   };
 
   const toggleHighlighting = (elements: HTMLElement[], stop = false) => {
@@ -758,16 +808,13 @@ const Main = ({
       switch (settings.readingSpeed) {
         case "normal":
           setReadingSpeed(0.9);
-          setScrollSpeed(SCROLL_INTERVAL);
           break;
         case "slow":
           setReadingSpeed(0.7);
-          setScrollSpeed(SCROLL_INTERVAL - 500);
 
           break;
         case "fast":
           setReadingSpeed(1.2);
-          setScrollSpeed(SCROLL_INTERVAL + 500);
           break;
       }
     }

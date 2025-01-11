@@ -12,11 +12,14 @@ import {
   CreditCard,
   Mail,
   Book,
+  Clock,
 } from "lucide-react";
 import { dict } from "@/utils/dict";
 import Link from "next/link";
 import { useRouter } from "next/navigation";
 import { useAuth } from "@/context/AuthContext";
+import { usePlan } from "@/context/PlanContext";
+import { calculateRemainingTime } from "@/utils/helper";
 
 const SettingsModal = lazy(() => import("@/components/SettingsModal"));
 const FeaturesModal = lazy(() => import("@/components/FeaturesModal"));
@@ -26,11 +29,13 @@ const Navbar: React.FC<{
   onToggleSettingsModal: (isSettingModalOpen: boolean) => void;
   onToggleFullScreen: (isFullScreen: boolean) => void;
   bookLanguage: string;
+  onFreeTrialClick: () => void;
 }> = ({
   onUpload,
   onToggleSettingsModal,
   onToggleFullScreen,
   bookLanguage,
+  onFreeTrialClick,
 }) => {
   const [isSettingModalOpen, setIsSettingModalOpen] = useState(false);
   const [isFeaturesModalOpen, setIsFeaturesModalOpen] = useState(false);
@@ -42,7 +47,12 @@ const Navbar: React.FC<{
   const text = dict[language];
   const { user, signOut } = useAuth();
   const isAuth = user?.email?.trim() !== "";
-  const isPremium = user?.isPremium;
+  const { plan, isFreeTrial, freeTrialEndDate } = usePlan();
+  const isPremium = plan === "premium";
+
+  const remainingTime = isFreeTrial
+    ? calculateRemainingTime(freeTrialEndDate!)
+    : 0;
 
   const checkFullscreen = () => {
     if (document.fullscreenElement) {
@@ -169,6 +179,7 @@ const Navbar: React.FC<{
                 <hr className="w-full border-b border-gray-400 my-1" />
               </div>
             )}
+
             {[
               {
                 name: "Features",
@@ -213,6 +224,23 @@ const Navbar: React.FC<{
               </div>
             ))}
 
+            {isFreeTrial && (
+              <div
+                className="cursor-pointer"
+                onClick={() => {
+                  onFreeTrialClick();
+                  setIsMenuOpen(false);
+                }}
+              >
+                <hr className="w-full border-t border-gray-300 my-1" />
+                <div className="flex items-center px-2 py-1.5 w-full text-sm font-medium font-satisfy text-light-text dark:text-dark-text hover:bg-dark-secondary transition-colors duration-300">
+                  <Clock className="mr-2 h-4 w-4" />
+                  <span className="truncate">
+                    Free Trial: {remainingTime} left
+                  </span>
+                </div>
+              </div>
+            )}
             <hr className="w-full border-t border-gray-300 my-1" />
             {!isAuth ? (
               <>

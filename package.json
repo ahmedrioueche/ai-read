@@ -10,6 +10,7 @@
     "lint": "next lint"
   },
   "dependencies": {
+    "@fingerprintjs/fingerprintjs": "^4.5.1",
     "@google/generative-ai": "^0.21.0",
     "@paypal/react-paypal-js": "^8.7.0",
     "@prisma/client": "^6.1.0",

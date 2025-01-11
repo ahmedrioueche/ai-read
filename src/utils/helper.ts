@@ -1,12 +1,3 @@
-const languageMap: Record<string, string> = {
-  english: "eng",
-  french: "fra",
-  german: "deu",
-  spanish: "spa",
-  italian: "ita",
-  arabic: "arb",
-};
-
 export const formatLanguage = (language: string | null): string => {
   if (!language) return "en-US"; // Default to English for null or undefined
 
@@ -153,4 +144,132 @@ export const splitTextIntoChunks = (
   }
 
   return chunks;
+};
+
+export const calculateRemainingTime = (endDate: Date | string): string => {
+  const now = new Date().getTime();
+  const end = new Date(endDate).getTime();
+  const difference = end - now;
+
+  if (difference <= 0) {
+    return "0 minutes"; // Trial has ended
+  }
+
+  const minutes = Math.floor(difference / (1000 * 60));
+  const hours = Math.floor(minutes / 60);
+  const days = Math.floor(hours / 24);
+
+  if (days > 0) {
+    return `${days} day${days > 1 ? "s" : ""}`;
+  } else if (hours > 0) {
+    return `${hours} hour${hours > 1 ? "s" : ""}`;
+  } else {
+    return `${minutes} minute${minutes > 1 ? "s" : ""}`;
+  }
+};
+
+export const languageMap: { [key: string]: string } = {
+  english: "en",
+  french: "fr",
+  spanish: "es",
+  german: "de",
+  italian: "it",
+  russian: "ru",
+  portuguese: "pt",
+  chinese: "zh",
+  japanese: "ja",
+  korean: "ko",
+  hindi: "hi",
+  turkish: "tr",
+  polish: "pl",
+  arabic: "ar",
+  dutch: "nl",
+  swedish: "sv",
+  danish: "da",
+  norwegian: "no",
+  finnish: "fi",
+  greek: "el",
+  czech: "cs",
+  hungarian: "hu",
+  romanian: "ro",
+  ukrainian: "uk",
+  vietnamese: "vi",
+  thai: "th",
+  indonesian: "id",
+  malay: "ms",
+  filipino: "tl",
+  swahili: "sw",
+  afrikaans: "af",
+  albanian: "sq",
+  amharic: "am",
+  armenian: "hy",
+  azerbaijani: "az",
+  basque: "eu",
+  belarusian: "be",
+  bengali: "bn",
+  bosnian: "bs",
+  bulgarian: "bg",
+  burmese: "my",
+  catalan: "ca",
+  cebuano: "ceb",
+  corsican: "co",
+  croatian: "hr",
+  esperanto: "eo",
+  estonian: "et",
+  fijian: "fj",
+  frisian: "fy",
+  galician: "gl",
+  georgian: "ka",
+  gujarati: "gu",
+  haitian: "ht",
+  hausa: "ha",
+  hawaiian: "haw",
+  hebrew: "he",
+  hmong: "hmn",
+  icelandic: "is",
+  igbo: "ig",
+  irish: "ga",
+  javanese: "jv",
+  kannada: "kn",
+  kazakh: "kk",
+  khmer: "km",
+  kurdish: "ku",
+  kyrgyz: "ky",
+  lao: "lo",
+  latin: "la",
+  latvian: "lv",
+  lithuanian: "lt",
+  luxembourgish: "lb",
+  macedonian: "mk",
+  malagasy: "mg",
+  malayalam: "ml",
+  maltese: "mt",
+  maori: "mi",
+  marathi: "mr",
+  mongolian: "mn",
+  nepali: "ne",
+  pashto: "ps",
+  persian: "fa",
+  punjabi: "pa",
+  samoan: "sm",
+  scots: "gd",
+  serbian: "sr",
+  sesotho: "st",
+  shona: "sn",
+  sindhi: "sd",
+  sinhala: "si",
+  slovak: "sk",
+  slovenian: "sl",
+  somali: "so",
+  sundanese: "su",
+  tajik: "tg",
+  tamil: "ta",
+  telugu: "te",
+  urdu: "ur",
+  uzbek: "uz",
+  welsh: "cy",
+  xhosa: "xh",
+  yiddish: "yi",
+  yoruba: "yo",
+  zulu: "zu",
 };

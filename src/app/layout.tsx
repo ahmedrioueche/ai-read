@@ -1,7 +1,7 @@
 "use client";
 
-import { AuthProvider } from "@/context/AuthContext";
 import "./globals.css";
+import Providers from "./Providers";
 
 export default function RootLayout({
   children,
@@ -16,7 +16,7 @@ export default function RootLayout({
         <meta name="viewport" content="width=device-width, initial-scale=1" />
       </head>
       <body>
-        <AuthProvider>{children}</AuthProvider>
+        <Providers>{children}</Providers>
       </body>
     </html>
   );

@@ -34,9 +34,39 @@ export const SettingsProvider: React.FC<{ children: React.ReactNode }> = ({
   useEffect(() => {
     // Load settings from localStorage after component mounts
     const savedSettings = localStorage.getItem("settings");
+    let settingsData: Settings;
+
     if (savedSettings) {
-      setSettings(JSON.parse(savedSettings));
+      settingsData = JSON.parse(savedSettings);
+      // Check if any required settings are missing and initialize them
+      if (
+        !settingsData.translationLanguage ||
+        !settingsData.readingSpeed ||
+        !settingsData.bookLanguage ||
+        !settingsData.ttsType ||
+        !settingsData.ttsVoice
+      ) {
+        settingsData = {
+          ...defaultSettings,
+          ...settingsData,
+          translationLanguage: settingsData.translationLanguage || {
+            language: "en",
+            rtl: false,
+          },
+          readingSpeed: settingsData.readingSpeed || "normal",
+          bookLanguage: settingsData.bookLanguage || "en",
+          ttsType: settingsData.ttsType || "basic",
+          ttsVoice: settingsData.ttsVoice || "nPczCjzI2devNBz1zQrb",
+        };
+        localStorage.setItem("settings", JSON.stringify(settingsData));
+      }
+    } else {
+      // If no settings exist, initialize with default settings
+      settingsData = defaultSettings;
+      localStorage.setItem("settings", JSON.stringify(settingsData));
     }
+
+    setSettings(settingsData);
     setIsLoaded(true);
   }, []);
 
@@ -46,7 +76,7 @@ export const SettingsProvider: React.FC<{ children: React.ReactNode }> = ({
   };
 
   if (!isLoaded) {
-    return null; // or a loading spinner
+    return null;
   }
 
   return (

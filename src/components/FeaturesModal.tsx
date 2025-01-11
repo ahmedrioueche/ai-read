@@ -10,12 +10,13 @@ const FeaturesModal: React.FC<{
   onClose: () => void;
 }> = ({ user, isOpen, onClose }) => {
   const router = useRouter();
-  const isPremium = user?.isPremium;
+  const currentPlan = user ? user.plan : "basic";
 
-  const handleClick = (planName: string) => {
-    if (planName === "Premium") {
-      user ? router.push("/payment") : router.push("/login?redirect=/payment");
-    }
+  const handleUpgrade = (plan: string) => {
+    const planRoute = plan.toLowerCase();
+    user.email.trim() !== ""
+      ? router.push(`/payment/${planRoute}`)
+      : router.push(`/login?redirect=/payment/${planRoute}`);
   };
 
   if (!isOpen) return null;
@@ -39,13 +40,26 @@ const FeaturesModal: React.FC<{
           </button>
         </div>
 
-        <div className="grid sm:grid-cols-2 gap-6">
+        {/* Animated Welcome/Notification Section */}
+        <div className="mb-8 text-center">
+          <div className="animate-fade-in">
+            <h3 className="text-2xl font-dancing text-dark-secondary mb-2">
+              Explore Our Plans 🌟
+            </h3>
+            <p className="text-dark-foreground/80">
+              Choose the plan that best suits your needs and unlock amazing
+              features!
+            </p>
+          </div>
+        </div>
+
+        <div className="grid md:grid-cols-3 grid-cols-1 gap-6">
           {plans.map((plan, index) => (
             <div
               key={index}
               className={`bg-dark-background rounded-xl shadow-lg p-4 md:p-6 flex flex-col border-2 
             ${
-              plan.name === "Premium"
+              plan.name === "Pro"
                 ? "border-dark-secondary shadow-dark-secondary/20"
                 : "border-dark-secondary/20"
             }`}
@@ -76,31 +90,27 @@ const FeaturesModal: React.FC<{
                 ))}
               </div>
 
-              {isPremium ? (
-                plan.name === "Premium" ? (
-                  <button
-                    className="w-full py-2 rounded-lg text-sm font-medium bg-dark-secondary/10 text-dark-secondary cursor-auto disabled"
-                    disabled
-                  >
-                    Current Plan
-                  </button>
-                ) : (
-                  <p className="text-center text-sm text-dark-secondary/80">
-                    Free plan is not available for downgrade
-                  </p>
-                )
-              ) : (
+              {/* Simplified Button Logic */}
+              {currentPlan === plan.name.toLowerCase() ? (
                 <button
-                  className={`w-full py-2 rounded-lg text-sm font-medium transition-colors ${
-                    plan.name === "Premium"
-                      ? "bg-dark-secondary text-white hover:bg-dark-secondary/90"
-                      : "bg-dark-secondary/10 text-dark-secondary cursor-auto disabled"
-                  }`}
-                  onClick={() => handleClick(plan.name)}
-                  disabled={plan.name !== "Premium"}
+                  className="w-full py-2 rounded-lg text-sm font-medium bg-dark-secondary/10 text-dark-secondary cursor-auto disabled"
+                  disabled
                 >
-                  {plan.name === "Premium" ? "Upgrade Now" : "Current Plan"}
+                  Current Plan
                 </button>
+              ) : plan.name.toLowerCase() === "pro" ||
+                (plan.name.toLowerCase() !== "pro" &&
+                  plan.name.toLowerCase() === "premium") ? (
+                <button
+                  className="w-full py-2 rounded-lg text-sm font-medium bg-dark-secondary text-white hover:bg-dark-secondary/90 transition-colors"
+                  onClick={() => handleUpgrade(plan.name)}
+                >
+                  Upgrade Now
+                </button>
+              ) : (
+                <p className="text-center text-sm text-dark-secondary/80">
+                  Downgrade not available
+                </p>
               )}
             </div>
           ))}

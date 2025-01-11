@@ -1,12 +1,22 @@
-import { Loader, Settings as SettingsIcon, Type, X } from "lucide-react";
+import {
+  Loader,
+  LucideIcon,
+  Settings as SettingsIcon,
+  Type,
+  X,
+  XCircle,
+} from "lucide-react";
 import React, { useEffect, useState } from "react";
 import CustomSelect from "./ui/CustomSelect";
 import { dict } from "@/utils/dict";
 import { User } from "@prisma/client";
 import VoiceApi from "@/apis/voiceApi";
 import { AiApi } from "@/apis/aiApi";
-import { Settings } from "@/utils/types";
 import { useSettings } from "@/context/SettingsContext";
+import { Settings } from "@/utils/types";
+import { usePlan } from "@/context/PlanContext";
+import Alert from "./ui/Alert";
+import { languageMap } from "@/utils/helper";
 
 // Types
 type BasicVoice = {
@@ -68,13 +78,22 @@ export const SettingsModal: React.FC<SettingsModalProps> = ({
   const [premiumVoices, setPremiumVoices] = useState<Voice[]>([]);
   const [voicesLoading, setVoicesLoading] = useState<boolean>(false);
   const [isPlayLoading, setIsPlayLoading] = useState(false);
+  const [status, setStatus] = useState<{
+    status: string;
+    message: string;
+    bg?: string;
+    icon?: LucideIcon;
+  }>();
+  const [isAlertOpen, setIsAlertOpen] = useState(false);
   const [sampleText, setSampleText] = useState(
     "Welcome to AIRead, the best AI-powered reading platform."
   );
-
   const voiceApi = new VoiceApi();
   const aiApi = new AiApi();
   const text = dict["en"];
+  const { plan, isFreeTrial } = usePlan();
+  const isPremium: boolean =
+    plan === "premium" || plan === "pro" || isFreeTrial;
 
   const isAndroid = /android/i.test(navigator.userAgent);
   const isChrome =
@@ -83,18 +102,23 @@ export const SettingsModal: React.FC<SettingsModalProps> = ({
 
   useEffect(() => {
     if (settings) {
-      setLanguage(settings.translationLanguage?.language || "english");
+      const translationLanguage = settings.translationLanguage;
+      setLanguage(translationLanguage.language || "english");
       setIsTranslation(settings.enableTranslation || false);
-      setIsReading(settings.enableReading || false);
+      setIsReading(settings.enableReading || true);
       setReadingSpeed(settings.readingSpeed || "normal");
       setAppLanguage(settings.appLanguage || "english");
-      setTtsType(settings.ttsType || "basic");
-      setTtsVoice(settings.ttsVoice);
+      setTtsType(isPremium ? settings.ttsType : "basic");
+      setTtsVoice(settings.ttsVoice || "");
       setBookLanguage(settings.bookLanguage || "english");
-      setAutoScroll(settings.enableAutoScrolling || false);
-      setHighlighting(settings.enableHighlighting || false);
+      setAutoScroll(settings.enableAutoScrolling || true);
+      setHighlighting(settings.enableHighlighting || true);
     }
   }, [settings]);
+
+  useEffect(() => {
+    setTtsType(isPremium ? settings.ttsType : "basic");
+  }, [isPremium]);
 
   const fetchBuiltInVoices = () => {
     const voices = window.speechSynthesis.getVoices();
@@ -126,6 +150,15 @@ export const SettingsModal: React.FC<SettingsModalProps> = ({
 
   const fetchPremiumVoices = async () => {
     try {
+      if (
+        premiumVoices &&
+        Array.isArray(premiumVoices) &&
+        premiumVoices.length > 0
+      ) {
+        return;
+      }
+
+      setVoicesLoading(true);
       const response = await voiceApi.getVoices();
       if (response?.voices && Array.isArray(response.voices)) {
         const apiVoices = response.voices.map((voice: any) => ({
@@ -141,8 +174,6 @@ export const SettingsModal: React.FC<SettingsModalProps> = ({
 
   useEffect(() => {
     const fetchVoices = async () => {
-      setVoicesLoading(true);
-
       if (ttsType === "basic") {
         if ("speechSynthesis" in window) {
           fetchBuiltInVoices();
@@ -165,48 +196,37 @@ export const SettingsModal: React.FC<SettingsModalProps> = ({
   }, [ttsType]);
 
   useEffect(() => {
-    if (!voicesLoading) {
-      const currentVoices = ttsType === "basic" ? basicVoices : premiumVoices;
-
-      if (!ttsVoice && currentVoices.length > 0) {
-        let defaultVoice: Voice | undefined;
-
-        if (ttsType === "basic") {
-          // For Android, prefer default voice or language-matched voice
-          if (isAndroid) {
-            const voices = window.speechSynthesis.getVoices();
-            defaultVoice = (basicVoices as BasicVoice[]).find((voice) => {
-              const sysVoice = voices.find((v) => v.name === voice.value);
-              return (
-                sysVoice?.default ||
-                voice.lang.toLowerCase().includes(bookLanguage.toLowerCase())
-              );
-            });
-          } else {
-            defaultVoice = (currentVoices as BasicVoice[]).find((voice) =>
-              voice.lang.toLowerCase().includes(bookLanguage.toLowerCase())
-            );
-          }
-        } else {
-          defaultVoice = currentVoices[0];
-        }
-
-        if (defaultVoice) {
-          setTtsVoice(defaultVoice.value);
-        } else if (currentVoices[0]) {
-          setTtsVoice(currentVoices[0].value);
-        }
+    // Reset ttsVoice when ttsType changes
+    if (ttsType === "basic" && basicVoices.length > 0) {
+      if (settings.ttsType === "basic") {
+        //display the selected voice
+        setTtsVoice(settings.ttsVoice);
+        return;
       }
+
+      const bookLangCode =
+        languageMap[bookLanguage.toLowerCase()] || bookLanguage.toLowerCase();
+
+      // Set the default voice for basic TTS
+      const defaultBasicVoice =
+        basicVoices.find((voice) => {
+          const voiceLang = (voice as BasicVoice).lang.toLowerCase();
+
+          return voiceLang.startsWith(bookLangCode);
+        }) || basicVoices[0];
+
+      setTtsVoice(defaultBasicVoice?.value || "");
+    } else if (ttsType === "premium" && premiumVoices.length > 0) {
+      if (settings.ttsType === "premium") {
+        //display the selected voice
+        setTtsVoice(settings.ttsVoice);
+        return;
+      }
+
+      // Set the default voice for premium TTS
+      setTtsVoice(premiumVoices[0]?.value || "");
     }
-  }, [
-    bookLanguage,
-    basicVoices,
-    premiumVoices,
-    ttsType,
-    voicesLoading,
-    ttsVoice,
-    isAndroid,
-  ]);
+  }, [ttsType, basicVoices, premiumVoices, bookLanguage]);
 
   const playSampleText = async () => {
     setIsPlayLoading(true);
@@ -248,6 +268,16 @@ export const SettingsModal: React.FC<SettingsModalProps> = ({
         };
       } catch (error) {
         console.error("Failed to play sample text using API:", error);
+        setStatus({
+          status: "Error",
+          message: "Failed to get premium TTS",
+          bg: "bg-red-500",
+          icon: XCircle,
+        });
+        setIsAlertOpen(true);
+        setTimeout(() => {
+          setIsAlertOpen(false);
+        }, 5000);
       }
     }
     setIsPlayLoading(false);
@@ -272,13 +302,12 @@ export const SettingsModal: React.FC<SettingsModalProps> = ({
       enableReading: isReading,
       readingSpeed: readingSpeed,
       appLanguage: appLanguage,
-      ttsType: ttsType,
+      ttsType: isPremium ? ttsType : "basic",
       ttsVoice: ttsVoice,
       bookLanguage: bookLanguage,
       enableAutoScrolling: autoScroll,
       enableHighlighting: highlighting,
     };
-
     updateSettings(newSettings);
     onClose();
   };
@@ -354,6 +383,7 @@ export const SettingsModal: React.FC<SettingsModalProps> = ({
                       checked={ttsType === "premium"}
                       onChange={() => setTtsType("premium")}
                       className="sr-only"
+                      disabled={!isPremium}
                     />
                     <span
                       className={`block cursor-pointer absolute inset-0 rounded-full transition-colors duration-300 ${
@@ -378,7 +408,7 @@ export const SettingsModal: React.FC<SettingsModalProps> = ({
                     <input
                       id="tts-built-in-toggle"
                       type="checkbox"
-                      checked={ttsType === "basic"}
+                      checked={ttsType === "basic" || !isPremium}
                       onChange={() => setTtsType("basic")}
                       className="sr-only"
                     />
@@ -596,6 +626,15 @@ export const SettingsModal: React.FC<SettingsModalProps> = ({
             </div>
           </div>
         </div>
+        {isAlertOpen && (
+          <Alert
+            title={status?.status}
+            message={status?.message}
+            bg={status?.bg}
+            icon={status?.icon}
+            onClose={() => setIsAlertOpen(false)}
+          />
+        )}
       </div>
     </div>
   );
