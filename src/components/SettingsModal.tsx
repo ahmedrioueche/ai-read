@@ -270,7 +270,7 @@ export const SettingsModal: React.FC<SettingsModalProps> = ({
         console.error("Failed to play sample text using API:", error);
         setStatus({
           status: "Error",
-          message: "Failed to get premium TTS",
+          message: "Premium TTS is unavailable for the moment",
           bg: "bg-red-500",
           icon: XCircle,
         });
