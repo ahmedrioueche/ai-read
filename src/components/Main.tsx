@@ -19,7 +19,6 @@ import { pageNavigationPlugin } from "@react-pdf-viewer/page-navigation";
 import { BookData } from "@/components/Home";
 import MinimalCard from "./ui/MinimalCard";
 import VoiceApi from "@/apis/voiceApi";
-import { Settings } from "@/utils/types";
 import { useSettings } from "@/context/SettingsContext";
 
 const EXCLUDED_TEXT = [
@@ -30,6 +29,9 @@ const EXCLUDED_TEXT = [
   "explain",
   "stop reading",
 ];
+
+type SetStateAction<T> = T | ((prevState: T) => T);
+type SetHighlightElements = (value: SetStateAction<HTMLElement[]>) => void;
 
 const Main = ({
   book,
@@ -90,6 +92,10 @@ const Main = ({
   let audioQueue: Blob[] = [];
   const [currentTextChunk, setCurrentTextChunk] = useState("");
   const [visibleText, setVisibleText] = useState("");
+  const [activeHighlightElements, setActiveHighlightElements] = useState<
+    HTMLElement[]
+  >([]);
+  const highlightTimeoutRef = useRef<NodeJS.Timeout | null>(null);
 
   useEffect(() => {
     const translationLanguage =
@@ -438,6 +444,125 @@ const Main = ({
     return fullText.slice(originalTextPosition).trim();
   };
 
+  const findRemainingElements = async (
+    fullText: string,
+    elements: HTMLElement[],
+    originalTextPosition: number,
+    setActiveHighlightElements: SetHighlightElements
+  ) => {
+    if (!rootRef.current) return;
+
+    try {
+      const container = rootRef.current.querySelector(".rpv-core__viewer");
+      if (!container) return;
+
+      const textLayers = Array.from(
+        container.querySelectorAll(".rpv-core__text-layer")
+      );
+
+      if (textLayers.length === 0) return;
+
+      const viewportHeight =
+        window.innerHeight || document.documentElement.clientHeight;
+      const viewportWidth =
+        window.innerWidth || document.documentElement.clientWidth;
+      const topOffset = getTopOffset();
+
+      const processChunkAsync = async (startIndex: number): Promise<void> => {
+        return new Promise((resolve) => {
+          const chunkSize = 100;
+          const chunkElements: HTMLElement[] = [];
+          let cumulativeText = "";
+
+          // Process current chunk of text layers
+          for (
+            let i = startIndex;
+            i < Math.min(startIndex + chunkSize, textLayers.length);
+            i++
+          ) {
+            const layer = textLayers[i];
+            const layerRect = layer.getBoundingClientRect();
+
+            // Check if layer is in viewport
+            const isLayerVisible =
+              layerRect.top < viewportHeight &&
+              layerRect.bottom > topOffset &&
+              layerRect.left < viewportWidth &&
+              layerRect.right > 0;
+
+            if (!isLayerVisible) continue;
+
+            const textElements = Array.from(
+              layer.querySelectorAll(".rpv-core__text-layer-text")
+            ) as HTMLElement[];
+
+            const visibleTexts = textElements
+              .map((element) => {
+                const rect = element.getBoundingClientRect();
+                const isVisible =
+                  rect.top < viewportHeight &&
+                  rect.bottom > topOffset &&
+                  rect.left < viewportWidth &&
+                  rect.right > 0;
+                return {
+                  element,
+                  rect,
+                  isVisible,
+                  text: element.textContent || "",
+                };
+              })
+              .filter(({ isVisible }) => isVisible)
+              .sort((a, b) => a.rect.top - b.rect.top);
+
+            for (const { element, text } of visibleTexts) {
+              cumulativeText += text + " ";
+              if (cumulativeText.length >= originalTextPosition) {
+                chunkElements.push(element);
+              }
+            }
+          }
+
+          console.log(
+            `Chunk ${startIndex}: Found ${chunkElements.length} elements. Text position: ${cumulativeText.length}`
+          );
+
+          // Update state with new elements
+          if (chunkElements.length > 0) {
+            setActiveHighlightElements((prev) => {
+              const combined = [...prev, ...chunkElements];
+              return [...new Set(combined)];
+            });
+          }
+
+          // Schedule next chunk or resolve
+          if (startIndex + chunkSize < textLayers.length) {
+            setTimeout(() => {
+              processChunkAsync(startIndex + chunkSize).then(resolve);
+            }, 0);
+          } else {
+            resolve();
+          }
+        });
+      };
+
+      // Start processing chunks
+      await processChunkAsync(0);
+    } catch (error) {
+      console.error("Error in findRemainingElements:", error);
+    }
+  };
+
+  // Debug helper
+  useEffect(() => {
+    if (activeHighlightElements.length > 0) {
+      console.log("Active highlight elements:", {
+        count: activeHighlightElements.length,
+        elements: activeHighlightElements,
+        texts: activeHighlightElements.map((el) => el.textContent),
+      });
+    }
+  }, [activeHighlightElements]);
+
   const delay = (ms: number) =>
     new Promise((resolve) => setTimeout(resolve, ms));
 
@@ -505,7 +630,6 @@ const Main = ({
   };
 
   const playAudio = (audioBlob: Blob) => {
-    console.log("playAudio");
     const audio = new Audio(URL.createObjectURL(audioBlob));
     audio.play();
     setCurrentPremiumAudio(audio);
@@ -517,8 +641,6 @@ const Main = ({
   };
 
   const playNextAudio = () => {
-    console.log("autoReading in playNextAudio", autoReading);
-
     if (audioQueue.length > 0) {
       if (autoReading.isActivated && !autoReading.isReading) {
         setReadingState("reading");
@@ -553,21 +675,44 @@ const Main = ({
     }
   }, [readingState]);
 
+  const startHighlighting = () => {
+    if (enableHighlighting) {
+      setIsHighlighting(true);
+    }
+  };
   const startReading = async () => {
     setReadingState("loading");
     autoReading.isActivated = true;
 
     try {
-      // Fetch text and elements
+      // Fetch initial visible text and elements
       const { text, elements } = await getVisibleText();
+      console.log("Initial elements:", elements);
+
+      // Process and handle initial visible text
       const processedText = preprocessText(text);
       await handleTextToSpeech(processedText);
+      setActiveHighlightElements(elements);
 
-      // Find and process remaining text in parallel
-      const remainingFullText = findRemainingFullText(text, fullText);
+      // Find remaining text
+      const remainingText = findRemainingFullText(text, fullText);
 
-      if (remainingFullText) {
-        const processedRemainingText = preprocessText(remainingFullText);
+      if (remainingText) {
+        // Find the exact position where remaining text starts
+        const originalTextPosition = fullText.indexOf(remainingText);
+        console.log("originalTextPosition", originalTextPosition);
+        // Process remaining elements before handling the remaining text
+        await findRemainingElements(
+          fullText,
+          elements,
+          originalTextPosition,
+          setActiveHighlightElements
+        );
+
+        startHighlighting();
+
+        // Process and speak remaining text
+        const processedRemainingText = preprocessText(remainingText);
         await handleTextToSpeech(processedRemainingText);
       }
     } catch (error) {
@@ -701,7 +846,6 @@ const Main = ({
       setVisibleText(visibleText);
       // Calculate the scroll offset based on visible text length
       const currentVisibleTextLength = visibleText.length;
-      console.log("currentVisibleTextLength", currentVisibleTextLength);
 
       // Calculate the scroll offset dynamically
       const scrollOffset = calculateScrollOffset(
@@ -710,8 +854,6 @@ const Main = ({
         lastScrollOffset,
         readingSpeed
       );
-
-      console.log("current scrollOffset", scrollOffset);
 
       // Update the last visible text length and scroll offset
       lastVisibleTextLength = currentVisibleTextLength;
@@ -763,45 +905,87 @@ const Main = ({
     return scrollOffset;
   };
 
-  const toggleHighlighting = (elements: HTMLElement[], stop = false) => {
-    if (stop) {
-      setIsHighlighting(false);
-
-      // Remove any highlight class from all elements
-      elements.forEach((el) => el.classList.remove("highlighted-text"));
-      return;
+  const handleHighlighting = (elements: HTMLElement[]) => {
+    if (!document.getElementById("highlight-styles")) {
+      // Add CSS styles for smooth transition
+      const style = document.createElement("style");
+      style.id = "highlight-styles";
+      style.textContent = `
+        .highlighted-text {
+          background-color: #f5690b;
+          color: white;
+          border-radius: 3px;
+          transition: background-color 0.3s ease-out, color 0.3s ease-out;
+        }
+      `;
+      document.head.appendChild(style);
     }
 
-    if (!isHighlighting) {
-      setIsHighlighting(true);
-      let currentIndex = 0;
+    let currentIndex = 0;
 
-      const highlightNextElement = () => {
-        if (currentIndex > 0) {
-          elements[currentIndex - 1].classList.remove("highlighted-text");
-        }
+    const highlightNextElement = () => {
+      if (!isHighlighting) {
+        // Stop highlighting if isHighlighting is false
+        return;
+      }
 
-        if (currentIndex < elements.length) {
-          elements[currentIndex].classList.add("highlighted-text");
-          currentIndex++;
-          setTimeout(highlightNextElement, 200);
-        }
-      };
+      if (currentIndex > 0) {
+        // Fade out the previous highlight
+        elements[currentIndex - 1].classList.remove("highlighted-text");
+      }
 
-      if (elements.length > 0) {
-        highlightNextElement();
+      if (currentIndex < elements.length) {
+        // Fade in the next highlight
+        elements[currentIndex].classList.add("highlighted-text");
+        currentIndex++;
+
+        // Adjust the delay based on the length of the text
+        const textLength = elements[currentIndex - 1].textContent?.length || 0;
+        const delay = Math.max(100, textLength * 66 * readingSpeed);
+
+        // Store the timeout ID so we can clear it later
+        highlightTimeoutRef.current = setTimeout(highlightNextElement, delay);
       } else {
+        // Stop highlighting when all elements are processed
         setIsHighlighting(false);
       }
+    };
+
+    if (elements.length > 0 && isHighlighting) {
+      highlightNextElement();
+    } else {
+      setIsHighlighting(false);
     }
   };
 
   const stopHighlighting = () => {
+    setIsHighlighting(false);
+    setActiveHighlightElements([]);
+
+    // Clear the timeout if it exists
+    if (highlightTimeoutRef.current) {
+      clearTimeout(highlightTimeoutRef.current);
+      highlightTimeoutRef.current = null;
+    }
+
+    // Remove any existing highlights
     const elements = Array.from(
       document.querySelectorAll(".rpv-core__text-layer-text")
     ) as HTMLElement[];
-    toggleHighlighting(elements, true);
+    elements.forEach((el) => el.classList.remove("highlighted-text"));
   };
+
+  useEffect(() => {
+    //console.log("activeHighlightElements", activeHighlightElements);
+    if (isHighlighting && readingState === "reading") {
+      handleHighlighting(activeHighlightElements);
+    } else {
+      // Clear any existing highlights when highlighting is turned off
+      activeHighlightElements.forEach((el) =>
+        el.classList.remove("highlighted-text")
+      );
+    }
+  }, [isHighlighting, activeHighlightElements, readingState]);
 
   useEffect(() => {
     if (settings) {

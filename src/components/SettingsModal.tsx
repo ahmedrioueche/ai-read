@@ -70,7 +70,7 @@ export const SettingsModal: React.FC<SettingsModalProps> = ({
   );
   const [appLanguage, setAppLanguage] = useState("english");
   const [ttsType, setTtsType] = useState<"premium" | "basic">("basic");
-  const [ttsVoice, setTtsVoice] = useState<string>("");
+  const [ttsVoice, setTtsVoice] = useState<string>("No Voice selected");
   const [bookLanguage, setBookLanguage] = useState("english");
   const [autoScroll, setAutoScroll] = useState<boolean>(true);
   const [highlighting, setHighlighting] = useState<boolean>(true);
@@ -104,15 +104,15 @@ export const SettingsModal: React.FC<SettingsModalProps> = ({
     if (settings) {
       const translationLanguage = settings.translationLanguage;
       setLanguage(translationLanguage.language || "english");
-      setIsTranslation(settings.enableTranslation || false);
-      setIsReading(settings.enableReading || true);
+      setIsTranslation(settings.enableTranslation);
+      setIsReading(settings.enableReading);
       setReadingSpeed(settings.readingSpeed || "normal");
       setAppLanguage(settings.appLanguage || "english");
       setTtsType(isPremium ? settings.ttsType : "basic");
       setTtsVoice(settings.ttsVoice || "");
       setBookLanguage(settings.bookLanguage || "english");
-      setAutoScroll(settings.enableAutoScrolling || true);
-      setHighlighting(settings.enableHighlighting || true);
+      setAutoScroll(settings.enableAutoScrolling);
+      setHighlighting(settings.enableHighlighting);
     }
   }, [settings]);
 

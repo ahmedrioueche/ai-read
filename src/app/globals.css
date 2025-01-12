@@ -39,11 +39,6 @@ body {
   }
 }
 
-.highlighted-text {
-  background-color: #f59e0b;
-  text-decoration: underline;
-}
-
 /* Hide scrollbar for WebKit-based browsers */
 html::-webkit-scrollbar,
 body::-webkit-scrollbar {
@@ -104,13 +99,4 @@ body {
 }
 .dark-mode canvas {
   filter: invert(1) hue-rotate(180deg);
-}
-
-.highlighted-text {
-  background-color: rgba(255, 255, 0, 0.2);
-  transition: background-color 0.3s ease-in-out;
-}
-.current-chunk-highlight {
-  background-color: rgba(255, 255, 0, 0.4);
-  transition: background-color 0.3s ease-in-out;
 }

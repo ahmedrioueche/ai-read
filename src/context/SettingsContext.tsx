@@ -33,7 +33,6 @@ export const SettingsProvider: React.FC<{ children: React.ReactNode }> = ({
 
   useEffect(() => {
     // Load settings from localStorage after component mounts
-    localStorage.clear();
     const savedSettings = localStorage.getItem("settings");
     let settingsData: Settings;
 
@@ -57,7 +56,7 @@ export const SettingsProvider: React.FC<{ children: React.ReactNode }> = ({
           readingSpeed: settingsData.readingSpeed || "normal",
           bookLanguage: settingsData.bookLanguage || "en",
           ttsType: settingsData.ttsType || "basic",
-          ttsVoice: settingsData.ttsVoice || "nPczCjzI2devNBz1zQrb",
+          ttsVoice: settingsData.ttsVoice,
         };
         localStorage.setItem("settings", JSON.stringify(settingsData));
       }

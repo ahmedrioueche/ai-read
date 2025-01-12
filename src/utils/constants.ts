@@ -7,7 +7,7 @@ export const plans = [
     features: [
       "Access to reading with basic text-to-speech functionality",
       "Translation, summarization, and explanation features",
-      "Auto-scrolling for effortless reading",
+      "Auto-scrolling and text highlighting",
       "Limited book storage capacity",
     ],
   },
@@ -18,7 +18,6 @@ export const plans = [
       "All Basic features",
       "Enhanced reading experience with premium text-to-speech",
       "Data synchronization across multiple devices",
-      "Text highlighting with customizable colors",
       "10 book storage capacity",
     ],
   },

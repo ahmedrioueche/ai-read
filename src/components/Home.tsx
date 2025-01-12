@@ -1,6 +1,6 @@
 "use client";
 
-import React, { useEffect, useState } from "react";
+import React, { lazy, Suspense, useEffect, useState } from "react";
 import Main from "../components/Main";
 import Landing from "@/components/Landing";
 import Navbar from "@/components/Navbar";
@@ -12,10 +12,12 @@ import {
 } from "@/utils/indexedDb";
 import BookList from "@/components/BookList";
 import { useAuth } from "@/context/AuthContext";
-import FreeTrialModal from "./FreeTrialModal";
 import { usePlan } from "@/context/PlanContext";
 import { useVisitor } from "@/context/VisitorContext";
 import { UserApi } from "@/apis/userApi";
+import LoadingPage from "./ui/LoadingPage";
+
+const FreeTrialModal = lazy(() => import("./FreeTrialModal"));
 
 export interface BookData {
   id: string;
@@ -268,20 +270,23 @@ const Home: React.FC = () => {
             books={books}
             currentBookId={currentBookId}
             onBookSelect={async (book) => {
-              await updateBookAccess(book.id); // Update lastAccessed when selecting a book
+              await updateBookAccess(book.id);
               setPdfFileUrl(book.fileUrl);
               setCurrentBookId(book.id);
             }}
           />
         )}
       </div>
-      <FreeTrialModal
-        user={user}
-        isOpen={isFreeTrialModalOpen}
-        onClose={() => setIsFreeTrialModalOpen(false)}
-        isTrialActive={isFreeTrialActive}
-        trialEndDate={freeTrialEndDate!}
-      />
+      <Suspense fallback={<LoadingPage />}>
+        <FreeTrialModal
+          user={user}
+          isOpen={isFreeTrialModalOpen}
+          onClose={() => setIsFreeTrialModalOpen(false)}
+          isTrialActive={isFreeTrialActive}
+          trialEndDate={freeTrialEndDate!}
+        />
+      </Suspense>
+
       {!currentBook && <Footer />}
     </div>
   );
