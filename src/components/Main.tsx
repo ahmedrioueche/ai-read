@@ -1,13 +1,12 @@
 "use client";
 import { preprocessText } from "@/utils/helper";
-import { Viewer, Worker } from "@react-pdf-viewer/core";
+import { Viewer, Worker, SpecialZoomLevel } from "@react-pdf-viewer/core";
 import "@react-pdf-viewer/core/lib/styles/index.css";
-import { defaultLayoutPlugin } from "@react-pdf-viewer/default-layout";
-import "@react-pdf-viewer/default-layout/lib/styles/index.css";
+import { zoomPlugin } from "@react-pdf-viewer/zoom"; // Import the zoom plugin
+import "@react-pdf-viewer/zoom/lib/styles/index.css"; // Import zoom plugin styles
 import { useState, useEffect, useRef } from "react";
 import TextCard from "./ui/TextCard";
 import OptionsMenu from "./ui/OptionsMenu";
-import { pageNavigationPlugin } from "@react-pdf-viewer/page-navigation";
 import { BookData } from "@/components/Home";
 import MinimalCard from "./ui/MinimalCard";
 import { useSettings } from "@/context/SettingsContext";
@@ -36,8 +35,6 @@ const Main = ({
   const translationLanguageData = settings.translationLanguage;
   const viewerRef = useRef<any>(null);
   const [lastPage, setLastPage] = useState<number>();
-  const pageNavigationPluginInstance = pageNavigationPlugin();
-  const defaultLayoutPluginInstance = defaultLayoutPlugin();
   const bookUrl = book?.fileUrl;
   const [scrollY, setScrollY] = useState(0);
   const [isHighlighting, setIsHighlighting] = useState(false);
@@ -51,6 +48,17 @@ const Main = ({
     HTMLElement[]
   >([]);
   const [isDarkMode, setIsDarkMode] = useState(false);
+  const [zoomLevel, setZoomLevel] = useState<number | SpecialZoomLevel>(
+    SpecialZoomLevel.ActualSize
+  );
+  const [currentPage, setCurrentPage] = useState<number>(1);
+  const [totalPages, setTotalPages] = useState<number>(0);
+  const [isControlsVisible, setIsControlsVisible] = useState(false); // State for controls visibility
+
+  // Create the zoom plugin instance
+  const zoomPluginInstance = zoomPlugin();
+  const { zoomTo } = zoomPluginInstance;
+
   const {
     selectedText,
     fullText,
@@ -124,6 +132,7 @@ const Main = ({
 
   const handlePageChange = (e: any) => {
     const newPage = e.currentPage;
+    setCurrentPage(newPage);
     onLastPageChange(parseInt(newPage, 10));
   };
 
@@ -222,7 +231,6 @@ const Main = ({
   };
 
   useEffect(() => {
-    //console.log("activeHighlightElements", activeHighlightElements);
     if (isHighlighting && readingState === "reading") {
       handleHighlighting(activeHighlightElements);
     } else {
@@ -279,6 +287,36 @@ const Main = ({
     };
   }, []);
 
+  // Custom zoom and page controls
+  const handleZoomIn = () => {
+    const newZoomLevel =
+      typeof zoomLevel === "number" ? zoomLevel + 0.25 : 1.25;
+    zoomTo(newZoomLevel); // Use the zoomTo method from the zoom plugin
+    setZoomLevel(newZoomLevel);
+  };
+
+  const handleZoomOut = () => {
+    const newZoomLevel =
+      typeof zoomLevel === "number" ? zoomLevel - 0.25 : 0.75;
+    zoomTo(newZoomLevel); // Use the zoomTo method from the zoom plugin
+    setZoomLevel(newZoomLevel);
+  };
+
+  const handleZoomChange = (newZoom: number | SpecialZoomLevel) => {
+    zoomTo(newZoom); // Use the zoomTo method from the zoom plugin
+    setZoomLevel(newZoom);
+  };
+
+  const handlePageInputChange = (e: React.ChangeEvent<HTMLInputElement>) => {
+    const pageNumber = parseInt(e.target.value, 10);
+    if (!isNaN(pageNumber) && pageNumber >= 1 && pageNumber <= totalPages) {
+      setCurrentPage(pageNumber);
+      if (viewerRef.current) {
+        viewerRef.current.jumpToPage(pageNumber);
+      }
+    }
+  };
+
   return (
     <div
       ref={rootRef}
@@ -287,13 +325,66 @@ const Main = ({
       }`}
       style={{ touchAction: "none" }}
     >
+      {/* Custom Zoom and Page Controls */}
+      <div
+        className={`fixed top-4 left-4 z-50 flex items-center space-x-4 bg-white/90 backdrop-blur-sm p-2 rounded-lg shadow-lg transition-opacity duration-300 ${
+          isControlsVisible ? "opacity-100" : "opacity-0"
+        } hover:opacity-100`}
+        onMouseEnter={() => setIsControlsVisible(true)}
+        onMouseLeave={() => setIsControlsVisible(false)}
+        onClick={() => setIsControlsVisible(!isControlsVisible)} // Toggle visibility on mobile
+      >
+        <button
+          onClick={handleZoomOut}
+          className="p-2 bg-gray-200 rounded-full hover:bg-gray-300 transition-colors"
+        >
+          -
+        </button>
+        <select
+          value={zoomLevel}
+          onChange={(e) =>
+            handleZoomChange(
+              parseFloat(e.target.value) as unknown as SpecialZoomLevel
+            )
+          }
+          className="p-2 bg-gray-200 rounded-lg"
+        >
+          <option value={SpecialZoomLevel.ActualSize}>100%</option>
+          <option value={SpecialZoomLevel.PageFit}>Fit Page</option>
+          <option value={SpecialZoomLevel.PageWidth}>Fit Width</option>
+          <option value={1.5}>150%</option>
+          <option value={2}>200%</option>
+          <option value={3}>300%</option>
+          <option value={4}>400%</option>
+        </select>
+        <button
+          onClick={handleZoomIn}
+          className="p-2 bg-gray-200 rounded-full hover:bg-gray-300 transition-colors"
+        >
+          +
+        </button>
+        <div className="flex items-center space-x-2">
+          <input
+            type="number"
+            value={currentPage}
+            onChange={handlePageInputChange}
+            min={1}
+            max={totalPages}
+            className="w-16 p-2 bg-gray-200 rounded-lg text-center"
+          />
+          <span>/ {totalPages}</span>
+        </div>
+      </div>
+
       <Worker workerUrl="https://cdnjs.cloudflare.com/ajax/libs/pdf.js/3.11.174/pdf.worker.min.js">
         <Viewer
           fileUrl={bookUrl}
-          plugins={[defaultLayoutPluginInstance]}
           initialPage={lastPage}
           onPageChange={handlePageChange}
+          onDocumentLoad={(e) => setTotalPages(e.doc.numPages)}
           ref={viewerRef}
+          defaultScale={zoomLevel}
+          plugins={[zoomPluginInstance]}
         />
       </Worker>
 
@@ -305,6 +396,7 @@ const Main = ({
         startReading={startReading}
         readingState={readingState}
         isDarkMode={isDarkMode}
+        isFullScreen={isFullScreen}
       />
 
       {translation &&

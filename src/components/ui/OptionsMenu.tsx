@@ -9,6 +9,7 @@ const OptionsMenu: React.FC<{
   startReading: () => void;
   readingState: "loading" | "reading" | "off";
   isDarkMode: boolean;
+  isFullScreen: boolean;
 }> = ({
   selectedText,
   getExplanation,
@@ -17,6 +18,7 @@ const OptionsMenu: React.FC<{
   startReading,
   readingState,
   isDarkMode,
+  isFullScreen,
 }) => {
   const [isExpanded, setIsExpanded] = useState(false);
   const [isStartReadingClicked, setIsStartReadingClicked] = useState(false);
@@ -30,7 +32,7 @@ const OptionsMenu: React.FC<{
   return (
     <div
       className={`fixed ${
-        isDarkMode ? "bottom-20" : "bottom-8"
+        isDarkMode ? (isFullScreen ? "bottom-6" : "bottom-20") : "bottom-6"
       } right-6 z-20 group`}
       onMouseEnter={() => setIsExpanded(true)}
       onMouseLeave={() => setIsExpanded(false)}
