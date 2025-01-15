@@ -13,13 +13,15 @@ interface VoiceSettings {
 export default class VoiceApi {
   private apiKeys: string[];
   private apiUrl: string;
-  private static workingApiKey: string | null = null; // Static variable to persist the working key
+  private static workingApiKey: string | null = null;
 
   constructor() {
-    // Define the API keys from environment variables
     this.apiKeys = [
-      process.env.NEXT_PUBLIC_ELEVENLABS_KEY_8 || "",
       process.env.NEXT_PUBLIC_ELEVENLABS_KEY_9 || "",
+      process.env.NEXT_PUBLIC_ELEVENLABS_KEY_10 || "",
+      process.env.NEXT_PUBLIC_ELEVENLABS_KEY_11 || "",
+      process.env.NEXT_PUBLIC_ELEVENLABS_KEY_12 || "",
+      process.env.NEXT_PUBLIC_ELEVENLABS_KEY_13 || "",
     ];
 
     this.apiUrl = "https://api.elevenlabs.io/v1";

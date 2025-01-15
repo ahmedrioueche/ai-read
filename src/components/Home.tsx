@@ -33,7 +33,6 @@ const Home: React.FC = () => {
   const [isSettingsModalOpen, setIsSettingModalOpen] = useState(false);
   const [currentBookId, setCurrentBookId] = useState<string | null>(null);
   const [isFullScreen, setIsFullScreen] = useState(false);
-  const [bookLanguage, setBookLanguage] = useState("");
   const BOOK_LIMIT = 5;
   const { user } = useAuth();
   const userApi = new UserApi();
@@ -243,7 +242,6 @@ const Home: React.FC = () => {
         onToggleFullScreen={(isFullScreen) => {
           setIsFullScreen(isFullScreen);
         }}
-        bookLanguage={bookLanguage}
         onFreeTrialClick={() => setIsFreeTrialModalOpen(true)}
       />
       <div
@@ -261,7 +259,6 @@ const Home: React.FC = () => {
               }}
               isSettingsModalOpen={isSettingsModalOpen}
               isFullScreen={isFullScreen}
-              onBookLanguage={(bookLanguage) => setBookLanguage(bookLanguage)}
             />
           )
         )}

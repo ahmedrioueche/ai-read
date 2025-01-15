@@ -10,6 +10,7 @@ type SettingsContextType = {
 
 const defaultSettings: Settings = {
   translationLanguage: { language: "en", rtl: false },
+  theme: "light",
   enableTranslation: false,
   enableReading: false,
   readingSpeed: "normal",

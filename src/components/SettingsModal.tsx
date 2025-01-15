@@ -55,6 +55,11 @@ const languages = [
   { value: "polish", label: "Polish", rtl: false },
 ];
 
+const themes = [
+  { value: "light", label: "Light" },
+  { value: "dark", label: "Dark" },
+];
+
 export const SettingsModal: React.FC<SettingsModalProps> = ({
   user,
   isOpen,
@@ -62,12 +67,13 @@ export const SettingsModal: React.FC<SettingsModalProps> = ({
 }) => {
   const { settings, updateSettings } = useSettings();
   const [loading, setLoading] = useState(false);
-  const [language, setLanguage] = useState("english");
+  const [language, setTranslationLanguage] = useState("english");
   const [isReading, setIsReading] = useState<boolean>(true);
   const [isTranslation, setIsTranslation] = useState<boolean>(false);
   const [readingSpeed, setReadingSpeed] = useState<"slow" | "normal" | "fast">(
     "normal"
   );
+  const [currentTheme, setCurrentTheme] = useState<"light" | "dark">("light");
   const [appLanguage, setAppLanguage] = useState("english");
   const [ttsType, setTtsType] = useState<"premium" | "basic">("basic");
   const [ttsVoice, setTtsVoice] = useState<string>("No Voice selected");
@@ -103,7 +109,8 @@ export const SettingsModal: React.FC<SettingsModalProps> = ({
   useEffect(() => {
     if (settings) {
       const translationLanguage = settings.translationLanguage;
-      setLanguage(translationLanguage.language || "english");
+      setTranslationLanguage(translationLanguage.language || "english");
+      setCurrentTheme(settings.theme || "light");
       setIsTranslation(settings.enableTranslation);
       setIsReading(settings.enableReading);
       setReadingSpeed(settings.readingSpeed || "normal");
@@ -299,6 +306,7 @@ export const SettingsModal: React.FC<SettingsModalProps> = ({
         rtl: selectedLanguage?.rtl!,
       },
       enableTranslation: isTranslation,
+      theme: currentTheme,
       enableReading: isReading,
       readingSpeed: readingSpeed,
       appLanguage: appLanguage,
@@ -324,6 +332,12 @@ export const SettingsModal: React.FC<SettingsModalProps> = ({
           }
         })
       : premiumVoices;
+
+  const handleThemeChange = (value: string) => {
+    if (value === "light" || value === "dark") {
+      setCurrentTheme(value);
+    }
+  };
 
   return (
     <div
@@ -351,10 +365,10 @@ export const SettingsModal: React.FC<SettingsModalProps> = ({
           <div className="flex flex-col -mt-4 md:mt-0">
             <div className="flex flex-col">
               <CustomSelect
-                label="App Language"
-                options={languages}
-                selectedOption={appLanguage}
-                onChange={setAppLanguage}
+                label="Book Theme"
+                options={themes}
+                selectedOption={currentTheme}
+                onChange={handleThemeChange}
               />
             </div>
 
@@ -473,7 +487,7 @@ export const SettingsModal: React.FC<SettingsModalProps> = ({
                 label={text.General.translation_language}
                 options={languages}
                 selectedOption={language}
-                onChange={setLanguage}
+                onChange={setTranslationLanguage}
               />
             </div>
             <div className="flex flex-row justify-between space-x-2">

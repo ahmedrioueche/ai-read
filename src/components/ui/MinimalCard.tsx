@@ -5,12 +5,14 @@ interface MinimalCardProps {
   text: string;
   onClose: () => void;
   viewerRef: React.RefObject<HTMLDivElement>;
+  isDarkMode: boolean; // Add isDarkMode prop
 }
 
 const MinimalCard: React.FC<MinimalCardProps> = ({
   text,
   onClose,
   viewerRef,
+  isDarkMode, // Destructure isDarkMode
 }) => {
   const [isExiting, setIsExiting] = useState(false);
 
@@ -65,6 +67,9 @@ const MinimalCard: React.FC<MinimalCardProps> = ({
         ${
           isExiting ? "opacity-0 translate-y-full" : "opacity-100 translate-y-0"
         }
+        ${
+          isDarkMode ? "filter invert hue-rotate-180" : ""
+        } // Flip colors in dark mode
       `}
       style={{
         // Additional styles to ensure it's above system UI

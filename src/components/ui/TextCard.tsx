@@ -6,6 +6,7 @@ interface TextCardProps {
   type: "translation" | "explanation" | "summary";
   languageData: { language: string; rtl: boolean };
   onClose: () => void;
+  isDarkMode: boolean; // Add isDarkMode prop
 }
 
 const TextCard: React.FC<TextCardProps> = ({
@@ -13,11 +14,12 @@ const TextCard: React.FC<TextCardProps> = ({
   type,
   languageData,
   onClose,
+  isDarkMode, // Destructure isDarkMode
 }) => {
   // Define styling variations with orange theme
   const typeStyles = {
     translation: {
-      bgColor: "bg-dark-background",
+      bgColor: "bg-dark-background", // Dark background
       borderColor: "border-dark-accent", // Main orange
       iconBg: "bg-dark-secondary/10",
       iconColor: "text-dark-secondary",
@@ -26,7 +28,7 @@ const TextCard: React.FC<TextCardProps> = ({
       title: "Translation",
     },
     explanation: {
-      bgColor: "bg-dark-background",
+      bgColor: "bg-dark-background", // Dark background
       borderColor: "border-dark-secondary/75", // Slightly lighter orange
       iconBg: "bg-dark-secondary/8",
       iconColor: "text-dark-secondary/75",
@@ -35,7 +37,7 @@ const TextCard: React.FC<TextCardProps> = ({
       title: "Explanation",
     },
     summary: {
-      bgColor: "bg-dark-background",
+      bgColor: "bg-dark-background", // Dark background
       borderColor: "border-light-secondary", // Even lighter orange
       iconBg: "bg-dark-secondary/6",
       iconColor: "text-dark-secondary/60",
@@ -45,6 +47,7 @@ const TextCard: React.FC<TextCardProps> = ({
     },
   };
 
+  // Use the style for the given type
   const { bgColor, borderColor, iconBg, iconColor, headerBg, icon, title } =
     typeStyles[type];
 
@@ -71,6 +74,9 @@ const TextCard: React.FC<TextCardProps> = ({
         max-h-[80vh]
         overflow-y-auto
         animate-fade-in
+        ${
+          isDarkMode ? "filter invert hue-rotate-180" : ""
+        } // Flip colors in dark mode
       `}
     >
       {/* Header */}
@@ -99,7 +105,11 @@ const TextCard: React.FC<TextCardProps> = ({
           >
             {icon}
           </div>
-          <h2 className="text-lg font-semibold text-dark-foreground">
+          <h2
+            className={`text-lg font-semibold ${
+              isDarkMode ? "text-dark-foreground" : "text-dark-foreground"
+            }`}
+          >
             {title}
           </h2>
         </div>
@@ -107,13 +117,19 @@ const TextCard: React.FC<TextCardProps> = ({
         <button
           className={`
             ${rtl ? "ml-2" : "mr-2"}
-            text-dark-foreground/60
+            ${
+              isDarkMode ? "text-dark-foreground/60" : "text-dark-foreground/60"
+            }
             hover:${borderColor}
             transition
             duration-200
             rounded-full
             p-1
-            hover:bg-dark-secondary/10
+            ${
+              isDarkMode
+                ? "hover:bg-dark-secondary/10"
+                : "hover:bg-dark-secondary/10"
+            }
           `}
           onClick={onClose}
           aria-label="Close"
@@ -126,7 +142,7 @@ const TextCard: React.FC<TextCardProps> = ({
       <div
         className={`
           p-6
-          text-dark-foreground
+          ${isDarkMode ? "text-dark-foreground" : "text-dark-foreground"}
           ${languageData.rtl ? "text-right" : "text-left"}
         `}
       >

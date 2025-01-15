@@ -8,6 +8,7 @@ const OptionsMenu: React.FC<{
   stopReading: () => void;
   startReading: () => void;
   readingState: "loading" | "reading" | "off";
+  isDarkMode: boolean;
 }> = ({
   selectedText,
   getExplanation,
@@ -15,6 +16,7 @@ const OptionsMenu: React.FC<{
   stopReading,
   startReading,
   readingState,
+  isDarkMode,
 }) => {
   const [isExpanded, setIsExpanded] = useState(false);
   const [isStartReadingClicked, setIsStartReadingClicked] = useState(false);
@@ -27,15 +29,22 @@ const OptionsMenu: React.FC<{
 
   return (
     <div
-      className="fixed bottom-6 right-6 z-20 group"
+      className={`fixed ${
+        isDarkMode ? "bottom-20" : "bottom-8"
+      } right-6 z-20 group`}
       onMouseEnter={() => setIsExpanded(true)}
       onMouseLeave={() => setIsExpanded(false)}
     >
       <div
         className={`
           absolute right-0 -bottom-4
-          bg-white/90 backdrop-blur-sm 
-          border border-gray-200 shadow-lg 
+          ${
+            isDarkMode
+              ? "bg-gray-900/90 border-gray-700 filter invert hue-rotate-180"
+              : "bg-white/90 border-gray-200"
+          }
+          backdrop-blur-sm 
+          border shadow-lg 
           flex flex-col items-start 
           transition-all duration-300 ease-in-out
           ${isExpanded ? "w-40 p-2 rounded-lg" : "w-12 p-1.5 rounded-full"}
@@ -49,7 +58,11 @@ const OptionsMenu: React.FC<{
             <div
               className={`
               cursor-pointer px-2 py-1 rounded-full 
-              hover:bg-gray-100 transition-all
+              ${
+                isDarkMode
+                  ? "hover:bg-gray-700 text-gray-100"
+                  : "hover:bg-gray-100 text-gray-700"
+              } transition-all
               flex items-center w-full
             `}
               onClick={() => {
@@ -57,9 +70,15 @@ const OptionsMenu: React.FC<{
                 setIsExpanded(false);
               }}
             >
-              <Info className="w-5 h-5 text-gray-700" />
+              <Info className="w-5 h-5" />
               {isExpanded && (
-                <span className="ml-2 text-xs text-gray-700">Explain</span>
+                <span
+                  className={`ml-2 text-xs ${
+                    isDarkMode ? "text-gray-100" : "text-gray-700"
+                  }`}
+                >
+                  Explain
+                </span>
               )}
             </div>
           )}
@@ -69,7 +88,11 @@ const OptionsMenu: React.FC<{
             <div
               className={`
                 cursor-pointer px-2 py-1 rounded-full 
-                hover:bg-gray-100 transition-all
+                ${
+                  isDarkMode
+                    ? "hover:bg-gray-700 text-gray-100"
+                    : "hover:bg-gray-100 text-gray-700"
+                } transition-all
                 flex items-center w-full
               `}
               onClick={() => {
@@ -77,9 +100,15 @@ const OptionsMenu: React.FC<{
                 setIsExpanded(false);
               }}
             >
-              <FileText className="w-5 h-5 text-gray-700" />
+              <FileText className="w-5 h-5" />
               {isExpanded && (
-                <span className="ml-2 text-xs text-gray-700">Summarize</span>
+                <span
+                  className={`ml-2 text-xs ${
+                    isDarkMode ? "text-gray-100" : "text-gray-700"
+                  }`}
+                >
+                  Summarize
+                </span>
               )}
             </div>
           )}
@@ -88,7 +117,11 @@ const OptionsMenu: React.FC<{
             <div
               className={`
                 cursor-pointer px-2 py-1 rounded-full 
-                hover:bg-gray-100 transition-all
+                ${
+                  isDarkMode
+                    ? "hover:bg-gray-700 text-gray-100"
+                    : "hover:bg-gray-100 text-gray-700"
+                } transition-all
                 flex items-center w-full
               `}
               onClick={() => {
@@ -98,7 +131,7 @@ const OptionsMenu: React.FC<{
             >
               <StopCircle className="w-5 h-5 text-red-500" />
               {isExpanded && (
-                <span className="ml-2 text-xs text-red-600">Stop Reading</span>
+                <span className="ml-2 text-xs text-red-500">Stop Reading</span>
               )}
             </div>
           )}
@@ -106,9 +139,17 @@ const OptionsMenu: React.FC<{
             <div
               className={`
                 cursor-pointer px-2 py-1 rounded-full 
-                hover:bg-gray-100 transition-all
+                ${
+                  isDarkMode
+                    ? "hover:bg-gray-700 text-gray-100"
+                    : "hover:bg-gray-100 text-gray-700"
+                } transition-all
                 flex items-center w-full ${
-                  isStartReadingClicked ? "bg-gray-200" : ""
+                  isStartReadingClicked
+                    ? isDarkMode
+                      ? "bg-gray-700"
+                      : "bg-gray-200"
+                    : ""
                 }
               `}
               onClick={() => {
@@ -117,9 +158,17 @@ const OptionsMenu: React.FC<{
                 startReading();
               }}
             >
-              <StopCircle className="w-5 h-5 text-green-500" />
+              <StopCircle
+                className={`w-5 h-5 ${
+                  isDarkMode ? "text-green-400" : "text-green-500"
+                }`}
+              />
               {isExpanded && (
-                <span className="ml-2 text-xs text-green-600">
+                <span
+                  className={`ml-2 text-xs ${
+                    isDarkMode ? "text-green-400" : "text-green-600"
+                  }`}
+                >
                   Start Reading
                 </span>
               )}
@@ -129,13 +178,27 @@ const OptionsMenu: React.FC<{
             <div
               className={`
                 cursor-pointer px-2 py-1 rounded-full 
-                hover:bg-gray-100 transition-all
+                ${
+                  isDarkMode
+                    ? "hover:bg-gray-700 text-gray-100"
+                    : "hover:bg-gray-100 text-gray-700"
+                } transition-all
                 flex items-center w-full
               `}
             >
-              <Loader className="w-5 h-5 text-blue-500 animate-spin" />
+              <Loader
+                className={`w-5 h-5 ${
+                  isDarkMode ? "text-blue-400" : "text-blue-500"
+                } animate-spin`}
+              />
               {isExpanded && (
-                <span className="ml-2 text-xs text-blue-600">Loading....</span>
+                <span
+                  className={`ml-2 text-xs ${
+                    isDarkMode ? "text-blue-400" : "text-blue-600"
+                  }`}
+                >
+                  Loading....
+                </span>
               )}
             </div>
           )}

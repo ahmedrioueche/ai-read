@@ -28,13 +28,11 @@ const Navbar: React.FC<{
   onUpload: (e: React.ChangeEvent<HTMLInputElement>) => void;
   onToggleSettingsModal: (isSettingModalOpen: boolean) => void;
   onToggleFullScreen: (isFullScreen: boolean) => void;
-  bookLanguage: string;
   onFreeTrialClick: () => void;
 }> = ({
   onUpload,
   onToggleSettingsModal,
   onToggleFullScreen,
-  bookLanguage,
   onFreeTrialClick,
 }) => {
   const [isSettingModalOpen, setIsSettingModalOpen] = useState(false);

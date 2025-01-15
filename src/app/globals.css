@@ -92,11 +92,7 @@ body {
   background-color: #fff;
 }
 
-/* dark-mode.css */
-.dark-mode {
+.dark-mode-pdf {
   filter: invert(1) hue-rotate(180deg);
-  background-color: #121212;
-}
-.dark-mode canvas {
-  filter: invert(1) hue-rotate(180deg);
+  background-color: black;
 }

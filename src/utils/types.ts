@@ -4,6 +4,7 @@ export interface Settings {
     language: string;
     rtl: boolean;
   };
+  theme: "light" | "dark";
   bookLanguage: string;
   enableTranslation: boolean;
   enableReading: boolean;
