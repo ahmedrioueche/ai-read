@@ -15,6 +15,7 @@ import useReading from "@/hooks/useReading";
 import useScrolling from "@/hooks/useScrolling";
 import useHighlighting from "@/hooks/useHighlighting";
 import useTextProcessing from "@/hooks/useTextProcessing";
+import { ZoomIn, ZoomOut } from "lucide-react";
 
 const Main = ({
   book,
@@ -327,18 +328,28 @@ const Main = ({
     >
       {/* Custom Zoom and Page Controls */}
       <div
-        className={`fixed top-4 left-4 z-50 flex items-center space-x-4 bg-white/90 backdrop-blur-sm p-2 rounded-lg shadow-lg transition-opacity duration-300 ${
+        className={`fixed ${
+          isDarkMode ? "top-4" : "top-16"
+        } left-4 z-50 flex items-center space-x-4 ${
+          isDarkMode
+            ? "bg-black/90 text-white filter invert hue-rotate-180"
+            : "bg-white/90 text-black"
+        } backdrop-blur-sm p-2 rounded-lg shadow-lg transition-opacity duration-300 ${
           isControlsVisible ? "opacity-100" : "opacity-0"
         } hover:opacity-100`}
         onMouseEnter={() => setIsControlsVisible(true)}
         onMouseLeave={() => setIsControlsVisible(false)}
-        onClick={() => setIsControlsVisible(!isControlsVisible)} // Toggle visibility on mobile
+        onClick={() => setIsControlsVisible(!isControlsVisible)}
       >
         <button
           onClick={handleZoomOut}
-          className="p-2 bg-gray-200 rounded-full hover:bg-gray-300 transition-colors"
+          className={`p-2 ${
+            isDarkMode
+              ? "bg-gray-700 hover:bg-gray-600 filter invert hue-rotate-180"
+              : "bg-gray-200 hover:bg-gray-300"
+          } rounded-full transition-colors`}
         >
-          -
+          <ZoomOut size={16} />
         </button>
         <select
           value={zoomLevel}
@@ -347,7 +358,11 @@ const Main = ({
               parseFloat(e.target.value) as unknown as SpecialZoomLevel
             )
           }
-          className="p-2 bg-gray-200 rounded-lg"
+          className={`p-2 ${
+            isDarkMode
+              ? "bg-gray-700 text-white filter invert hue-rotate-180"
+              : "bg-gray-200 text-black"
+          } rounded-lg`}
         >
           <option value={SpecialZoomLevel.ActualSize}>100%</option>
           <option value={SpecialZoomLevel.PageFit}>Fit Page</option>
@@ -359,9 +374,13 @@ const Main = ({
         </select>
         <button
           onClick={handleZoomIn}
-          className="p-2 bg-gray-200 rounded-full hover:bg-gray-300 transition-colors"
+          className={`p-2 ${
+            isDarkMode
+              ? "bg-gray-700 hover:bg-gray-600"
+              : "bg-gray-200 hover:bg-gray-300"
+          } rounded-full transition-colors`}
         >
-          +
+          <ZoomIn size={16} />
         </button>
         <div className="flex items-center space-x-2">
           <input
@@ -370,9 +389,13 @@ const Main = ({
             onChange={handlePageInputChange}
             min={1}
             max={totalPages}
-            className="w-16 p-2 bg-gray-200 rounded-lg text-center"
+            className={`w-12 p-2 ${
+              isDarkMode ? "bg-gray-700 text-white" : "bg-gray-200 text-black"
+            } rounded-lg text-center`}
           />
-          <span>/ {totalPages}</span>
+          <span className={isDarkMode ? "text-white" : "text-black"}>
+            / {totalPages}
+          </span>
         </div>
       </div>
 

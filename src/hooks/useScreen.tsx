@@ -3,6 +3,7 @@ import { useState, useEffect } from "react";
 const useScreen = () => {
   const [isSmallScreen, setIsSmallScreen] = useState(false);
   const [isMidScreen, setIsMidScreen] = useState(false);
+  const [isMobile, setIsMobile] = useState(false);
 
   useEffect(() => {
     const smallScreenQuery = window.matchMedia("(max-width: 768px)");
@@ -13,6 +14,7 @@ const useScreen = () => {
     const handleResize = () => {
       setIsSmallScreen(smallScreenQuery.matches);
       setIsMidScreen(midScreenQuery.matches);
+      setIsMobile(smallScreenQuery.matches); // Same breakpoint as small screen
     };
 
     // Set the initial screen size
@@ -29,7 +31,7 @@ const useScreen = () => {
     };
   }, []);
 
-  return { isSmallScreen, isMidScreen };
+  return { isSmallScreen, isMidScreen, isMobile };
 };
 
 export default useScreen;

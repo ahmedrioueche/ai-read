@@ -10,7 +10,6 @@ import {
   getBooksFromIndexedDB,
   deleteOldestBookFromIndexedDB,
 } from "@/utils/indexedDb";
-import BookList from "@/components/BookList";
 import { useAuth } from "@/context/AuthContext";
 import { usePlan } from "@/context/PlanContext";
 import { useVisitor } from "@/context/VisitorContext";
@@ -18,6 +17,7 @@ import { UserApi } from "@/apis/userApi";
 import LoadingPage from "./ui/LoadingPage";
 
 const FreeTrialModal = lazy(() => import("./FreeTrialModal"));
+const BookList = lazy(() => import("./BookList"));
 
 export interface BookData {
   id: string;
@@ -262,16 +262,18 @@ const Home: React.FC = () => {
             />
           )
         )}
-        {currentBook && (
-          <BookList
-            books={books}
-            currentBookId={currentBookId}
-            onBookSelect={async (book) => {
-              await updateBookAccess(book.id);
-              setPdfFileUrl(book.fileUrl);
-              setCurrentBookId(book.id);
-            }}
-          />
+        {!isFullScreen && currentBook && (
+          <Suspense fallback={<LoadingPage />}>
+            <BookList
+              books={books}
+              currentBookId={currentBookId}
+              onBookSelect={async (book) => {
+                await updateBookAccess(book.id);
+                setPdfFileUrl(book.fileUrl);
+                setCurrentBookId(book.id);
+              }}
+            />
+          </Suspense>
         )}
       </div>
       <Suspense fallback={<LoadingPage />}>
