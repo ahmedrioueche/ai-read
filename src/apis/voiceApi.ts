@@ -1,6 +1,5 @@
 import axios from "axios";
 
-// Define types for voice response and API key
 interface VoiceResponse {
   data: any;
 }
@@ -14,6 +13,7 @@ export default class VoiceApi {
   private apiKeys: string[];
   private apiUrl: string;
   private static workingApiKey: string | null = null;
+  private static readonly STORAGE_KEY = "elevenlabs-working-key";
 
   constructor() {
     this.apiKeys = [
@@ -22,9 +22,19 @@ export default class VoiceApi {
       process.env.NEXT_PUBLIC_ELEVENLABS_KEY_11 || "",
       process.env.NEXT_PUBLIC_ELEVENLABS_KEY_12 || "",
       process.env.NEXT_PUBLIC_ELEVENLABS_KEY_13 || "",
+      process.env.NEXT_PUBLIC_ELEVENLABS_KEY_14 || "",
+      process.env.NEXT_PUBLIC_ELEVENLABS_KEY_15 || "",
     ];
 
     this.apiUrl = "https://api.elevenlabs.io/v1";
+
+    // Try to load the working key from localStorage on initialization
+    if (typeof window !== "undefined") {
+      const storedKey = localStorage.getItem(VoiceApi.STORAGE_KEY);
+      if (storedKey && this.apiKeys.includes(storedKey)) {
+        VoiceApi.workingApiKey = storedKey;
+      }
+    }
   }
 
   // Helper method to try API keys
@@ -43,6 +53,10 @@ export default class VoiceApi {
         // Find the index of the working API key and start from the next one
         startIndex = this.apiKeys.indexOf(VoiceApi.workingApiKey) + 1;
         VoiceApi.workingApiKey = null; // Reset the working API key since it failed
+        // Clear from localStorage when key fails
+        if (typeof window !== "undefined") {
+          localStorage.removeItem(VoiceApi.STORAGE_KEY);
+        }
       }
     }
 
@@ -54,6 +68,10 @@ export default class VoiceApi {
       try {
         const result = await requestFn(apiKey);
         VoiceApi.workingApiKey = apiKey; // Store the working API key
+        // Save to localStorage when we find a working key
+        if (typeof window !== "undefined") {
+          localStorage.setItem(VoiceApi.STORAGE_KEY, apiKey);
+        }
         return result;
       } catch (error) {
         console.error(`Error with API key ${i + 1}:`, error);
@@ -107,8 +125,33 @@ export default class VoiceApi {
     });
   }
 
-  // Get the working API key (for debugging or other purposes)
+  // Get the working API key
   getWorkingApiKey(): string | null {
     return VoiceApi.workingApiKey;
+  }
+
+  // Get the remaining credit for the valid API key
+  async getValidKeyRemainingCredit(): Promise<number | null> {
+    if (!VoiceApi.workingApiKey) {
+      console.error("No valid API key found.");
+      return null;
+    }
+
+    try {
+      const response = await axios.get(`${this.apiUrl}/user`, {
+        headers: {
+          "xi-api-key": VoiceApi.workingApiKey,
+        },
+      });
+
+      // Extract the remaining character limit from the response
+      const remainingCredit =
+        response.data.subscription.character_limit -
+        response.data.subscription.character_count;
+      return remainingCredit;
+    } catch (error) {
+      console.error("Failed to fetch remaining credit:", error);
+      return null;
+    }
   }
 }

@@ -1,7 +1,6 @@
 import { useState } from "react";
 import { splitTextIntoChunks } from "@/utils/helper";
 import VoiceApi from "@/apis/voiceApi";
-import useHighlighting from "./useHighlighting";
 
 const useReading = (ttsType: "premium" | "basic", ttsVoice: string) => {
   const [readingState, setReadingState] = useState<
@@ -65,6 +64,8 @@ const useReading = (ttsType: "premium" | "basic", ttsVoice: string) => {
   // Function to handle text-to-speech for both premium and basic TTS
   const handleTextToSpeech = async (text: string) => {
     const chunks = splitTextIntoChunks(text, ttsType === "premium" ? 200 : 400); // Split text into chunks
+    const remainingCredit = await voiceApi.getValidKeyRemainingCredit();
+    console.log("remainingCredit", remainingCredit);
 
     if (ttsType === "premium") {
       // TTS API is enabled
@@ -90,6 +91,7 @@ const useReading = (ttsType: "premium" | "basic", ttsVoice: string) => {
             const chunk = chunks[i];
             try {
               const audioBlob = await fetchTtsAudio(chunk);
+              console.log(`audioBlob for chunk ${i + 1}`, audioBlob);
               audioQueue.push(audioBlob); // Add to the queue
               setCurrentTextChunk(chunk);
             } catch (error) {
@@ -171,6 +173,8 @@ const useReading = (ttsType: "premium" | "basic", ttsVoice: string) => {
     stopPremiumAudio();
     window.speechSynthesis.cancel();
     setAutoReading({ isActivated: false, isReading: false });
+    autoReading.isActivated = false;
+    autoReading.isReading = false;
     setReadingState("off");
   };
 
