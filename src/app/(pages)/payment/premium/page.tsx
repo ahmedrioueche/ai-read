@@ -10,6 +10,7 @@ import { useRouter } from "next/navigation";
 import { User } from "@prisma/client";
 import Alert from "@/components/ui/Alert";
 import { CheckCircle, Loader, LucideIcon, XCircle } from "lucide-react";
+import { AppAlerts } from "@/lib/appAlerts";
 
 const plan = plans.find((plan) => plan.name === "Premium");
 
@@ -24,6 +25,7 @@ const Payment: React.FC = () => {
     icon?: LucideIcon;
   }>();
   const [isAlertOpen, setIsAlertOpen] = useState(false);
+  const appAlerts = new AppAlerts();
 
   const handleApprove = async (orderId: string) => {
     setStatus({
@@ -52,6 +54,13 @@ const Payment: React.FC = () => {
       }, 3000);
     } catch (e) {
       console.log("Failed to update user data", e);
+      try {
+        await appAlerts.sendErrorAlert(
+          "Failed to update user data after premium payment"
+        );
+      } catch (e) {
+        console.log("Failed to send error alert", e);
+      }
       setStatus({
         status: "Fail",
         message: "There was an error processing the payment. Please try again.",
@@ -62,6 +71,12 @@ const Payment: React.FC = () => {
       setTimeout(() => {
         setIsAlertOpen(false);
       }, 5000);
+    }
+
+    try {
+      await appAlerts.sendNewPaymentAlert(user.email, "premium");
+    } catch (e) {
+      console.log("Error sending payment alert", e);
     }
   };
 

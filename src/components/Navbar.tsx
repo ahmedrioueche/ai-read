@@ -205,7 +205,7 @@ const Navbar: React.FC<{
                     if (isPremium) {
                       router.push("/subscription");
                     } else {
-                      router.push("/payment");
+                      router.push("/payment/premium");
                     }
                   }
                   setIsMenuOpen(false);

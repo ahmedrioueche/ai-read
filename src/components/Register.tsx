@@ -4,6 +4,7 @@ import { UserPlus, Mail, Lock, Loader } from "lucide-react";
 import Link from "next/link";
 import { useRouter, useSearchParams } from "next/navigation";
 import { useAuth } from "@/context/AuthContext";
+import { AppAlerts } from "@/lib/appAlerts";
 
 export default function RegisterPage() {
   const [email, setEmail] = useState("");
@@ -17,14 +18,26 @@ export default function RegisterPage() {
   const router = useRouter();
   const searchParams = useSearchParams();
   const redirect = searchParams.get("redirect");
+  const appAlerts = new AppAlerts();
 
   const handleRegister = async (e: React.FormEvent) => {
     setLoading(true);
     e.preventDefault();
-    const result = await signUp(email, password, {});
-    if (result.data) {
-      router.push(redirect || "/");
-    } else {
+    try {
+      const result = await signUp(email, password, {});
+      if (result.data) {
+        try {
+          await appAlerts.sendNewUserAlert(email);
+          router.push(redirect || "/");
+        } catch (e) {
+          console.log("Error sending signup alert", e);
+          router.push(redirect || "/"); //route anyways
+        }
+      } else {
+        setResult({ error: true, message: "Please try again later" });
+      }
+    } catch (e) {
+      console.log("Error signing up", e);
       setResult({ error: true, message: "Please try again later" });
     }
     setLoading(false);

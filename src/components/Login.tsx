@@ -4,6 +4,7 @@ import { LogIn, Mail, Lock, Loader } from "lucide-react";
 import Link from "next/link";
 import { useAuth } from "@/context/AuthContext";
 import { useRouter, useSearchParams } from "next/navigation";
+import { AppAlerts } from "@/lib/appAlerts";
 
 export default function LoginPage() {
   const [email, setEmail] = useState("");
@@ -17,6 +18,7 @@ export default function LoginPage() {
   const router = useRouter();
   const searchParams = useSearchParams();
   const redirect = searchParams.get("redirect");
+  const appAlerts = new AppAlerts();
 
   const handleLogin = async (e: React.FormEvent) => {
     setLoading(true);
@@ -24,7 +26,13 @@ export default function LoginPage() {
     try {
       const result = await signIn(email, password);
       if (result.data) {
-        router.push(redirect || "/");
+        try {
+          await appAlerts.sendUserLoginAlert(email);
+          router.push(redirect || "/");
+        } catch (e) {
+          console.log("Error sending signup alert", e);
+          router.push(redirect || "/"); //route anyways
+        }
       } else {
         setResult({ error: true, message: "Please try again later" });
       }
