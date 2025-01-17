@@ -80,7 +80,7 @@ const Navbar: React.FC<{
 
   const handleLogout = () => {
     signOut();
-    window.location.reload();
+    //window.location.reload();
   };
 
   useEffect(() => {

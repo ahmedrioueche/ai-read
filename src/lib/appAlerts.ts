@@ -37,7 +37,7 @@ export class AppAlerts {
 
   public async sendNewPaymentAlert(userData: string, paymentDetails: string) {
     const subject = "New Payment Alert";
-    const content = `A new payment has been processed, user: ${userData} subscription: ${paymentDetails}`;
+    const content = `A new payment has been processed, user: ${userData}, Details: ${paymentDetails}`;
     await this.sendAlert(this.EMAIL, subject, content);
   }
 

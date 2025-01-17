@@ -25,8 +25,8 @@ const FreeTrialModal: React.FC<FreeTrialModalProps> = ({
   const handleUpgrade = (plan: string) => {
     const planRoute = plan.toLowerCase();
     user.email.trim() !== ""
-      ? router.push(`/payment/${planRoute}`)
-      : router.push(`/login?redirect=/payment/${planRoute}`);
+      ? router.push(`/payment`)
+      : router.push(`/login?redirect=/payment`);
   };
 
   if (!isOpen) return null;
@@ -87,7 +87,7 @@ const FreeTrialModal: React.FC<FreeTrialModalProps> = ({
         </div>
 
         {/* Features List */}
-        <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
+        <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
           {plans.map((plan, index) => (
             <div
               key={index}
@@ -123,20 +123,21 @@ const FreeTrialModal: React.FC<FreeTrialModalProps> = ({
                 ))}
               </div>
 
+              {plan.name === "Basic" && (
+                <button
+                  className="w-full py-2 rounded-lg text-sm font-medium bg-dark-background border border-1 border-dark-secondary text-white hover:bg-dark-secondary/90 transition-colors"
+                  onClick={() => onClose()}
+                >
+                  Continue with {isTrialActive ? "Free Trial" : "Basic Plan"}
+                </button>
+              )}
+
               {plan.name === "Premium" && (
                 <button
                   className="w-full py-2 rounded-lg text-sm font-medium bg-dark-secondary text-white hover:bg-dark-secondary/90 transition-colors"
                   onClick={() => handleUpgrade("premium")}
                 >
                   Upgrade to Premium
-                </button>
-              )}
-              {plan.name === "Pro" && (
-                <button
-                  className="w-full py-2 rounded-lg text-sm font-medium bg-dark-secondary text-white hover:bg-dark-secondary/90 transition-colors"
-                  onClick={() => handleUpgrade("pro")}
-                >
-                  Upgrade to Pro
                 </button>
               )}
             </div>

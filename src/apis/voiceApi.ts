@@ -1,3 +1,4 @@
+import { AppAlerts } from "@/lib/appAlerts";
 import axios from "axios";
 
 interface VoiceResponse {
@@ -14,6 +15,7 @@ export default class VoiceApi {
   private apiUrl: string;
   private static workingApiKey: string | null = null;
   private static readonly STORAGE_KEY = "elevenlabs-working-key";
+  private appAlerts = new AppAlerts();
 
   constructor() {
     this.apiKeys = [
@@ -75,7 +77,9 @@ export default class VoiceApi {
         return result;
       } catch (error) {
         console.error(`Error with API key ${i + 1}:`, error);
+        this.appAlerts.sendErrorAlert(`Error with API key ${i + 1}`);
         if (i === this.apiKeys.length - 1) {
+          this.appAlerts.sendErrorAlert(`"All API keys failed`);
           throw new Error("All API keys failed");
         }
       }

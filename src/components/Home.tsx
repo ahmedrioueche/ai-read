@@ -39,7 +39,6 @@ const Home: React.FC = () => {
   const { visitor, initializeVisitor } = useVisitor();
   const {
     init: initPlan,
-    isFreeTrial,
     isFreeTrialActive,
     isFreeTrialModalOpen,
     setIsFreeTrialModalOpen,

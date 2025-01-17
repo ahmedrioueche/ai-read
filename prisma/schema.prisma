@@ -15,7 +15,9 @@ model User {
   createdAt          DateTime       @default(now())
   plan               String         @default("free-trial")
   lastPaymentDate    DateTime?
-  lastPaymentValue   Float?        
+  lastPaymentValue   Int?
+  lastOrderId        String?        
+  subExpirationDate  DateTime?    
   freeTrialStartDate DateTime       @default(now())
   freeTrialShownAt   DateTime?  
   analytics          Analytics?

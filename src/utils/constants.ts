@@ -17,18 +17,9 @@ export const plans = [
     features: [
       "All Basic features",
       "Enhanced reading experience with premium text-to-speech",
-      "Data synchronization across multiple devices",
+      "PDF compatibility with dark mode",
       "10 book storage capacity",
-    ],
-  },
-  {
-    name: "Pro",
-    price: "$90/year",
-    features: [
-      "All Premium features",
       "Personalized reading reminders and detailed analytics",
-      "PDF compatibility with dark mode support",
-      "Unlimited book storage for your library",
     ],
   },
 ];

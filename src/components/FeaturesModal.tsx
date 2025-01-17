@@ -10,13 +10,15 @@ const FeaturesModal: React.FC<{
   onClose: () => void;
 }> = ({ user, isOpen, onClose }) => {
   const router = useRouter();
-  const currentPlan = user ? user.plan : "basic";
+  const currentPlan = user.email.trim() !== "" ? user.plan : "basic";
 
   const handleUpgrade = (plan: string) => {
-    const planRoute = plan.toLowerCase();
+    if (plan == "premium") {
+      return;
+    }
     user.email.trim() !== ""
-      ? router.push(`/payment/${planRoute}`)
-      : router.push(`/login?redirect=/payment/${planRoute}`);
+      ? router.push(`/payment`)
+      : router.push(`/login?redirect=/payment`);
   };
 
   if (!isOpen) return null;
@@ -53,7 +55,7 @@ const FeaturesModal: React.FC<{
           </div>
         </div>
 
-        <div className="grid md:grid-cols-3 grid-cols-1 gap-6">
+        <div className="grid md:grid-cols-2 grid-cols-1 gap-6">
           {plans.map((plan, index) => (
             <div
               key={index}
@@ -90,27 +92,33 @@ const FeaturesModal: React.FC<{
                 ))}
               </div>
 
-              {/* Simplified Button Logic */}
-              {currentPlan === plan.name.toLowerCase() ? (
+              {plan.name === "Basic" && (
                 <button
-                  className="w-full py-2 rounded-lg text-sm font-medium bg-dark-secondary/10 text-dark-secondary cursor-auto disabled"
-                  disabled
+                  className={`w-full py-2 rounded-lg text-sm font-medium bg-dark-background cursor-auto ${
+                    currentPlan === "basic"
+                      ? "border border-1 border-dark-secondary text-white"
+                      : "text-dark-secondary"
+                  }    transition-color`}
                 >
-                  Current Plan
+                  {currentPlan === "basic"
+                    ? "Current Plan"
+                    : "Downgrade not Availabe"}
                 </button>
-              ) : plan.name.toLowerCase() === "pro" ||
-                (plan.name.toLowerCase() !== "pro" &&
-                  plan.name.toLowerCase() === "premium") ? (
+              )}
+
+              {plan.name === "Premium" && (
                 <button
-                  className="w-full py-2 rounded-lg text-sm font-medium bg-dark-secondary text-white hover:bg-dark-secondary/90 transition-colors"
-                  onClick={() => handleUpgrade(plan.name)}
+                  className={`w-full py-2 rounded-lg text-sm font-medium ${
+                    currentPlan === "premium"
+                      ? "border border-1 bg-dark-background border-dark-secondary cursor-auto"
+                      : "bg-dark-secondary hover:bg-dark-secondary/90"
+                  } text-white  transition-colors`}
+                  onClick={() => handleUpgrade("premium")}
                 >
-                  Upgrade Now
+                  {currentPlan === "premium"
+                    ? "Current Plans"
+                    : "Upgrade to Premium"}
                 </button>
-              ) : (
-                <p className="text-center text-sm text-dark-secondary/80">
-                  Downgrade not available
-                </p>
               )}
             </div>
           ))}
