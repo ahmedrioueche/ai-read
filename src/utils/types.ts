@@ -14,3 +14,13 @@ export interface Settings {
   enableAutoScrolling: boolean;
   enableHighlighting: boolean;
 }
+
+export interface Book {
+  id: string;
+  title: string;
+  author: string;
+  description: string;
+  coverUrl: string; // URL to the book cover image
+  fileUrl: string; // URL to the PDF file
+  lastAccessed?: number; // Optional timestamp
+}

@@ -47,17 +47,6 @@ const Payment: React.FC = () => {
   const [paymentValue, setPaymentValue] = useState(pricing.premium);
   const [discountString, setDiscountString] = useState("0");
   const [isProcessing, setIsProcessing] = useState(false);
-  const [authorized, setAuthorized] = useState(false);
-
-  //if user doesnt exist or user's plan is already premium, kick them out
-  if (
-    user?.email?.trim() === "" ||
-    (user?.email?.trim() !== "" && user.plan === "premium")
-  ) {
-    router.push("/");
-  } else {
-    setAuthorized(true);
-  }
 
   const formatCurrency = (value: string) => {
     return new Intl.NumberFormat("en-US", {
@@ -221,79 +210,79 @@ const Payment: React.FC = () => {
                 </p>
               ))}
             </div>
-            {authorized && (
-              <div className="bg-dark-background/50 rounded-lg p-3">
-                <div className="relative">
-                  <div className="relative z-50 mb-4">
-                    <div className="flex flex-row space-x-2">
-                      {/* CustomSelect takes 60% width */}
-                      <div className="w-[60%]">
-                        <CustomSelect
-                          options={paymentOptions}
-                          label={""}
-                          selectedOption={selectedPaymentOptionValue}
-                          onChange={setSelectedPaymentOptionValue}
-                          disabled={isProcessing}
-                        />
-                      </div>
+            <div className="bg-dark-background/50 rounded-lg p-3">
+              <div className="relative">
+                <div className="relative z-50 mb-4">
+                  <div className="flex flex-row space-x-2">
+                    {/* CustomSelect takes 60% width */}
+                    <div className="w-[60%]">
+                      <CustomSelect
+                        options={paymentOptions}
+                        label={""}
+                        selectedOption={selectedPaymentOptionValue}
+                        onChange={setSelectedPaymentOptionValue}
+                        disabled={isProcessing}
+                      />
+                    </div>
 
-                      {/* Discount Div takes 20% width */}
-                      <div className="w-[20%] h-11 mt-2 bg-dark-secondary/80 p-3 rounded-lg border border-dark-secondary/20 flex items-center justify-center">
-                        <span className="text-dark-foreground text-sm font-medium">
-                          <div className="text-sm">Discount</div>
-                          {formatCurrency(discountString)}
-                        </span>
-                      </div>
-                      {/* Payment Value Div takes 20% width */}
-                      <div className="w-[20%] h-11 mt-2 bg-dark-secondary/80 p-3 rounded-lg border border-dark-secondary/20 flex items-center justify-center">
-                        <span className="text-dark-foreground text-sm font-medium">
-                          <div className="text-sm">Final Price</div>
+                    {/* Discount Div takes 20% width */}
+                    <div className="w-[20%] h-11 mt-2 bg-dark-secondary/80 p-3 rounded-lg border border-dark-secondary/20 flex items-center justify-center">
+                      <span className="text-dark-foreground font-medium">
+                        <div className="hidden md:flex text-sm">Discount</div>
+                        {formatCurrency(discountString)}
+                      </span>
+                    </div>
+                    {/* Payment Value Div takes 20% width */}
+                    <div className="w-[20%] h-11 mt-2 bg-dark-secondary/80 p-3 rounded-lg border border-dark-secondary/20 flex items-center justify-center">
+                      <span className="text-dark-foreground font-medium">
+                        <div className="hidden md:flex md:text-sm ">
+                          Final Price
+                        </div>
 
-                          {formatCurrency(paymentValue)}
-                        </span>
-                      </div>
+                        {formatCurrency(paymentValue)}
+                      </span>
                     </div>
                   </div>
+                </div>
 
-                  <div className="relative z-40">
-                    <PayPalButtons
-                      key={paymentValue}
-                      createOrder={(data, actions) => {
-                        return actions.order.create({
-                          purchase_units: [
-                            {
-                              amount: { value: paymentValue },
-                            },
-                          ],
-                        });
-                      }}
-                      onApprove={(data, actions) => {
-                        return actions.order
-                          .capture()
-                          .then(
-                            (details: {
-                              payer: { name: { given_name: any } };
-                            }) => {
-                              const orderId = data.orderID || "";
-                              handleApprove(orderId, paymentValue);
-                            }
-                          );
-                      }}
-                      onError={(err) => {
-                        console.error("PayPal Checkout Error", err);
-                        alert("An error occurred during the transaction.");
-                      }}
-                      style={{
-                        layout: "vertical",
-                        color: "gold",
-                        shape: "rect",
-                        label: "pay",
-                      }}
-                    />
-                  </div>
+                <div className="relative z-40">
+                  <PayPalButtons
+                    key={paymentValue}
+                    createOrder={(data, actions) => {
+                      return actions.order.create({
+                        purchase_units: [
+                          {
+                            amount: { value: paymentValue },
+                          },
+                        ],
+                      });
+                    }}
+                    onApprove={(data, actions) => {
+                      return actions.order
+                        .capture()
+                        .then(
+                          (details: {
+                            payer: { name: { given_name: any } };
+                          }) => {
+                            const orderId = data.orderID || "";
+                            handleApprove(orderId, paymentValue);
+                          }
+                        );
+                    }}
+                    onError={(err) => {
+                      console.error("PayPal Checkout Error", err);
+                      alert("An error occurred during the transaction.");
+                    }}
+                    style={{
+                      layout: "vertical",
+                      color: "gold",
+                      shape: "rect",
+                      label: "pay",
+                    }}
+                  />
                 </div>
               </div>
-            )}
+            </div>
           </div>
         </div>
         {isAlertOpen && (

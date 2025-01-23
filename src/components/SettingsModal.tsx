@@ -363,16 +363,7 @@ export const SettingsModal: React.FC<SettingsModalProps> = ({
         <div className="grid grid-cols-1 sm:grid-cols-2 gap-6 mt-6">
           {/* Left Side */}
           <div className="flex flex-col -mt-4 md:mt-0">
-            <div className="flex flex-col">
-              <CustomSelect
-                label="Book Theme"
-                options={themes}
-                selectedOption={currentTheme}
-                onChange={handleThemeChange}
-              />
-            </div>
-
-            <div className="mt-6">
+            <div className="">
               <CustomSelect
                 label="Book Language"
                 options={languages}
@@ -477,6 +468,14 @@ export const SettingsModal: React.FC<SettingsModalProps> = ({
                   {isPlayLoading ? <Loader className="animate-spin" /> : "Play"}
                 </button>
               </div>
+            </div>
+            <div className="flex flex-col mt-6">
+              <CustomSelect
+                label="Book Theme"
+                options={themes}
+                selectedOption={currentTheme}
+                onChange={handleThemeChange}
+              />
             </div>
           </div>
 

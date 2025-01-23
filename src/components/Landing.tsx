@@ -6,6 +6,7 @@ interface LandingProps {
 const Landing: React.FC<LandingProps> = ({ onFileChange }) => {
   const language = "en";
   const text = dict[language];
+
   return (
     <div className="flex flex-col items-center justify-center min-h-screen bg-dark-background p-2">
       {" "}

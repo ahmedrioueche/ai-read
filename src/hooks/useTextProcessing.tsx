@@ -1,6 +1,5 @@
-import { useState, useEffect } from "react";
+import { useState } from "react";
 import { AiApi } from "@/apis/aiApi";
-import { preprocessText } from "@/utils/helper";
 import { useSettings } from "@/context/SettingsContext";
 
 const EXCLUDED_TEXT = [
@@ -81,6 +80,8 @@ const useTextProcessing = (
     summary,
     explanation,
     setTranslation,
+    setExplanation,
+    setSummary,
     getTranslation,
     getSummary,
     getExplanation,

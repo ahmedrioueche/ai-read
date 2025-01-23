@@ -80,7 +80,7 @@ const Navbar: React.FC<{
 
   const handleLogout = () => {
     signOut();
-    //window.location.reload();
+    window.location.reload();
   };
 
   useEffect(() => {
@@ -203,7 +203,7 @@ const Navbar: React.FC<{
                     router.push("/login?redirect=/payment");
                   } else {
                     if (isPremium) {
-                      router.push("/subscription");
+                      //router.push("/subscription");
                     } else {
                       router.push("/payment/premium");
                     }

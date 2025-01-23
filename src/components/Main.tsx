@@ -2,8 +2,8 @@
 import { preprocessText } from "@/utils/helper";
 import { Viewer, Worker, SpecialZoomLevel } from "@react-pdf-viewer/core";
 import "@react-pdf-viewer/core/lib/styles/index.css";
-import { zoomPlugin } from "@react-pdf-viewer/zoom"; // Import the zoom plugin
-import "@react-pdf-viewer/zoom/lib/styles/index.css"; // Import zoom plugin styles
+import { zoomPlugin } from "@react-pdf-viewer/zoom";
+import "@react-pdf-viewer/zoom/lib/styles/index.css";
 import { useState, useEffect, useRef } from "react";
 import TextCard from "./ui/TextCard";
 import OptionsMenu from "./ui/OptionsMenu";
@@ -28,8 +28,6 @@ const Main = ({
   isSettingsModalOpen: boolean;
   isFullScreen: boolean;
 }) => {
-  const [summary, setSummary] = useState<string | null>(null);
-  const [explanation, setExplanation] = useState<string | null>(null);
   const [currentBookId, setCurrentBookId] = useState("");
   const [isHoverOver, setIsHoverOver] = useState(false);
   const { settings, updateSettings } = useSettings();
@@ -73,7 +71,11 @@ const Main = ({
 
   const {
     translation,
+    explanation,
+    summary,
     setTranslation,
+    setSummary,
+    setExplanation,
     getTranslation,
     getSummary,
     getExplanation,

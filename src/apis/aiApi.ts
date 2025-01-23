@@ -59,6 +59,7 @@ export class AiApi {
     refering to the context, the context is only given to enhance your undertanding of the text.`;
     try {
       const response = await this.promptAi(prompt);
+
       return response;
     } catch (e) {
       console.log("Failed to explain text", e);
