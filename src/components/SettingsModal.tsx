@@ -17,6 +17,7 @@ import { Settings } from "@/utils/types";
 import { usePlan } from "@/context/PlanContext";
 import Alert from "./ui/Alert";
 import { languageMap } from "@/utils/helper";
+import { AppAlerts } from "@/lib/appAlerts";
 
 // Types
 type BasicVoice = {
@@ -100,11 +101,11 @@ export const SettingsModal: React.FC<SettingsModalProps> = ({
   const { plan, isFreeTrial } = usePlan();
   const isPremium: boolean =
     plan === "premium" || plan === "pro" || isFreeTrial;
-
   const isAndroid = /android/i.test(navigator.userAgent);
   const isChrome =
     navigator.userAgent.includes("Chrome") &&
     !navigator.userAgent.includes("Edg");
+  const appAlerts = new AppAlerts();
 
   useEffect(() => {
     if (settings) {
@@ -277,10 +278,15 @@ export const SettingsModal: React.FC<SettingsModalProps> = ({
         console.error("Failed to play sample text using API:", error);
         setStatus({
           status: "Error",
-          message: "Premium TTS is unavailable for the moment",
+          message: "Premium Text To Speech is unavailable for the moment",
           bg: "bg-red-500",
           icon: XCircle,
         });
+        try {
+          appAlerts.sendErrorAlert("Premium Text To Speech is unavailable");
+        } catch (e) {
+          console.log("Error sending alert", e);
+        }
         setIsAlertOpen(true);
         setTimeout(() => {
           setIsAlertOpen(false);

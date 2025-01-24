@@ -42,7 +42,7 @@ const Alert: React.FC<AlertProps> = ({
           onClick={onClose}
           className={`p-2 rounded-full ${
             bg ? bg : "bg-dark-secondary"
-          }bg-dark-secondary hover:bg-light-secondary/100 transition-colors duration-300 text-dark-foreground`}
+          }bg-dark-secondary hover:bg-dark-background transition-colors duration-300 text-dark-foreground`}
         >
           <X size={16} />
         </button>

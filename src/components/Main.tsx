@@ -37,7 +37,6 @@ const Main = ({
   const bookUrl = book?.fileUrl;
   const [scrollY, setScrollY] = useState(0);
   const [isHighlighting, setIsHighlighting] = useState(false);
-  const [scrollIntervalId, setScrollIntervalId] = useState<number>();
   const SCROLL_INTERVAL = 5250;
   const [ttsType, setTtsType] = useState<"premium" | "basic">("basic");
   const [ttsVoice, setTtsVoice] = useState("");
