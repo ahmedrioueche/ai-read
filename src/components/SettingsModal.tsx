@@ -368,7 +368,7 @@ export const SettingsModal: React.FC<SettingsModalProps> = ({
         </div>
         <div className="grid grid-cols-1 sm:grid-cols-2 gap-6 mt-6">
           {/* Left Side */}
-          <div className="flex flex-col -mt-4 md:mt-0">
+          <div className="flex flex-col mt-0">
             <div className="">
               <CustomSelect
                 label="Book Language"
