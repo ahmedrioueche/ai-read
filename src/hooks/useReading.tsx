@@ -1,8 +1,9 @@
 import { useState } from "react";
-import { splitTextIntoChunks } from "@/utils/helper";
+import { formatLanguageToLocalCode, splitTextIntoChunks } from "@/utils/helper";
 import VoiceApi from "@/apis/voiceApi";
+import { useSettings } from "@/context/SettingsContext";
 
-const useReading = (ttsType: "premium" | "basic", ttsVoice: string) => {
+const useReading = () => {
   const [readingState, setReadingState] = useState<
     "loading" | "reading" | "off"
   >("off");
@@ -19,16 +20,21 @@ const useReading = (ttsType: "premium" | "basic", ttsVoice: string) => {
   const [readingSpeed, setReadingSpeed] = useState<number>(0.9);
   let audioQueue: Blob[] = [];
   const voiceApi = new VoiceApi();
+  const { settings } = useSettings();
+  const ttsType = settings.ttsType;
+  const ttsVoice = settings.ttsVoice;
+  const bookLanguage = settings.bookLanguage;
 
   // Function to read text using the browser's speech synthesis
-  const readText = (text: string) => {
+  const readTextWebSpeechApi = (text: string) => {
     if ("speechSynthesis" in window) {
       const utterance = new SpeechSynthesisUtterance(text);
       const selectedVoice = window.speechSynthesis
         .getVoices()
         .find((voice) => voice.name === ttsVoice);
 
-      utterance.lang = "en-US"; // Default language
+      const lang = formatLanguageToLocalCode(bookLanguage);
+      utterance.lang = lang;
       utterance.pitch = 1.1; // Set pitch (range 0 to 2)
       utterance.rate = readingSpeed; // Set rate (range 0.1 to 10)
       if (selectedVoice) {
@@ -104,7 +110,7 @@ const useReading = (ttsType: "premium" | "basic", ttsVoice: string) => {
         // Fallback to built-in TTS if TTS API fails
         for (const chunk of chunks) {
           if (!autoReading.isReading) {
-            readText(chunk);
+            readTextWebSpeechApi(chunk);
             setCurrentTextChunk(chunk);
           }
         }
@@ -113,7 +119,7 @@ const useReading = (ttsType: "premium" | "basic", ttsVoice: string) => {
       // TTS API is disabled, use built-in TTS
       for (const chunk of chunks) {
         if (!autoReading.isReading) {
-          readText(chunk);
+          readTextWebSpeechApi(chunk);
           setCurrentTextChunk(chunk);
         }
       }
@@ -126,7 +132,7 @@ const useReading = (ttsType: "premium" | "basic", ttsVoice: string) => {
       const audioBlob = await fetchTtsAudio(text);
       playAudio(audioBlob);
     } else {
-      readText(text);
+      readTextWebSpeechApi(text);
     }
   };
 
@@ -199,7 +205,7 @@ const useReading = (ttsType: "premium" | "basic", ttsVoice: string) => {
     setReadingSpeed,
     setReadingState,
     setAutoReading,
-    readText,
+    readText: readTextWebSpeechApi,
     handleTextToSpeech,
     stopReading,
   };

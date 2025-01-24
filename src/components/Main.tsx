@@ -92,7 +92,7 @@ const Main = ({
     handleTextToSpeech,
     stopReading,
     readSelectedText,
-  } = useReading(ttsType, ttsVoice);
+  } = useReading();
 
   const { startScrolling, stopScrolling } = useScrolling(
     enableAutoScrolling,
