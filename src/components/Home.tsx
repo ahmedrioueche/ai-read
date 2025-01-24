@@ -33,7 +33,8 @@ const Home: React.FC = () => {
   const [isSettingsModalOpen, setIsSettingsModalOpen] = useState(false);
   const [currentBookId, setCurrentBookId] = useState<string | null>(null);
   const [isFullScreen, setIsFullScreen] = useState(false);
-  const BOOK_LIMIT = 5;
+  const BASIC_BOOK_LIMIT = 3;
+  const [bookLimit, setBookLimit] = useState(BASIC_BOOK_LIMIT);
   const { user } = useAuth();
   const userApi = new UserApi();
   const { visitor, initializeVisitor } = useVisitor();
@@ -43,7 +44,11 @@ const Home: React.FC = () => {
     isFreeTrialModalOpen,
     setIsFreeTrialModalOpen,
     freeTrialEndDate,
+    plan,
+    isFreeTrial,
   } = usePlan();
+  const isPremium: boolean =
+    plan === "premium" || plan === "pro" || isFreeTrial;
 
   useEffect(() => {
     initializeVisitor();
@@ -54,6 +59,12 @@ const Home: React.FC = () => {
       initPlan(visitor);
     }
   }, [visitor]);
+
+  useEffect(() => {
+    if (isPremium) {
+      setBookLimit(100);
+    }
+  }, []);
 
   //update new user's free trial period to visitor's (no new free trial on every account creation on same machine)
   useEffect(() => {
@@ -143,7 +154,7 @@ const Home: React.FC = () => {
           };
 
           const updatedBooks = [...books, newBook];
-          if (updatedBooks.length > BOOK_LIMIT) {
+          if (updatedBooks.length > bookLimit) {
             try {
               await deleteOldestBookFromIndexedDB();
               updatedBooks.shift();

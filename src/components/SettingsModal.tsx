@@ -312,7 +312,7 @@ export const SettingsModal: React.FC<SettingsModalProps> = ({
         rtl: selectedLanguage?.rtl!,
       },
       enableTranslation: isTranslation,
-      theme: currentTheme,
+      theme: !isPremium ? "light" : currentTheme,
       enableReading: isReading,
       readingSpeed: readingSpeed,
       appLanguage: appLanguage,
