@@ -13,12 +13,12 @@ export const plans = [
   },
   {
     name: "Premium",
-    price: "$12/month",
+    price: "$15/month",
     features: [
       "All Basic features",
-      "Enhanced reading experience with premium text-to-speech",
+      "Premium text-to-speech: realistic voices with natural emotion",
       "PDF compatibility with dark mode",
-      "10 book storage capacity",
+      "Expanded book storage capacity",
       "Personalized reading reminders and detailed analytics",
     ],
   },
