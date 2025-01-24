@@ -192,6 +192,7 @@ const Navbar: React.FC<{
                 icon: CogIcon,
                 onClick: () => {
                   setIsSettingModalOpen(true);
+                  onToggleSettingsModal(true);
                   setIsMenuOpen(false);
                 },
               },

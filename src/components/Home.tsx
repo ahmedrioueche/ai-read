@@ -30,7 +30,7 @@ export interface BookData {
 const Home: React.FC = () => {
   const [pdfFileUrl, setPdfFileUrl] = useState<string | null>(null);
   const [books, setBooks] = useState<BookData[]>([]);
-  const [isSettingsModalOpen, setIsSettingModalOpen] = useState(false);
+  const [isSettingsModalOpen, setIsSettingsModalOpen] = useState(false);
   const [currentBookId, setCurrentBookId] = useState<string | null>(null);
   const [isFullScreen, setIsFullScreen] = useState(false);
   const BOOK_LIMIT = 5;
@@ -44,6 +44,10 @@ const Home: React.FC = () => {
     setIsFreeTrialModalOpen,
     freeTrialEndDate,
   } = usePlan();
+
+  useEffect(() => {
+    console.log({ isSettingsModalOpen });
+  }, [isSettingsModalOpen]);
 
   useEffect(() => {
     initializeVisitor();
@@ -231,13 +235,17 @@ const Home: React.FC = () => {
     loadBooksFromDB();
   }, []);
 
+  const handleToggleSettingsModal = (isOpen: boolean) => {
+    setIsSettingsModalOpen(isOpen);
+  };
+
   const currentBook = books.find((book) => book.id === currentBookId);
 
   return (
     <div className="flex flex-col min-h-screen bg-dark-background">
       <Navbar
         onUpload={handleFileChange}
-        onToggleSettingsModal={(isOpen) => setIsSettingModalOpen(isOpen)}
+        onToggleSettingsModal={handleToggleSettingsModal}
         onToggleFullScreen={(isFullScreen) => {
           setIsFullScreen(isFullScreen);
         }}
