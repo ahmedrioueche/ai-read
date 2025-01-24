@@ -481,6 +481,7 @@ export const SettingsModal: React.FC<SettingsModalProps> = ({
                 options={themes}
                 selectedOption={currentTheme}
                 onChange={handleThemeChange}
+                disabled={!isPremium}
               />
             </div>
           </div>
