@@ -396,3 +396,39 @@ export const generateEmailContent = (content: string) => {
       </html>`,
   };
 };
+
+// Define weights for additional punctuation marks
+const punctuationWeights = {
+  ",": 70, // Weight for commas
+  "!": 120, // Weight for exclamation marks
+  "?": 120, // Weight for question marks
+  ".": 170, // Weight for full stops
+  ";": 95, // Weight for semicolons
+  ":": 95, // Weight for colons
+  "-": 50, // Weight for hyphens
+  "(": 40, // Weight for opening parentheses
+  ")": 40, // Weight for closing parentheses
+  '"': 60, // Weight for double quotes
+  "'": 60, // Weight for single quotes
+  "…": 220, // Weight for ellipsis
+  "–": 70, // Weight for en dash
+  "—": 120, // Weight for em dash
+};
+
+export const calculateDelay = (text: string, readingSpeed: number) => {
+  const textLength = text.length;
+  const baseDelay = Math.max(100, textLength * 55 * readingSpeed);
+
+  // Calculate the additional delay based on punctuation marks
+  let punctuationDelay = 0;
+  for (const [punctuation, weight] of Object.entries(punctuationWeights)) {
+    // Use a regular expression to count occurrences of the punctuation mark
+    const regex = new RegExp(`\\${punctuation}`, "g");
+    const count = (text.match(regex) || []).length;
+    punctuationDelay += count * weight;
+  }
+
+  // Calculate the total delay
+  const totalDelay = baseDelay + punctuationDelay;
+  return totalDelay;
+};

@@ -1,15 +1,32 @@
+import { calculateDelay } from "@/utils/helper";
 import { useRef, useEffect } from "react";
 
 const useHighlighting = (
+  activeHighlightElements: HTMLElement[],
   isHighlighting: boolean,
   setIsHighlighting: React.Dispatch<React.SetStateAction<boolean>>,
-  activeHighlightElements: HTMLElement[],
   readingSpeed: number
 ) => {
   const highlightTimeoutRef = useRef<NodeJS.Timeout | null>(null);
+  const currentIndexRef = useRef<number>(0); // Track the current index in the array
+
+  // Function to stop highlighting and clean up
+  const stopHighlighting = () => {
+    // Clear the timeout if it exists
+    if (highlightTimeoutRef.current) {
+      clearTimeout(highlightTimeoutRef.current);
+      highlightTimeoutRef.current = null;
+    }
+
+    // Remove any existing highlights
+    activeHighlightElements.forEach((el) =>
+      el.classList.remove("highlighted-text")
+    );
+    currentIndexRef.current = 0; // Reset the current index only when explicitly stopping
+  };
 
   // Function to handle highlighting of elements
-  const handleHighlighting = (elements: HTMLElement[]) => {
+  const handleHighlighting = () => {
     if (!document.getElementById("highlight-styles")) {
       // Add CSS styles for smooth transition
       const style = document.createElement("style");
@@ -25,58 +42,53 @@ const useHighlighting = (
       document.head.appendChild(style);
     }
 
-    let currentIndex = 0;
-
     const highlightNextElement = () => {
       if (!isHighlighting) {
         // Stop highlighting if isHighlighting is false
+        stopHighlighting();
         return;
       }
 
-      if (currentIndex > 0) {
-        // Fade out the previous highlight
-        elements[currentIndex - 1].classList.remove("highlighted-text");
-      }
+      // Check if there are more elements to highlight
+      if (currentIndexRef.current < activeHighlightElements.length) {
+        const element = activeHighlightElements[currentIndexRef.current];
 
-      if (currentIndex < elements.length) {
+        // Remove highlight from the previous element
+        if (currentIndexRef.current > 0) {
+          activeHighlightElements[currentIndexRef.current - 1].classList.remove(
+            "highlighted-text"
+          );
+        }
+
         // Fade in the next highlight
-        elements[currentIndex].classList.add("highlighted-text");
-        currentIndex++;
+        element.classList.add("highlighted-text");
 
-        // Adjust the delay based on the length of the text
-        const textLength = elements[currentIndex - 1].textContent?.length || 0;
-        const delay = Math.max(100, textLength * 66 * readingSpeed);
+        // Extract the text content from the element
+        const text = element.textContent || "";
+
+        // Calculate the base delay based on text length and reading speed
+        const delay = calculateDelay(text, readingSpeed);
 
         // Store the timeout ID so we can clear it later
-        highlightTimeoutRef.current = setTimeout(highlightNextElement, delay);
+        highlightTimeoutRef.current = setTimeout(() => {
+          currentIndexRef.current++; // Move to the next element
+          highlightNextElement(); // Continue highlighting
+        }, delay);
       } else {
         // Stop highlighting when all elements are processed
         setIsHighlighting(false);
       }
     };
 
-    if (elements.length > 0 && isHighlighting) {
-      highlightNextElement();
-    } else {
-      setIsHighlighting(false);
-    }
-  };
-
-  // Function to stop highlighting
-  const stopHighlighting = () => {
-    setIsHighlighting(false);
-
-    // Clear the timeout if it exists
+    // Stop any existing highlighting loop before starting a new one
     if (highlightTimeoutRef.current) {
       clearTimeout(highlightTimeoutRef.current);
       highlightTimeoutRef.current = null;
     }
 
-    // Remove any existing highlights
-    const elements = Array.from(
-      document.querySelectorAll(".rpv-core__text-layer-text")
-    ) as HTMLElement[];
-    elements.forEach((el) => el.classList.remove("highlighted-text"));
+    if (activeHighlightElements.length > 0 && isHighlighting) {
+      highlightNextElement();
+    }
   };
 
   // Cleanup on unmount
@@ -86,10 +98,24 @@ const useHighlighting = (
     };
   }, []);
 
+  // Restart highlighting only when isHighlighting changes
+  useEffect(() => {
+    if (isHighlighting) {
+      handleHighlighting();
+    } else {
+      stopHighlighting();
+    }
+  }, [isHighlighting]);
+
+  // Update the current index if activeHighlightElements changes
+  useEffect(() => {
+    if (currentIndexRef.current >= activeHighlightElements.length) {
+      // If the current index is out of bounds, reset it
+      currentIndexRef.current = 0;
+    }
+  }, [activeHighlightElements]);
+
   return {
-    isHighlighting,
-    activeHighlightElements,
-    setIsHighlighting,
     handleHighlighting,
     stopHighlighting,
   };

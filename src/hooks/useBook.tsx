@@ -278,12 +278,9 @@ const useBook = (bookUrl: string, isFullScreen: boolean) => {
             const layer = textLayers[i];
             const layerRect = layer.getBoundingClientRect();
 
-            // Check if layer is in viewport
+            // Check if layer is in or near the viewport
             const isLayerVisible =
-              layerRect.top < viewportHeight &&
-              layerRect.bottom > topOffset &&
-              layerRect.left < viewportWidth &&
-              layerRect.right > 0;
+              layerRect.bottom > topOffset && layerRect.top < viewportHeight;
 
             if (!isLayerVisible) continue;
 
@@ -291,28 +288,22 @@ const useBook = (bookUrl: string, isFullScreen: boolean) => {
               layer.querySelectorAll(".rpv-core__text-layer-text")
             ) as HTMLElement[];
 
-            const visibleTexts = textElements
-              .map((element) => {
-                const rect = element.getBoundingClientRect();
-                const isVisible =
-                  rect.top < viewportHeight &&
-                  rect.bottom > topOffset &&
-                  rect.left < viewportWidth &&
-                  rect.right > 0;
-                return {
-                  element,
-                  rect,
-                  isVisible,
-                  text: element.textContent || "",
-                };
-              })
-              .filter(({ isVisible }) => isVisible)
-              .sort((a, b) => a.rect.top - b.rect.top);
+            for (const element of textElements) {
+              const rect = element.getBoundingClientRect();
+              const isVisible =
+                rect.bottom > topOffset &&
+                rect.top < viewportHeight &&
+                rect.left < viewportWidth &&
+                rect.right > 0;
 
-            for (const { element, text } of visibleTexts) {
-              cumulativeText += text + " ";
-              if (cumulativeText.length >= originalTextPosition) {
-                chunkElements.push(element);
+              if (isVisible) {
+                const text = element.textContent || "";
+                cumulativeText += text + " ";
+
+                // Check if the cumulative text includes the target position
+                if (cumulativeText.length >= originalTextPosition) {
+                  chunkElements.push(element);
+                }
               }
             }
           }

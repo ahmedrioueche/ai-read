@@ -46,10 +46,6 @@ const Home: React.FC = () => {
   } = usePlan();
 
   useEffect(() => {
-    console.log({ isSettingsModalOpen });
-  }, [isSettingsModalOpen]);
-
-  useEffect(() => {
     initializeVisitor();
   }, []);
 

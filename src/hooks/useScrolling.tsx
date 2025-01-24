@@ -3,10 +3,11 @@ import { useState, useEffect } from "react";
 const useScroll = (
   enableAutoScrolling: boolean,
   readingSpeed: number,
-  getVisibleText: () => Promise<{ text: string }>
+  getVisibleText: () => Promise<{ text: string; elements: HTMLElement[] }>
 ) => {
   const [scrollIntervalId, setScrollIntervalId] = useState<number | null>(null);
   const [visibleText, setVisibleText] = useState("");
+  const [visibleElements, setVisibleElements] = useState<HTMLElement[]>([]);
 
   // Function to calculate the scroll offset dynamically
   const calculateScrollOffset = (
@@ -71,8 +72,9 @@ const useScroll = (
       }
 
       // Get the currently visible text using the existing getVisibleText function
-      const { text: visibleText } = await getVisibleText();
+      const { text: visibleText, elements } = await getVisibleText();
       setVisibleText(visibleText);
+      setVisibleElements(elements);
 
       // Calculate the scroll offset based on visible text length
       const currentVisibleTextLength = visibleText.length;
@@ -126,6 +128,7 @@ const useScroll = (
 
   return {
     visibleText,
+    visibleElements,
     startScrolling,
     stopScrolling,
   };

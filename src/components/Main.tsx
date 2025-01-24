@@ -94,16 +94,16 @@ const Main = ({
     readSelectedText,
   } = useReading();
 
-  const { startScrolling, stopScrolling } = useScrolling(
+  const { startScrolling, stopScrolling, visibleElements } = useScrolling(
     enableAutoScrolling,
     readingSpeed,
     getVisibleText
   );
 
   const { handleHighlighting, stopHighlighting } = useHighlighting(
+    activeHighlightElements,
     isHighlighting,
     setIsHighlighting,
-    activeHighlightElements,
     readingSpeed
   );
 
@@ -146,17 +146,6 @@ const Main = ({
     }
   }, [bookUrl]);
 
-  // Debug helper
-  useEffect(() => {
-    if (activeHighlightElements.length > 0) {
-      console.log("Active highlight elements:", {
-        count: activeHighlightElements.length,
-        elements: activeHighlightElements,
-        texts: activeHighlightElements.map((el) => el.textContent),
-      });
-    }
-  }, [activeHighlightElements]);
-
   useEffect(() => {
     if (readingState === "reading") {
       startScrolling(SCROLL_INTERVAL);
@@ -171,6 +160,42 @@ const Main = ({
     }
   };
 
+  useEffect(() => {
+    // Check if visibleElements has changed and is not empty
+    if (visibleElements.length > 0) {
+      // Compare visibleElements and activeHighlightElements based on content
+      const hasDifference =
+        visibleElements.length !== activeHighlightElements.length ||
+        visibleElements.some((el, index) => {
+          const existingElement = activeHighlightElements[index];
+          return (
+            !existingElement ||
+            el.textContent !== existingElement.textContent || // Compare text content
+            el.getBoundingClientRect().top !==
+              existingElement.getBoundingClientRect().top // Compare position
+          );
+        });
+
+      if (hasDifference) {
+        setActiveHighlightElements((prev) => {
+          // Combine previous and new elements, removing duplicates based on content
+          const combinedElements = [...prev, ...visibleElements];
+          const uniqueElements = combinedElements.filter(
+            (el, index, self) =>
+              index ===
+              self.findIndex(
+                (e) =>
+                  e.textContent === el.textContent && // Compare text content
+                  e.getBoundingClientRect().top ===
+                    el.getBoundingClientRect().top // Compare position
+              )
+          );
+          return uniqueElements;
+        });
+      }
+    }
+  }, [visibleElements]);
+
   const startReading = async () => {
     setReadingState("loading");
     autoReading.isActivated = true;
@@ -183,24 +208,11 @@ const Main = ({
       const processedText = preprocessText(text);
       await handleTextToSpeech(processedText);
       setActiveHighlightElements(elements);
+      startHighlighting();
 
       // Find remaining text
       const remainingText = findRemainingFullText(text, fullText);
-
-      if (remainingText) {
-        // Find the exact position where remaining text starts
-        const originalTextPosition = fullText.indexOf(remainingText);
-        console.log("originalTextPosition", originalTextPosition);
-        // Process remaining elements before handling the remaining text
-        await findRemainingElements(
-          fullText,
-          elements,
-          originalTextPosition,
-          setActiveHighlightElements
-        );
-
-        startHighlighting();
-
+      if (remainingText.trim() !== "") {
         // Process and speak remaining text
         const processedRemainingText = preprocessText(remainingText);
         await handleTextToSpeech(processedRemainingText);
@@ -239,7 +251,7 @@ const Main = ({
 
   useEffect(() => {
     if (isHighlighting && readingState === "reading") {
-      handleHighlighting(activeHighlightElements);
+      handleHighlighting();
     } else {
       // Clear any existing highlights when highlighting is turned off
       activeHighlightElements.forEach((el) =>

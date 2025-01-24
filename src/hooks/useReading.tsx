@@ -18,7 +18,8 @@ const useReading = () => {
   const [currentPremiumAudio, setCurrentPremiumAudio] =
     useState<HTMLAudioElement | null>(null);
   const [readingSpeed, setReadingSpeed] = useState<number>(0.9);
-  let audioQueue: Blob[] = [];
+  let audioQueue: Blob[] = []; // Queue for premium TTS audio chunks
+  let basicTtsQueue: string[] = []; // Queue for basic TTS text chunks
   const voiceApi = new VoiceApi();
   const { settings } = useSettings();
   const ttsType = settings.ttsType;
@@ -51,6 +52,7 @@ const useReading = () => {
           setReadingState("off");
         }
         autoReading.isReading = false;
+        playNextBasicTts(); // Play the next chunk in the basic TTS queue
       };
 
       // Speak the text
@@ -71,7 +73,6 @@ const useReading = () => {
   const handleTextToSpeech = async (text: string) => {
     const chunks = splitTextIntoChunks(text, ttsType === "premium" ? 200 : 400); // Split text into chunks
     const remainingCredit = await voiceApi.getValidKeyRemainingCredit();
-    console.log("remainingCredit", remainingCredit);
 
     if (ttsType === "premium") {
       // TTS API is enabled
@@ -101,7 +102,7 @@ const useReading = () => {
               audioQueue.push(audioBlob); // Add to the queue
               setCurrentTextChunk(chunk);
             } catch (error) {
-              console.error("Error fetching audio for chunk:", chunk, error);
+              console.error("Error f  etching audio for chunk:", chunk, error);
             }
           }
         }
@@ -110,23 +111,38 @@ const useReading = () => {
         // Fallback to built-in TTS if TTS API fails
         for (const chunk of chunks) {
           if (!autoReading.isReading) {
-            readTextWebSpeechApi(chunk);
+            basicTtsQueue.push(chunk); // Add chunks to the basic TTS queue
             setCurrentTextChunk(chunk);
           }
         }
+        playNextBasicTts(); // Start playing the first chunk in the basic TTS queue
       }
     } else {
       // TTS API is disabled, use built-in TTS
+      console.log({ autoReading });
       for (const chunk of chunks) {
         if (!autoReading.isReading) {
-          readTextWebSpeechApi(chunk);
+          basicTtsQueue.push(chunk); // Add chunks to the basic TTS queue
           setCurrentTextChunk(chunk);
         }
       }
+      playNextBasicTts(); // Start playing the first chunk in the basic TTS queue
     }
   };
 
-  //function to read selected text
+  // Function to play the next chunk in the basic TTS queue
+  const playNextBasicTts = () => {
+    if (basicTtsQueue.length > 0 && !autoReading.isReading) {
+      const nextChunk = basicTtsQueue.shift(); // Get the next chunk from the queue
+      if (nextChunk) {
+        readTextWebSpeechApi(nextChunk); // Read the chunk
+      }
+    } else if (basicTtsQueue.length === 0) {
+      stopReading(); // Stop reading if the queue is empty
+    }
+  };
+
+  // Function to read selected text
   const readSelectedText = async (text: string) => {
     if (ttsType === "premium") {
       const audioBlob = await fetchTtsAudio(text);
