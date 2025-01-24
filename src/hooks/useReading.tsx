@@ -21,7 +21,7 @@ const useReading = (ttsType: "premium" | "basic", ttsVoice: string) => {
   const voiceApi = new VoiceApi();
 
   // Function to read text using the browser's speech synthesis
-  const readTextWebSpeechApi = (text: string) => {
+  const readText = (text: string) => {
     if ("speechSynthesis" in window) {
       const utterance = new SpeechSynthesisUtterance(text);
       const selectedVoice = window.speechSynthesis
@@ -55,7 +55,7 @@ const useReading = (ttsType: "premium" | "basic", ttsVoice: string) => {
   };
 
   // Function to fetch TTS audio for premium voices
-  const fetchPremiumTtsAudio = async (text: string): Promise<Blob> => {
+  const fetchTtsAudio = async (text: string): Promise<Blob> => {
     const voiceId = ttsVoice || "nPczCjzI2devNBz1zQrb"; // Default voice ID
     const audioBuffer = await voiceApi.textToSpeech(text, voiceId);
     return new Blob([audioBuffer], { type: "audio/mpeg" });
@@ -65,6 +65,7 @@ const useReading = (ttsType: "premium" | "basic", ttsVoice: string) => {
   const handleTextToSpeech = async (text: string) => {
     const chunks = splitTextIntoChunks(text, ttsType === "premium" ? 200 : 400); // Split text into chunks
     const remainingCredit = await voiceApi.getValidKeyRemainingCredit();
+    console.log("remainingCredit", remainingCredit);
 
     if (ttsType === "premium") {
       // TTS API is enabled
@@ -73,7 +74,7 @@ const useReading = (ttsType: "premium" | "basic", ttsVoice: string) => {
         const firstChunk = chunks[0];
         if (firstChunk) {
           if (autoReading.isActivated) {
-            const audioBlob = await fetchPremiumTtsAudio(firstChunk);
+            const audioBlob = await fetchTtsAudio(firstChunk);
             audioQueue.push(audioBlob); // Add the first chunk to the queue
             playNextAudio(); // Start playback immediately
             setCurrentTextChunk(firstChunk);
@@ -89,14 +90,9 @@ const useReading = (ttsType: "premium" | "basic", ttsVoice: string) => {
 
             const chunk = chunks[i];
             try {
-              const audioBlob = await fetchPremiumTtsAudio(chunk);
-              console.log(`chunk ${i + 1} text`, chunk);
-
+              const audioBlob = await fetchTtsAudio(chunk);
               console.log(`audioBlob for chunk ${i + 1}`, audioBlob);
               audioQueue.push(audioBlob); // Add to the queue
-
-              console.log("delayDuration", delayDuration);
-              console.log("audioQueue", audioQueue);
               setCurrentTextChunk(chunk);
             } catch (error) {
               console.error("Error fetching audio for chunk:", chunk, error);
@@ -108,7 +104,7 @@ const useReading = (ttsType: "premium" | "basic", ttsVoice: string) => {
         // Fallback to built-in TTS if TTS API fails
         for (const chunk of chunks) {
           if (!autoReading.isReading) {
-            readTextWebSpeechApi(chunk);
+            readText(chunk);
             setCurrentTextChunk(chunk);
           }
         }
@@ -117,7 +113,7 @@ const useReading = (ttsType: "premium" | "basic", ttsVoice: string) => {
       // TTS API is disabled, use built-in TTS
       for (const chunk of chunks) {
         if (!autoReading.isReading) {
-          readTextWebSpeechApi(chunk);
+          readText(chunk);
           setCurrentTextChunk(chunk);
         }
       }
@@ -127,10 +123,10 @@ const useReading = (ttsType: "premium" | "basic", ttsVoice: string) => {
   //function to read selected text
   const readSelectedText = async (text: string) => {
     if (ttsType === "premium") {
-      const audioBlob = await fetchPremiumTtsAudio(text);
+      const audioBlob = await fetchTtsAudio(text);
       playAudio(audioBlob);
     } else {
-      readTextWebSpeechApi(text);
+      readText(text);
     }
   };
 
@@ -184,8 +180,8 @@ const useReading = (ttsType: "premium" | "basic", ttsVoice: string) => {
 
   // Helper function to calculate chunk duration
   const calculateChunkDuration = (text: string): number => {
-    const length = text.length;
-    return length * 38; //value achieved through testing
+    const length = text.length; // Estimate word count
+    return length * 38; // Convert to milliseconds
   };
 
   // Helper function to delay execution
@@ -203,7 +199,7 @@ const useReading = (ttsType: "premium" | "basic", ttsVoice: string) => {
     setReadingSpeed,
     setReadingState,
     setAutoReading,
-    readText: readTextWebSpeechApi,
+    readText,
     handleTextToSpeech,
     stopReading,
   };

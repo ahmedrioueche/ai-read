@@ -29,8 +29,9 @@ const Main = ({
   isFullScreen: boolean;
 }) => {
   const [currentBookId, setCurrentBookId] = useState("");
-  const [isHoverOver, setIsHoverOver] = useState(false);
-  const { settings, updateSettings } = useSettings();
+  const [isHoveredOver, setIsHoveredOver] = useState(false);
+  const [savedSelectedText, setSavedSelectedText] = useState("");
+  const { settings } = useSettings();
   const translationLanguageData = settings.translationLanguage;
   const viewerRef = useRef<any>(null);
   const [lastPage, setLastPage] = useState<number>();
@@ -59,6 +60,7 @@ const Main = ({
 
   const {
     selectedText,
+    setSelectedText,
     fullText,
     rootRef,
     extractText,
@@ -79,7 +81,7 @@ const Main = ({
     getSummary,
     getExplanation,
     isValidText,
-  } = useTextProcessing(bookContext, isHoverOver);
+  } = useTextProcessing(bookContext, isHoveredOver);
 
   const {
     readingState,
@@ -212,6 +214,7 @@ const Main = ({
   useEffect(() => {
     const handleSelectedtext = async () => {
       if (selectedText && selectedText.trim() !== "") {
+        setSavedSelectedText(selectedText);
         const preprocessedText = preprocessText(selectedText);
         if (!isValidText(preprocessedText, isSettingsModalOpen)) return;
 
@@ -222,6 +225,8 @@ const Main = ({
           getTranslation(preprocessedText);
         }
       }
+
+      setSelectedText(null);
     };
 
     handleSelectedtext();
@@ -413,9 +418,9 @@ const Main = ({
       </Worker>
 
       <OptionsMenu
-        selectedText={selectedText}
-        getExplanation={() => getExplanation(selectedText!)}
-        getSummary={() => getSummary(selectedText!)}
+        selectedText={selectedText || savedSelectedText}
+        getExplanation={() => getExplanation(selectedText || savedSelectedText)}
+        getSummary={() => getSummary(selectedText || savedSelectedText)}
         stopReading={handleStopReading}
         startReading={startReading}
         readingState={readingState}
@@ -436,8 +441,8 @@ const Main = ({
         ) : (
           <div
             className="flex justify-center items-end w-full h-full"
-            onMouseEnter={() => setIsHoverOver(true)}
-            onMouseLeave={() => setIsHoverOver(false)}
+            onMouseEnter={() => setIsHoveredOver(true)}
+            onMouseLeave={() => setIsHoveredOver(false)}
           >
             <TextCard
               text={translation}
@@ -452,8 +457,8 @@ const Main = ({
       {explanation && (
         <div
           className="flex justify-center items-end w-full h-full"
-          onMouseEnter={() => setIsHoverOver(true)}
-          onMouseLeave={() => setIsHoverOver(false)}
+          onMouseEnter={() => setIsHoveredOver(true)}
+          onMouseLeave={() => setIsHoveredOver(false)}
         >
           <TextCard
             text={explanation}
@@ -468,8 +473,8 @@ const Main = ({
       {summary && (
         <div
           className="flex justify-center items-end w-full h-full"
-          onMouseEnter={() => setIsHoverOver(true)}
-          onMouseLeave={() => setIsHoverOver(false)}
+          onMouseEnter={() => setIsHoveredOver(true)}
+          onMouseLeave={() => setIsHoveredOver(false)}
         >
           <TextCard
             text={summary}

@@ -13,7 +13,7 @@ const EXCLUDED_TEXT = [
 
 const useTextProcessing = (
   bookContext: string | null,
-  isHoverOver: boolean
+  isHoveredOver: boolean
 ) => {
   const [translation, setTranslation] = useState<string | null>(null);
   const [summary, setSummary] = useState<string | null>(null);
@@ -26,7 +26,9 @@ const useTextProcessing = (
   const isValidText = (text: string, isSettingsModalOpen: boolean): boolean => {
     if (isSettingsModalOpen) return false;
     // Check if text matches any excluded keywords
-    return !EXCLUDED_TEXT.some((excluded) => excluded === text.toLowerCase());
+    return !EXCLUDED_TEXT.some(
+      (excluded) => excluded.toLowerCase() === text.toLowerCase()
+    );
   };
 
   const getTranslation = async (text: string) => {
@@ -35,7 +37,7 @@ const useTextProcessing = (
       if (response) {
         setTranslation(response);
         setTimeout(() => {
-          if (!isHoverOver) {
+          if (!isHoveredOver) {
             setTranslation(null);
           }
         }, 5000 + response.length * 200);
@@ -49,7 +51,7 @@ const useTextProcessing = (
       if (response) {
         setSummary(response);
         setTimeout(() => {
-          if (!isHoverOver) {
+          if (!isHoveredOver) {
             setSummary(null);
           }
         }, 5000 + response.length * 200);
@@ -67,7 +69,7 @@ const useTextProcessing = (
       if (response) {
         setExplanation(response);
         setTimeout(() => {
-          if (!isHoverOver) {
+          if (!isHoveredOver) {
             setExplanation(null);
           }
         }, 5000 + response.length * 200);

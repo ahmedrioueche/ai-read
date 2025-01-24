@@ -361,6 +361,7 @@ const useBook = (bookUrl: string, isFullScreen: boolean) => {
   return {
     fullText,
     selectedText,
+    setSelectedText,
     bookLanguage,
     rootRef,
     extractText,
