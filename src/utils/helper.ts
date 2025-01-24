@@ -106,29 +106,20 @@ export const splitTextIntoChunks = (
     // Determine the potential end of the current chunk
     let endIndex = Math.min(currentIndex + maxLength, text.length);
 
-    // If we're not at the end of the text, look for a proper sentence ending
-    if (endIndex < text.length) {
-      // Look for the last sentence ending within the chunk
-      const lastPeriodIndex = text.lastIndexOf(".", endIndex);
-      const lastExclamationIndex = text.lastIndexOf("!", endIndex);
-      const lastQuestionIndex = text.lastIndexOf("?", endIndex);
+    // Look for the last comma or full stop within the chunk
+    const lastCommaIndex = text.lastIndexOf(",", endIndex);
+    const lastFullStopIndex = text.lastIndexOf(".", endIndex);
 
-      // Find the latest sentence ending
-      const sentenceEndings = [
-        lastPeriodIndex,
-        lastExclamationIndex,
-        lastQuestionIndex,
-      ].filter((index) => index > currentIndex && index <= endIndex);
+    // Prioritize splitting at full stops, then commas
+    if (lastFullStopIndex > currentIndex) {
+      endIndex = lastFullStopIndex + 1; // Include the full stop
+    } else if (lastCommaIndex > currentIndex) {
+      endIndex = lastCommaIndex + 1; // Include the comma
+    }
 
-      if (sentenceEndings.length > 0) {
-        endIndex = Math.max(...sentenceEndings) + 1;
-      } else {
-        // If no sentence ending is found, look for the last space
-        const lastSpaceIndex = text.lastIndexOf(" ", endIndex);
-        if (lastSpaceIndex > currentIndex) {
-          endIndex = lastSpaceIndex;
-        }
-      }
+    // If no comma or full stop is found, split at the maxLength
+    if (endIndex <= currentIndex) {
+      endIndex = Math.min(currentIndex + maxLength, text.length);
     }
 
     // Extract and clean the chunk

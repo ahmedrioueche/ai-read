@@ -26,6 +26,7 @@ export default class VoiceApi {
       process.env.NEXT_PUBLIC_ELEVENLABS_KEY_13 || "",
       process.env.NEXT_PUBLIC_ELEVENLABS_KEY_14 || "",
       process.env.NEXT_PUBLIC_ELEVENLABS_KEY_15 || "",
+      process.env.NEXT_PUBLIC_ELEVENLABS_KEY_16 || "",
     ];
 
     this.apiUrl = "https://api.elevenlabs.io/v1";

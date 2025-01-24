@@ -565,6 +565,7 @@ export const SettingsModal: React.FC<SettingsModalProps> = ({
                   { value: "normal", label: text.General.normal },
                   { value: "fast", label: text.General.fast },
                 ]}
+                disabled={ttsType === "premium"}
                 selectedOption={readingSpeed}
                 onChange={(value: "slow" | "normal" | "fast") =>
                   setReadingSpeed(value)
