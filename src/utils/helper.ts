@@ -344,52 +344,75 @@ export const generateEmailContent = (content: string) => {
           <meta name="viewport" content="width=device-width, initial-scale=1.0">
           <title>Email</title>
           <style>
-            @import url('https://fonts.googleapis.com/css2?family=Stix+Two+Text:wght@400;700&display=swap');
+            @import url('https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap');
             body {
-              font-family: Arial, sans-serif;
-              background-color: #f4f4f4;
-              color: #333;
-              padding: 20px;
+              font-family: 'Inter', sans-serif;
+              background-color: #f9fafb;
+              color: #111827;
               margin: 0;
+              padding: 0;
             }
             .container {
               max-width: 600px;
               margin: 0 auto;
-              background-color: #fff;
-              padding: 20px;
-              border-radius: 8px;
-              box-shadow: 0 0 10px rgba(0, 0, 0, 0.1);
-              font-family: 'Stix Two Text', serif;
+              background-color: #ffffff;
+              border-radius: 12px;
+              overflow: hidden;
+              box-shadow: 0 4px 6px rgba(0, 0, 0, 0.1);
             }
             .header {
-              display: flex;
-              align-items: center;
-              margin-bottom: 20px;
+              background-color: #1e40af;
+              padding: 24px;
+              text-align: center;
             }
             .header .logo {
-              font-size: 2rem;
-              font-weight: bold;
-              color: #007bff;
-              margin-right: 10px;
-              cursor: pointer;
-              transition: color 0.3s;
+              font-size: 1.75rem;
+              font-weight: 700;
+              color: #ffffff;
+              text-decoration: none;
+              transition: opacity 0.3s ease;
             }
             .header .logo:hover {
-              color: #0056b3;
+              opacity: 0.9;
             }
             .content {
+              padding: 32px;
               font-size: 1rem;
-              color: #333;
+              line-height: 1.6;
+              color: #374151;
+            }
+            .content p {
+              margin: 0 0 16px;
+            }
+            .footer {
+              padding: 24px;
+              text-align: center;
+              font-size: 0.875rem;
+              color: #6b7280;
+              background-color: #f9fafb;
+              border-top: 1px solid #e5e7eb;
+            }
+            .footer a {
+              color: #1e40af;
+              text-decoration: none;
+              transition: color 0.3s ease;
+            }
+            .footer a:hover {
+              color: #1e3a8a;
             }
           </style>
         </head>
         <body>
           <div class="container">
             <div class="header">
-              <div class="logo">AIRead</div>
+              <a href="#" class="logo">AIRead</a>
             </div>
             <div class="content">
               ${content}
+            </div>
+            <div class="footer">
+              <p>If you have any questions, feel free to <a href="mailto:support@airead.com">contact us</a>.</p>
+              <p>&copy; ${new Date().getFullYear()} AIRead. All rights reserved.</p>
             </div>
           </div>
         </body>
