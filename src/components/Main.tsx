@@ -272,19 +272,19 @@ const Main = ({
     }
   }, [settings]);
 
-  useEffect(() => {
-    const handleScroll = () => {
-      setScrollY(window.scrollY); // Update the vertical scroll position
-    };
-
-    // Add scroll event listener
-    window.addEventListener("scroll", handleScroll);
-
-    // Cleanup event listener on component unmount
-    return () => {
-      window.removeEventListener("scroll", handleScroll);
-    };
-  }, []);
+  // useEffect(() => {
+  //   const handleScroll = () => {
+  //     setScrollY(window.scrollY); // Update the vertical scroll position
+  //   };
+  //
+  //   // Add scroll event listener
+  //   window.addEventListener("scroll", handleScroll);
+  //
+  //   // Cleanup event listener on component unmount
+  //   return () => {
+  //     window.removeEventListener("scroll", handleScroll);
+  //   };
+  // }, []);
 
   useEffect(() => {
     const handleBeforeUnload = () => {
