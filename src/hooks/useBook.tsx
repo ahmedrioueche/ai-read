@@ -239,105 +239,6 @@ const useBook = (bookUrl: string, isFullScreen: boolean) => {
     return fullText.slice(originalTextPosition).trim();
   };
 
-  const findRemainingElements = async (
-    fullText: string,
-    elements: HTMLElement[],
-    originalTextPosition: number,
-    setActiveHighlightElements: SetHighlightElements
-  ) => {
-    if (!rootRef.current) return;
-
-    try {
-      const container = rootRef.current.querySelector(".rpv-core__viewer");
-      if (!container) return;
-
-      const textLayers = Array.from(
-        container.querySelectorAll(".rpv-core__text-layer")
-      );
-
-      if (textLayers.length === 0) return;
-
-      const viewportHeight =
-        window.innerHeight || document.documentElement.clientHeight;
-      const viewportWidth =
-        window.innerWidth || document.documentElement.clientWidth;
-      const topOffset = getTopOffset();
-
-      const processChunkAsync = async (startIndex: number): Promise<void> => {
-        return new Promise((resolve) => {
-          const chunkSize = 100;
-          const chunkElements: HTMLElement[] = [];
-          let cumulativeText = "";
-
-          // Process current chunk of text layers
-          for (
-            let i = startIndex;
-            i < Math.min(startIndex + chunkSize, textLayers.length);
-            i++
-          ) {
-            const layer = textLayers[i];
-            const layerRect = layer.getBoundingClientRect();
-
-            // Check if layer is in or near the viewport
-            const isLayerVisible =
-              layerRect.bottom > topOffset && layerRect.top < viewportHeight;
-
-            if (!isLayerVisible) continue;
-
-            const textElements = Array.from(
-              layer.querySelectorAll(".rpv-core__text-layer-text")
-            ) as HTMLElement[];
-
-            for (const element of textElements) {
-              const rect = element.getBoundingClientRect();
-              const isVisible =
-                rect.bottom > topOffset &&
-                rect.top < viewportHeight &&
-                rect.left < viewportWidth &&
-                rect.right > 0;
-
-              if (isVisible) {
-                const text = element.textContent || "";
-                cumulativeText += text + " ";
-
-                // Check if the cumulative text includes the target position
-                if (cumulativeText.length >= originalTextPosition) {
-                  chunkElements.push(element);
-                }
-              }
-            }
-          }
-
-          console.log(
-            `Chunk ${startIndex}: Found ${chunkElements.length} elements. Text position: ${cumulativeText.length}`
-          );
-
-          // Update state with new elements
-          if (chunkElements.length > 0) {
-            setActiveHighlightElements((prev) => {
-              const combined = [...prev, ...chunkElements];
-              return [...new Set(combined)];
-            });
-          }
-
-          // Schedule next chunk or resolve
-          if (startIndex + chunkSize < textLayers.length) {
-            setTimeout(() => {
-              processChunkAsync(startIndex + chunkSize).then(resolve);
-            }, 0);
-          } else {
-            resolve();
-          }
-        });
-      };
-
-      // Start processing chunks
-      await processChunkAsync(0);
-    } catch (error) {
-      console.error("Error in findRemainingElements:", error);
-    }
-  };
-
   const getTopOffset = () => {
     return isFullScreen ? 60 : 120 - scrollY;
   };
@@ -358,7 +259,6 @@ const useBook = (bookUrl: string, isFullScreen: boolean) => {
     extractText,
     getVisibleText,
     findRemainingFullText,
-    findRemainingElements,
     handleTextSelection,
     bookContext,
     setBookContext,

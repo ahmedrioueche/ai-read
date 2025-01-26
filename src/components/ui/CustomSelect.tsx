@@ -5,7 +5,7 @@ interface CustomSelectProps<T> {
   options: { value: T; label: string }[];
   selectedOption: T;
   onChange: (value: T) => void;
-  disabled?: boolean; // Add disabled prop
+  disabled?: boolean;
 }
 
 const CustomSelect = <T extends string>({
@@ -13,10 +13,12 @@ const CustomSelect = <T extends string>({
   options,
   selectedOption,
   onChange,
-  disabled, // Destructure disabled prop
+  disabled,
 }: CustomSelectProps<T>) => {
   const [isOpen, setIsOpen] = useState(false);
   const selectRef = useRef<HTMLDivElement>(null);
+  const listRef = useRef<HTMLUListElement>(null); // Ref for the dropdown list
+  const scrollPositionRef = useRef<number>(0); // Ref to store scroll position
 
   // Close the dropdown when clicking outside
   useEffect(() => {
@@ -38,7 +40,7 @@ const CustomSelect = <T extends string>({
   // Handle keyboard navigation
   useEffect(() => {
     const handleKeyDown = (event: KeyboardEvent) => {
-      if (!isOpen || disabled) return; // Skip if disabled
+      if (!isOpen || disabled) return;
 
       const focusedElement = document.activeElement;
       const items = Array.from(selectRef.current?.querySelectorAll("li") || []);
@@ -62,24 +64,38 @@ const CustomSelect = <T extends string>({
     return () => {
       document.removeEventListener("keydown", handleKeyDown);
     };
-  }, [isOpen, disabled]); // Add disabled to dependencies
+  }, [isOpen, disabled]);
+
+  // Save scroll position when the list is scrolled
+  const handleListScroll = () => {
+    if (listRef.current) {
+      scrollPositionRef.current = listRef.current.scrollTop;
+    }
+  };
+
+  // Restore scroll position when the dropdown is reopened
+  useEffect(() => {
+    if (isOpen && listRef.current) {
+      listRef.current.scrollTop = scrollPositionRef.current;
+    }
+  }, [isOpen]);
 
   return (
     <div className="relative" ref={selectRef}>
       <label className="font-semibold text-dark-foreground">{label}</label>
       <div
         role="button"
-        tabIndex={disabled ? -1 : 0} // Disable tab index if disabled
+        tabIndex={disabled ? -1 : 0}
         aria-haspopup="listbox"
         aria-expanded={isOpen}
         aria-label={label}
-        aria-disabled={disabled} // Indicate disabled state
+        aria-disabled={disabled}
         className={`mt-2 p-2 border rounded-md bg-light-background dark:bg-dark-background hover:border-light-secondary dark:hover:border-dark-secondary focus:ring-2 focus:ring-light-secondary dark:focus:ring-dark-secondary cursor-pointer text-light-foreground dark:hover:text-dark-foreground dark:text-dark-foreground ${
           disabled
             ? "opacity-50 cursor-not-allowed hover:border-none dark:hover:border-none"
             : ""
-        }`} // Add disabled styles
-        onClick={() => !disabled && setIsOpen(!isOpen)} // Only toggle if not disabled
+        }`}
+        onClick={() => !disabled && setIsOpen(!isOpen)}
         onKeyDown={(e) => {
           if (!disabled && (e.key === "Enter" || e.key === " ")) {
             setIsOpen(!isOpen);
@@ -89,35 +105,36 @@ const CustomSelect = <T extends string>({
         {options.find((option) => option.value === selectedOption)?.label ||
           selectedOption}
       </div>
-      {isOpen &&
-        !disabled && ( // Only render dropdown if not disabled
-          <ul
-            role="listbox"
-            className="absolute z-10 mt-1 w-full bg-light-background dark:bg-dark-background border border-light-secondary dark:border-dark-secondary rounded-md shadow-lg max-h-60 overflow-auto"
-          >
-            {options.map((option) => (
-              <li
-                key={option.value}
-                role="option"
-                aria-selected={option.value === selectedOption}
-                tabIndex={0}
-                className="px-4 py-2 hover:bg-light-secondary dark:hover:bg-dark-secondary hover:cursor-pointer text-light-foreground dark:text-dark-foreground dark:hover:text-dark-background focus:bg-light-secondary dark:focus:bg-dark-secondary focus:outline-none"
-                onClick={() => {
+      {isOpen && !disabled && (
+        <ul
+          ref={listRef} // Attach the ref to the list
+          role="listbox"
+          className="absolute z-10 mt-1 w-full bg-light-background dark:bg-dark-background border border-light-secondary dark:border-dark-secondary rounded-md shadow-lg max-h-60 overflow-auto"
+          onScroll={handleListScroll} // Save scroll position on scroll
+        >
+          {options.map((option) => (
+            <li
+              key={option.value}
+              role="option"
+              aria-selected={option.value === selectedOption}
+              tabIndex={0}
+              className="px-4 py-2 hover:bg-light-secondary dark:hover:bg-dark-secondary hover:cursor-pointer text-light-foreground dark:text-dark-foreground dark:hover:text-dark-background focus:bg-light-secondary dark:focus:bg-dark-secondary focus:outline-none"
+              onClick={() => {
+                onChange(option.value);
+                setIsOpen(false);
+              }}
+              onKeyDown={(e) => {
+                if (e.key === "Enter" || e.key === " ") {
                   onChange(option.value);
                   setIsOpen(false);
-                }}
-                onKeyDown={(e) => {
-                  if (e.key === "Enter" || e.key === " ") {
-                    onChange(option.value);
-                    setIsOpen(false);
-                  }
-                }}
-              >
-                {option.label}
-              </li>
-            ))}
-          </ul>
-        )}
+                }
+              }}
+            >
+              {option.label}
+            </li>
+          ))}
+        </ul>
+      )}
     </div>
   );
 };

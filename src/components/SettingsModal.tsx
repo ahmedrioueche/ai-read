@@ -10,7 +10,7 @@ import React, { useEffect, useState } from "react";
 import CustomSelect from "./ui/CustomSelect";
 import { dict } from "@/utils/dict";
 import { User } from "@prisma/client";
-import VoiceApi from "@/apis/voiceApi";
+import VoiceApi, { VoiceApi2 } from "@/apis/voiceApi";
 import { AiApi } from "@/apis/aiApi";
 import { useSettings } from "@/context/SettingsContext";
 import { Settings } from "@/utils/types";
@@ -77,7 +77,10 @@ export const SettingsModal: React.FC<SettingsModalProps> = ({
   const [currentTheme, setCurrentTheme] = useState<"light" | "dark">("light");
   const [appLanguage, setAppLanguage] = useState("english");
   const [ttsType, setTtsType] = useState<"premium" | "basic">("basic");
-  const [ttsVoice, setTtsVoice] = useState<string>("No Voice selected");
+  const [ttsVoice, setTtsVoice] = useState<{ label?: string; value?: string }>({
+    label: "No Voice selected",
+    value: "",
+  });
   const [bookLanguage, setBookLanguage] = useState("english");
   const [autoScroll, setAutoScroll] = useState<boolean>(true);
   const [highlighting, setHighlighting] = useState<boolean>(true);
@@ -96,6 +99,7 @@ export const SettingsModal: React.FC<SettingsModalProps> = ({
     "Welcome to AIRead, the best AI-powered reading platform."
   );
   const voiceApi = new VoiceApi();
+  const voiceApi2 = new VoiceApi2();
   const aiApi = new AiApi();
   const text = dict["en"];
   const { plan, isFreeTrial } = usePlan();
@@ -117,7 +121,7 @@ export const SettingsModal: React.FC<SettingsModalProps> = ({
       setReadingSpeed(settings.readingSpeed || "normal");
       setAppLanguage(settings.appLanguage || "english");
       setTtsType(isPremium ? settings.ttsType : "basic");
-      setTtsVoice(settings.ttsVoice || "");
+      setTtsVoice(settings.ttsVoice);
       setBookLanguage(settings.bookLanguage || "english");
       setAutoScroll(settings.enableAutoScrolling);
       setHighlighting(settings.enableHighlighting);
@@ -167,11 +171,19 @@ export const SettingsModal: React.FC<SettingsModalProps> = ({
       }
 
       setVoicesLoading(true);
-      const response = await voiceApi.getVoices();
-      if (response?.voices && Array.isArray(response.voices)) {
-        const apiVoices = response.voices.map((voice: any) => ({
-          value: voice.voice_id,
-          label: voice.name,
+      // const response = await voiceApi.getVoices();
+      // if (response?.voices && Array.isArray(response.voices)) {
+      //   const apiVoices = response.voices.map((voice: any) => ({
+      //     value: voice.voice_id,
+      //     label: voice.name,
+      //   }));
+      //   setPremiumVoices(apiVoices);
+      // }
+      const voices = await voiceApi2.getVoices();
+      if (voices && Array.isArray(voices)) {
+        const apiVoices = voices.map((voice: any) => ({
+          value: voice.Name,
+          label: voice.DisplayName + " - " + voice.LocaleName,
         }));
         setPremiumVoices(apiVoices);
       }
@@ -223,7 +235,7 @@ export const SettingsModal: React.FC<SettingsModalProps> = ({
           return voiceLang.startsWith(bookLangCode);
         }) || basicVoices[0];
 
-      setTtsVoice(defaultBasicVoice?.value || "");
+      setTtsVoice({ value: defaultBasicVoice?.value || "" });
     } else if (ttsType === "premium" && premiumVoices.length > 0) {
       if (settings.ttsType === "premium") {
         //display the selected voice
@@ -232,7 +244,7 @@ export const SettingsModal: React.FC<SettingsModalProps> = ({
       }
 
       // Set the default voice for premium TTS
-      setTtsVoice(premiumVoices[0]?.value || "");
+      setTtsVoice(premiumVoices[0]);
     }
   }, [ttsType, basicVoices, premiumVoices, bookLanguage]);
 
@@ -245,7 +257,9 @@ export const SettingsModal: React.FC<SettingsModalProps> = ({
 
       const utterance = new SpeechSynthesisUtterance(sampleText);
       const voices = window.speechSynthesis.getVoices();
-      const selectedVoice = voices.find((voice) => voice.name === ttsVoice);
+      const selectedVoice = voices.find(
+        (voice) => voice.name === ttsVoice.label
+      );
 
       if (selectedVoice) {
         utterance.voice = selectedVoice;
@@ -266,7 +280,7 @@ export const SettingsModal: React.FC<SettingsModalProps> = ({
       }
     } else {
       try {
-        const audio = await voiceApi.textToSpeech(sampleText, ttsVoice);
+        const audio = await voiceApi2.textToSpeech(sampleText, ttsVoice.value);
         const audioBlob = new Blob([audio], { type: "audio/mpeg" });
         const audioUrl = URL.createObjectURL(audioBlob);
         const audioElement = new Audio(audioUrl);
@@ -317,7 +331,10 @@ export const SettingsModal: React.FC<SettingsModalProps> = ({
       readingSpeed: readingSpeed,
       appLanguage: appLanguage,
       ttsType: isPremium ? ttsType : "basic",
-      ttsVoice: ttsVoice,
+      ttsVoice: {
+        label: ttsVoice?.label!,
+        value: ttsVoice?.value!,
+      },
       bookLanguage: bookLanguage,
       enableAutoScrolling: autoScroll,
       enableHighlighting: highlighting,
@@ -337,7 +354,9 @@ export const SettingsModal: React.FC<SettingsModalProps> = ({
               .includes(bookLanguage.toLowerCase());
           }
         })
-      : premiumVoices;
+      : (premiumVoices as PremiumVoice[]).filter((voice) => {
+          return voice.label.toLowerCase().includes(bookLanguage.toLowerCase());
+        });
 
   const handleThemeChange = (value: string) => {
     if (value === "light" || value === "dark") {
@@ -448,8 +467,20 @@ export const SettingsModal: React.FC<SettingsModalProps> = ({
                 <CustomSelect
                   label="Text To Speech Voice"
                   options={filteredVoices}
-                  selectedOption={ttsVoice}
-                  onChange={setTtsVoice}
+                  selectedOption={ttsVoice.value!}
+                  onChange={(value: string) => {
+                    // Find the selected option from filteredVoices
+                    const selectedVoice = filteredVoices.find(
+                      (voice) => voice.value === value
+                    );
+                    if (selectedVoice) {
+                      // Update ttsVoice with both value and label
+                      setTtsVoice({
+                        value: selectedVoice.value,
+                        label: selectedVoice.label,
+                      });
+                    }
+                  }}
                 />
               )}
               <div className="flex items-center gap-2 mt-10">

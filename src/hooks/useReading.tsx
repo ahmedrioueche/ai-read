@@ -1,6 +1,6 @@
 import { useState } from "react";
 import { formatLanguageToLocalCode, splitTextIntoChunks } from "@/utils/helper";
-import VoiceApi from "@/apis/voiceApi";
+import VoiceApi, { VoiceApi2 } from "@/apis/voiceApi";
 import { useSettings } from "@/context/SettingsContext";
 
 const useReading = () => {
@@ -21,6 +21,8 @@ const useReading = () => {
   let audioQueue: Blob[] = []; // Queue for premium TTS audio chunks
   let basicTtsQueue: string[] = []; // Queue for basic TTS text chunks
   const voiceApi = new VoiceApi();
+  const voiceApi2 = new VoiceApi2();
+
   const { settings } = useSettings();
   const ttsType = settings.ttsType;
   const ttsVoice = settings.ttsVoice;
@@ -32,7 +34,7 @@ const useReading = () => {
       const utterance = new SpeechSynthesisUtterance(text);
       const selectedVoice = window.speechSynthesis
         .getVoices()
-        .find((voice) => voice.name === ttsVoice);
+        .find((voice) => voice.name === ttsVoice.value);
 
       const lang = formatLanguageToLocalCode(bookLanguage);
       utterance.lang = lang;
@@ -63,9 +65,14 @@ const useReading = () => {
   };
 
   // Function to fetch TTS audio for premium voices
+  //const fetchTtsAudio = async (text: string): Promise<Blob> => {
+  //  const voiceId = ttsVoice || "nPczCjzI2devNBz1zQrb"; // Default voice ID
+  //  const audioBuffer = await voiceApi.textToSpeech(text, voiceId);
+  //  return new Blob([audioBuffer], { type: "audio/mpeg" });
+  //};
+
   const fetchTtsAudio = async (text: string): Promise<Blob> => {
-    const voiceId = ttsVoice || "nPczCjzI2devNBz1zQrb"; // Default voice ID
-    const audioBuffer = await voiceApi.textToSpeech(text, voiceId);
+    const audioBuffer = await voiceApi2.textToSpeech(text);
     return new Blob([audioBuffer], { type: "audio/mpeg" });
   };
 

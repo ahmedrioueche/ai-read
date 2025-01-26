@@ -160,3 +160,61 @@ export default class VoiceApi {
     }
   }
 }
+
+export class VoiceApi2 {
+  private apiKey = process.env.NEXT_PUBLIC_AZURE_KEY_1;
+  private apiUrl =
+    "https://eastus.tts.speech.microsoft.com/cognitiveservices/v1";
+
+  // Method to fetch available voices
+  async getVoices(): Promise<any[]> {
+    console.log("getVoices");
+
+    const voicesUrl = `https://eastus.tts.speech.microsoft.com/cognitiveservices/voices/list`;
+
+    const headers = {
+      "Ocp-Apim-Subscription-Key": this.apiKey,
+    };
+
+    try {
+      const response = await axios.get(voicesUrl, { headers });
+      console.log("response", response);
+      return response.data;
+    } catch (error) {
+      console.error("Error fetching available voices:", error);
+      throw error;
+    }
+  }
+
+  // Method to synthesize speech
+  async textToSpeech(
+    text: string,
+    voiceName: string = "en-US-JennyNeural"
+  ): Promise<ArrayBuffer> {
+    const headers = {
+      "Ocp-Apim-Subscription-Key": this.apiKey,
+      "Content-Type": "application/ssml+xml",
+      "X-Microsoft-OutputFormat": "audio-16khz-128kbitrate-mono-mp3",
+    };
+
+    const ssml = `
+      <speak version='1.0' xml:lang='en-US'>
+        <voice name='${voiceName}'>
+          ${text}
+        </voice>
+      </speak>
+    `;
+
+    try {
+      const response = await axios.post(this.apiUrl, ssml, {
+        headers: headers,
+        responseType: "arraybuffer",
+      });
+
+      return response.data;
+    } catch (error) {
+      console.error("Error synthesizing speech:", error);
+      throw error;
+    }
+  }
+}

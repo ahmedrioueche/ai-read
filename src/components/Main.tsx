@@ -39,8 +39,6 @@ const Main = ({
   const [scrollY, setScrollY] = useState(0);
   const [isHighlighting, setIsHighlighting] = useState(false);
   const SCROLL_INTERVAL = 5250;
-  const [ttsType, setTtsType] = useState<"premium" | "basic">("basic");
-  const [ttsVoice, setTtsVoice] = useState("");
   const [enableAutoScrolling, setEnableAutoScrolling] = useState(false);
   const [enableHighlighting, setEnableHighlighting] = useState(false);
   const [activeHighlightElements, setActiveHighlightElements] = useState<
@@ -66,7 +64,6 @@ const Main = ({
     extractText,
     getVisibleText,
     findRemainingFullText,
-    findRemainingElements,
     bookContext,
   } = useBook(bookUrl, isFullScreen);
 
@@ -108,8 +105,6 @@ const Main = ({
   );
 
   useEffect(() => {
-    setTtsType(settings?.ttsType);
-    setTtsVoice(settings?.ttsVoice);
     setEnableAutoScrolling(settings?.enableAutoScrolling);
     setEnableHighlighting(settings?.enableHighlighting);
     setIsDarkMode(settings?.theme === "dark" ? true : false);
@@ -310,19 +305,19 @@ const Main = ({
   const handleZoomIn = () => {
     const newZoomLevel =
       typeof zoomLevel === "number" ? zoomLevel + 0.25 : 1.25;
-    zoomTo(newZoomLevel); // Use the zoomTo method from the zoom plugin
+    zoomTo(newZoomLevel);
     setZoomLevel(newZoomLevel);
   };
 
   const handleZoomOut = () => {
     const newZoomLevel =
       typeof zoomLevel === "number" ? zoomLevel - 0.25 : 0.75;
-    zoomTo(newZoomLevel); // Use the zoomTo method from the zoom plugin
+    zoomTo(newZoomLevel);
     setZoomLevel(newZoomLevel);
   };
 
   const handleZoomChange = (newZoom: number | SpecialZoomLevel) => {
-    zoomTo(newZoom); // Use the zoomTo method from the zoom plugin
+    zoomTo(newZoom);
     setZoomLevel(newZoom);
   };
 

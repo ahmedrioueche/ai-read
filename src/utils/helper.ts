@@ -455,3 +455,10 @@ export const calculateDelay = (text: string, readingSpeed: number) => {
   const totalDelay = baseDelay + punctuationDelay;
   return totalDelay;
 };
+
+export const formatCurrency = (value: string) => {
+  return new Intl.NumberFormat("en-US", {
+    style: "currency",
+    currency: "USD",
+  }).format(parseFloat(value));
+};

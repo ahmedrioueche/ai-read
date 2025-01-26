@@ -10,7 +10,10 @@ export interface Settings {
   enableReading: boolean;
   readingSpeed: "slow" | "normal" | "fast";
   ttsType: "premium" | "basic";
-  ttsVoice: string;
+  ttsVoice: {
+    label: string;
+    value: string;
+  };
   enableAutoScrolling: boolean;
   enableHighlighting: boolean;
 }

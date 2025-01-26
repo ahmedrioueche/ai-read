@@ -1,5 +1,5 @@
 import { NextResponse } from "next/server";
-import prisma from "@/utils/prisma";
+import { UserService } from "@/services/userService";
 
 async function handlePost(req: Request) {
   try {
@@ -13,44 +13,14 @@ async function handlePost(req: Request) {
       );
     }
 
-    // First check if user exists
-    const user = await prisma.user.findUnique({
-      where: { email },
-      include: {
-        analytics: true,
-        settings: true,
-      },
-    });
-
-    if (!user) {
-      return NextResponse.json(
-        { message: "User not found", email },
-        { status: 404 }
-      );
-    }
-
-    console.log("Found user:", user);
-
-    try {
-      const updatedUser = await prisma.user.update({
-        where: { email },
-        data: {
-          ...updateData,
-        },
-      });
-
-      console.log("Successfully updated user:", updatedUser);
-
-      return NextResponse.json(
-        { message: "User updated successfully", user: updatedUser },
-        { status: 200 }
-      );
-    } catch (prismaError) {
-      console.error("Prisma update error:", prismaError);
-      throw prismaError; // Re-throw to be caught by outer catch block
-    }
+    const userService = new UserService();
+    return await userService.updateUser(email, updateData);
   } catch (error) {
-    console.log("Error");
+    console.error("Error in handlePost:", error);
+    return NextResponse.json(
+      { message: "Internal Server Error" },
+      { status: 500 }
+    );
   }
 }
 

@@ -19,12 +19,11 @@ export const plans = [
       "Premium text-to-speech: realistic voices with natural emotion",
       "PDF compatibility with dark mode",
       "Expanded book storage capacity",
-      "Personalized reading reminders and detailed analytics",
+      //"Personalized reading reminders and detailed analytics",
     ],
   },
 ];
 
 export const pricing = {
-  premium: "12.00",
-  pro: "90.00",
+  premium: "15.00",
 };

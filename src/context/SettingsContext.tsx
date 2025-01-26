@@ -16,7 +16,10 @@ const defaultSettings: Settings = {
   readingSpeed: "normal",
   appLanguage: "en",
   ttsType: "basic",
-  ttsVoice: "",
+  ttsVoice: {
+    label: "Undefined",
+    value: "",
+  },
   bookLanguage: "en",
   enableAutoScrolling: false,
   enableHighlighting: false,

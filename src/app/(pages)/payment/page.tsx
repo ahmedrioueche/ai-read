@@ -4,14 +4,14 @@ import { PayPalButtons } from "@paypal/react-paypal-js";
 import PaypalProvider from "@/components/PaypalProvider";
 import { plans, pricing } from "@/utils/constants";
 import Link from "next/link";
-import { UserApi } from "@/apis/userApi";
 import { useAuth } from "@/context/AuthContext";
 import { useRouter } from "next/navigation";
-import { User } from "@prisma/client";
 import Alert from "@/components/ui/Alert";
 import { CheckCircle, Loader, LucideIcon, XCircle } from "lucide-react";
 import { AppAlerts } from "@/lib/appAlerts";
 import CustomSelect from "@/components/ui/CustomSelect";
+import { PaypalApi } from "@/apis/paymentApi";
+import { formatCurrency } from "@/utils/helper";
 
 const plan = plans.find((plan) => plan.name === "Premium");
 
@@ -32,7 +32,7 @@ const paymentOptions = [
 
 const Payment: React.FC = () => {
   const { user } = useAuth();
-  const userApi = new UserApi();
+  console.log({ user });
   const router = useRouter();
   const [status, setStatus] = useState<{
     status: string;
@@ -48,15 +48,7 @@ const Payment: React.FC = () => {
   const [discountString, setDiscountString] = useState("0");
   const [isProcessing, setIsProcessing] = useState(false);
 
-  const formatCurrency = (value: string) => {
-    return new Intl.NumberFormat("en-US", {
-      style: "currency",
-      currency: "USD",
-    }).format(parseFloat(value));
-  };
-
   useEffect(() => {
-    console.log("selectedPaymentOptionLabel", selectedPaymentOptionValue);
     const selectedPaymentOptionValueInt = parseInt(
       selectedPaymentOptionValue,
       10
@@ -65,88 +57,66 @@ const Payment: React.FC = () => {
       parseFloat(pricing.premium) * selectedPaymentOptionValueInt;
     const discount =
       selectedPaymentOptionValueInt > 1 ? selectedPaymentOptionValueInt * 2 : 0;
-
     const paymentValueWithDiscount = paymentValue - discount;
 
     setPaymentValue(paymentValueWithDiscount.toFixed(2));
     setDiscountString(discount.toFixed(2));
   }, [selectedPaymentOptionValue]);
 
-  const handleApprove = async (orderId: string, paymentValue: string) => {
-    setIsProcessing(true);
-    setStatus({
-      status: "Loading",
-      message: "Please Wait until processing is completed",
-      bg: "bg-blue-500",
-      icon: Loader,
-    });
-    setIsAlertOpen(true);
+  const paypalApi = new PaypalApi();
 
+  const createOrder = async () => {
     try {
-      // Calculate subscription duration in months
-      const subDuration = parseInt(selectedPaymentOptionValue, 10);
+      const orderID = await paypalApi.createOrder(paymentValue);
+      console.log("orderID", orderID);
+      return orderID;
+    } catch (error) {
+      console.error("Failed to create order:", error);
+      throw error;
+    }
+  };
 
-      // Calculate subscription expiration date
-      const currentDate = new Date();
-      const subExpirationDate = new Date(
-        currentDate.setMonth(currentDate.getMonth() + subDuration)
+  const onApprove = async (data: { orderID: string }) => {
+    setIsProcessing(true);
+    try {
+      // Step 1: Capture the PayPal payment
+      console.log("orderId", data.orderID);
+      console.log("user", user);
+      console.log("paymentValue", paymentValue);
+      const captureDetails = await paypalApi.captureOrder(
+        data.orderID,
+        user.email,
+        paymentValue
       );
 
-      // Prepare user data for update
-      const userData: Partial<User> = {
-        lastOrderId: orderId,
-        plan: "premium",
-        lastPaymentDate: new Date(),
-        lastPaymentValue: parseFloat(paymentValue),
-        subExpirationDate: subExpirationDate,
-      };
+      console.log({ captureDetails });
 
-      // Update user data in the database
-      await userApi.updateUser(user?.email, userData);
-
-      // Show success message
+      // Step 2: Update UI to show success message
       setStatus({
         status: "Success",
-        message: "Payment successful! You are now a Premium member!.",
+        message: "Payment successful! You are now a Premium member!",
         icon: CheckCircle,
       });
       setIsAlertOpen(true);
 
-      // Send payment alert
+      // Step 3: Send a payment alert email
       try {
         await appAlerts.sendNewPaymentAlert(
           user.email,
-          `payment value: $${paymentValue}, subscription expiration date: ${subExpirationDate}`
+          `Payment value: $${paymentValue}`
         );
-      } catch (e) {
-        console.log("Error sending payment alert", e);
+      } catch (error) {
+        console.error("Error sending payment alert:", error);
       }
 
-      // Redirect to home page after 3 seconds
+      // Step 4: Redirect to home page after 3 seconds
       setTimeout(() => {
         router.push("/");
       }, 3000);
-    } catch (e) {
-      console.log("Failed to update user data", e);
+    } catch (error) {
+      console.error("Failed to capture payment:", error);
 
-      // Send error alert
-      try {
-        await appAlerts.sendErrorAlert(
-          "Failed to update user data after premium payment"
-        );
-      } catch (e) {
-        console.log("Failed to send error alert", e);
-        // we gotta try again
-        try {
-          await appAlerts.sendErrorAlert(
-            "Failed to update user data after premium payment"
-          );
-        } catch (e) {
-          console.log("Failed to send error alert", e);
-        }
-      }
-
-      // Show error message
+      // Update UI to show failure message
       setStatus({
         status: "Fail",
         message: "There was an error processing the payment. Please try again.",
@@ -160,6 +130,7 @@ const Payment: React.FC = () => {
         setIsAlertOpen(false);
       }, 5000);
     }
+    setIsProcessing(false);
   };
 
   return (
@@ -178,12 +149,11 @@ const Payment: React.FC = () => {
           </div>
 
           <div
-            className={`bg-dark-background rounded-xl shadow-lg md:p-6 p-4 flex flex-col border-2 
-              ${
-                plan?.name === "Premium"
-                  ? "border-dark-secondary shadow-dark-secondary/20"
-                  : "border-dark-secondary/20"
-              }`}
+            className={`bg-dark-background rounded-xl shadow-lg md:p-6 p-4 flex flex-col border-2 ${
+              plan?.name === "Premium"
+                ? "border-dark-secondary shadow-dark-secondary/20"
+                : "border-dark-secondary/20"
+            }`}
           >
             <div className="flex items-center space-x-3 mb-4">
               <div className="w-10 h-10 rounded-full bg-dark-secondary/10 flex items-center justify-center">
@@ -210,79 +180,69 @@ const Payment: React.FC = () => {
                 </p>
               ))}
             </div>
-            <div className="bg-dark-background/50 rounded-lg p-3">
-              <div className="relative">
-                <div className="relative z-50 mb-4">
-                  <div className="flex flex-row space-x-2">
-                    {/* CustomSelect takes 60% width */}
-                    <div className="w-[60%]">
-                      <CustomSelect
-                        options={paymentOptions}
-                        label={""}
-                        selectedOption={selectedPaymentOptionValue}
-                        onChange={setSelectedPaymentOptionValue}
-                        disabled={isProcessing}
-                      />
-                    </div>
+            {user && user.email.trim() !== "" ? (
+              <div className="bg-dark-background/50 text-dark-foreground rounded-lg p-3">
+                <div className="relative">
+                  <div className="relative z-50 mb-4">
+                    <div className="flex flex-row space-x-2">
+                      <div className="w-[60%]">
+                        <CustomSelect
+                          options={paymentOptions}
+                          label={""}
+                          selectedOption={selectedPaymentOptionValue}
+                          onChange={setSelectedPaymentOptionValue}
+                          disabled={isProcessing}
+                        />
+                      </div>
 
-                    {/* Discount Div takes 20% width */}
-                    <div className="w-[20%] h-11 mt-2 bg-dark-secondary/80 p-3 rounded-lg border border-dark-secondary/20 flex items-center justify-center">
-                      <span className="text-dark-foreground font-medium">
-                        <div className="hidden md:flex text-sm">Discount</div>
-                        {formatCurrency(discountString)}
-                      </span>
-                    </div>
-                    {/* Payment Value Div takes 20% width */}
-                    <div className="w-[20%] h-11 mt-2 bg-dark-secondary/80 p-3 rounded-lg border border-dark-secondary/20 flex items-center justify-center">
-                      <span className="text-dark-foreground font-medium">
-                        <div className="hidden md:flex md:text-sm ">
-                          Final Price
-                        </div>
-
-                        {formatCurrency(paymentValue)}
-                      </span>
+                      <div className="w-[20%] h-11 mt-2 bg-dark-secondary/80 p-3 rounded-lg border border-dark-secondary/20 flex items-center justify-center">
+                        <span className="text-dark-foreground font-medium">
+                          <div className="hidden md:flex text-sm">Discount</div>
+                          {formatCurrency(discountString)}
+                        </span>
+                      </div>
+                      <div className="w-[20%] h-11 mt-2 bg-dark-secondary/80 p-3 rounded-lg border border-dark-secondary/20 flex items-center justify-center">
+                        <span className="text-dark-foreground font-medium">
+                          <div className="hidden md:flex md:text-sm ">
+                            Final Price
+                          </div>
+                          {formatCurrency(paymentValue)}
+                        </span>
+                      </div>
                     </div>
                   </div>
-                </div>
 
-                <div className="relative z-40">
-                  <PayPalButtons
-                    key={paymentValue}
-                    createOrder={(data, actions) => {
-                      return actions.order.create({
-                        purchase_units: [
-                          {
-                            amount: { value: paymentValue },
-                          },
-                        ],
-                      });
-                    }}
-                    onApprove={(data, actions) => {
-                      return actions.order
-                        .capture()
-                        .then(
-                          (details: {
-                            payer: { name: { given_name: any } };
-                          }) => {
-                            const orderId = data.orderID || "";
-                            handleApprove(orderId, paymentValue);
-                          }
-                        );
-                    }}
-                    onError={(err) => {
-                      console.error("PayPal Checkout Error", err);
-                      alert("An error occurred during the transaction.");
-                    }}
-                    style={{
-                      layout: "vertical",
-                      color: "gold",
-                      shape: "rect",
-                      label: "pay",
-                    }}
-                  />
+                  <div className="relative z-40">
+                    <PayPalButtons
+                      key={paymentValue}
+                      createOrder={createOrder}
+                      onApprove={onApprove}
+                      onError={(err) => {
+                        console.error("PayPal Checkout Error", err);
+                        setStatus({
+                          status: "Fail",
+                          message:
+                            "An error occurred during the transaction. Please try again.",
+                          bg: "bg-red-500",
+                          icon: XCircle,
+                        });
+                        setIsAlertOpen(true);
+                      }}
+                      style={{
+                        layout: "vertical",
+                        color: "gold",
+                        shape: "rect",
+                        label: "pay",
+                      }}
+                    />
+                  </div>
                 </div>
               </div>
-            </div>
+            ) : (
+              <div className="mb-10 flex flex-col items-center justify-center ">
+                <Loader className="animate-spin text-2xl text-dark-secondary" />
+              </div>
+            )}
           </div>
         </div>
         {isAlertOpen && (
