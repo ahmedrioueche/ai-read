@@ -135,7 +135,7 @@ export const SettingsModal: React.FC<SettingsModalProps> = ({
     setTtsType(isPremium ? settings.ttsType : "basic");
   }, [isPremium]);
 
-  const fetchBuiltInVoices = () => {
+  const fetchBasicVoices = () => {
     const voices = window.speechSynthesis.getVoices();
     if (voices.length > 0) {
       const validVoices = voices.filter((voice) => voice && voice.name);
@@ -162,6 +162,13 @@ export const SettingsModal: React.FC<SettingsModalProps> = ({
       );
     }
   };
+
+  //make sure the tts voice select always have a value
+  useEffect(() => {
+    if (ttsVoice.label?.trim() === "") {
+      setTtsVoice(basicVoices[0]);
+    }
+  }, [basicVoices]);
 
   const fetchPremiumVoices = async () => {
     try {
@@ -199,8 +206,8 @@ export const SettingsModal: React.FC<SettingsModalProps> = ({
     const fetchVoices = async () => {
       if (ttsType === "basic") {
         if ("speechSynthesis" in window) {
-          fetchBuiltInVoices();
-          window.speechSynthesis.onvoiceschanged = fetchBuiltInVoices;
+          fetchBasicVoices();
+          window.speechSynthesis.onvoiceschanged = fetchBasicVoices;
         }
       } else {
         await fetchPremiumVoices();
