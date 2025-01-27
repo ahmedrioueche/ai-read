@@ -124,7 +124,7 @@ export const SettingsModal: React.FC<SettingsModalProps> = ({
       setReadingSpeed(settings.readingSpeed || "normal");
       setAppLanguage(settings.appLanguage || "english");
       setTtsType(isPremium ? settings.ttsType : "basic");
-      setTtsVoice(settings.ttsVoice);
+      setTtsVoice(settings.ttsVoice || { label: "Select voice" });
       setBookLanguage(settings.bookLanguage || "english");
       setAutoScroll(settings.enableAutoScrolling);
       setHighlighting(settings.enableHighlighting);
