@@ -153,6 +153,7 @@ const useReading = () => {
     if (ttsType === "premium") {
       const audioBlob = await fetchTtsAudio(text);
       playAudio(audioBlob);
+      setReadingState("reading");
     } else {
       readTextWebSpeechApi(text);
     }
