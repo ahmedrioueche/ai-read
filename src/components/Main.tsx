@@ -4,7 +4,7 @@ import { Viewer, Worker, SpecialZoomLevel } from "@react-pdf-viewer/core";
 import "@react-pdf-viewer/core/lib/styles/index.css";
 import { zoomPlugin } from "@react-pdf-viewer/zoom";
 import "@react-pdf-viewer/zoom/lib/styles/index.css";
-import { useState, useEffect, useRef } from "react";
+import { useState, useEffect, useRef, FormEvent } from "react";
 import TextCard from "./ui/TextCard";
 import OptionsMenu from "./ui/OptionsMenu";
 import { BookData } from "@/components/Home";
@@ -16,6 +16,7 @@ import useScrolling from "@/hooks/useScrolling";
 import useHighlighting from "@/hooks/useHighlighting";
 import useTextProcessing from "@/hooks/useTextProcessing";
 import { ZoomIn, ZoomOut } from "lucide-react";
+import { pageNavigationPlugin } from "@react-pdf-viewer/page-navigation";
 
 const Main = ({
   book,
@@ -55,6 +56,8 @@ const Main = ({
   // Create the zoom plugin instance
   const zoomPluginInstance = zoomPlugin();
   const { zoomTo } = zoomPluginInstance;
+  const pageNavigationPluginInstance = pageNavigationPlugin();
+  const { jumpToPage } = pageNavigationPluginInstance;
 
   const {
     selectedText,
@@ -331,6 +334,12 @@ const Main = ({
     }
   };
 
+  const handlePageInputSubmit = (e: React.FormEvent) => {
+    e.preventDefault();
+    const pageNumber = currentPage;
+    jumpToPage(pageNumber);
+  };
+
   return (
     <div
       ref={rootRef}
@@ -395,11 +404,14 @@ const Main = ({
         >
           <ZoomIn size={16} />
         </button>
-        <div className="flex items-center space-x-2">
+        <form
+          onSubmit={(e) => handlePageInputSubmit(e)}
+          className="flex items-center space-x-2"
+        >
           <input
             type="number"
-            value={currentPage}
             onChange={handlePageInputChange}
+            value={currentPage}
             min={1}
             max={totalPages}
             className={`w-12 p-2 ${
@@ -409,7 +421,7 @@ const Main = ({
           <span className={isDarkMode ? "text-white" : "text-black"}>
             / {totalPages}
           </span>
-        </div>
+        </form>
       </div>
 
       <Worker workerUrl="https://cdnjs.cloudflare.com/ajax/libs/pdf.js/3.11.174/pdf.worker.min.js">
@@ -420,7 +432,7 @@ const Main = ({
           onDocumentLoad={(e) => setTotalPages(e.doc.numPages)}
           ref={viewerRef}
           defaultScale={zoomLevel}
-          plugins={[zoomPluginInstance]}
+          plugins={[zoomPluginInstance, pageNavigationPluginInstance]}
         />
       </Worker>
 

@@ -18,7 +18,7 @@ import { useSettings } from "@/context/SettingsContext";
 import { Settings } from "@/utils/types";
 import { usePlan } from "@/context/PlanContext";
 import Alert from "./ui/Alert";
-import { languageMap } from "@/utils/helper";
+import { languageMap, shortenLocaleName } from "@/utils/helper";
 import { AppAlerts } from "@/lib/appAlerts";
 
 // Types
@@ -196,7 +196,8 @@ export const SettingsModal: React.FC<SettingsModalProps> = ({
       if (voices && Array.isArray(voices)) {
         const apiVoices = voices.map((voice: any) => ({
           value: voice.Name,
-          label: voice.DisplayName + " - " + voice.LocaleName,
+          label:
+            voice.DisplayName + " - " + shortenLocaleName(voice.LocaleName),
         }));
         setPremiumVoices(apiVoices);
       }

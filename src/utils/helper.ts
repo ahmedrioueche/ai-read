@@ -266,6 +266,21 @@ export function getLanguages(dict: Record<string, any>): string[] {
   return Object.keys(dict);
 }
 
+export function shortenLocaleName(localeName: string): string {
+  return localeName.replace(/\(([^)]+)\)/, (_, country) => {
+    const countryParts = country.split(" ");
+    if (countryParts.length > 1) {
+      // If the country name has more than one word, return initials
+      const initials = countryParts
+        .map((word: string[]) => word[0].toUpperCase())
+        .join("");
+      return `(${initials})`;
+    }
+    // Otherwise, return the full country name
+    return `(${country})`;
+  });
+}
+
 export const preprocessText = (text: string) => {
   // Step 1: Remove inline annotations like "[22]" or similar
   let cleanedText = text.replace(/\[\d+\]/g, "");

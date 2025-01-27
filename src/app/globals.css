@@ -96,3 +96,14 @@ body {
   filter: invert(1) hue-rotate(180deg);
   background-color: black;
 }
+
+/* Remove the spinner from number inputs */
+input[type="number"]::-webkit-outer-spin-button,
+input[type="number"]::-webkit-inner-spin-button {
+  -webkit-appearance: none;
+  margin: 0;
+}
+
+input[type="number"] {
+  -moz-appearance: textfield;
+}
