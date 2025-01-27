@@ -98,6 +98,9 @@ export const SettingsModal: React.FC<SettingsModalProps> = ({
   const [sampleText, setSampleText] = useState(
     "Welcome to AIRead, the best AI-powered reading platform."
   );
+  const [isSearchMode, setIsSearchMode] = useState(false); // State for search mode
+  const [searchQuery, setSearchQuery] = useState(""); // State for search query
+
   const voiceApi = new VoiceApi();
   const voiceApi2 = new VoiceApi2();
   const aiApi = new AiApi();
@@ -364,6 +367,56 @@ export const SettingsModal: React.FC<SettingsModalProps> = ({
     }
   };
 
+  // Filter voices based on search query
+  const searchResults = filteredVoices.filter((voice) =>
+    voice.label.toLowerCase().includes(searchQuery.toLowerCase())
+  );
+
+  // Toggle search mode
+  const toggleSearchMode = () => {
+    setIsSearchMode(!isSearchMode);
+    setSearchQuery(""); // Clear search query when toggling
+  };
+
+  // Handle voice selection in search mode
+  const handleSearchSelect = (voice: { value: string; label: string }) => {
+    setTtsVoice({ value: voice.value, label: voice.label });
+    setIsSearchMode(false); // Switch back to CustomSelect
+  };
+
+  // Render the searchable filter
+  const renderSearchFilter = () => (
+    <div className="flex flex-col gap-2">
+      <div className="flex flex-row gap-2">
+        <input
+          type="text"
+          placeholder="Search voices..."
+          value={searchQuery}
+          onChange={(e) => setSearchQuery(e.target.value)}
+          className="flex-1 px-3 py-2 bg-dark-foreground border border-dark-accent/70 rounded-lg shadow-sm placeholder-gray-600 focus:outline-none focus:ring-2 focus:ring-dark-secondary focus:border-transparent text-dark-background"
+        />
+        <button
+          onClick={toggleSearchMode}
+          className="px-4 py-2 h-10 bg-dark-secondary text-light-background rounded-md hover:bg-dark-accent transition-colors duration-300"
+        >
+          Cancel
+        </button>
+      </div>
+      {/* Set a fixed height for the search results container */}
+      <ul className="h-60 overflow-y-auto">
+        {searchResults.map((voice) => (
+          <li
+            key={voice.value}
+            className="px-4 bg-dark-foreground py-2 hover:bg-light-secondary dark:hover:bg-dark-secondary hover:cursor-pointer text-light-foreground dark:text-dark-foreground dark:hover:text-dark-background focus:bg-light-secondary dark:focus:bg-dark-secondary focus:outline-none"
+            onClick={() => handleSearchSelect(voice)}
+          >
+            {voice.label}
+          </li>
+        ))}
+      </ul>
+    </div>
+  );
+
   return (
     <div
       className={`fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50 transition-transform duration-300 ${
@@ -460,52 +513,69 @@ export const SettingsModal: React.FC<SettingsModalProps> = ({
               </div>
             </div>
 
-            <div className="mt-6">
+            {/* Separate Section for CustomSelect + Search */}
+            <div className="flex flex-row mt-6 gap-2 w-full">
               {voicesLoading ? (
                 <Loader className="animate-spin" />
-              ) : (
-                <CustomSelect
-                  label="Text To Speech Voice"
-                  options={filteredVoices}
-                  selectedOption={ttsVoice.value!}
-                  onChange={(value: string) => {
-                    // Find the selected option from filteredVoices
-                    const selectedVoice = filteredVoices.find(
-                      (voice) => voice.value === value
-                    );
-                    if (selectedVoice) {
-                      // Update ttsVoice with both value and label
-                      setTtsVoice({
-                        value: selectedVoice.value,
-                        label: selectedVoice.label,
-                      });
-                    }
-                  }}
-                />
-              )}
-              <div className="flex items-center gap-2 mt-10">
-                <div className="relative flex-1">
-                  <input
-                    id="sample-text"
-                    name="sample-text"
-                    type="text"
-                    value={sampleText}
-                    onChange={(e) => setSampleText(e.target.value)}
-                    required
-                    className="w-full px-3 py-2 pl-10 bg-dark-background border border-dark-accent/70 rounded-lg shadow-sm placeholder-gray-600 focus:outline-none focus:ring-2 focus:ring-dark-primary focus:border-transparent text-dark-foreground"
-                    placeholder="Enter sample text"
-                  />
-                  <Type className="h-5 w-5 text-dark-secondary absolute left-3 top-1/2 transform -translate-y-1/2" />
+              ) : isSearchMode ? (
+                <div className="flex flex-col w-full">
+                  <span className="text-base font-semibold mb-2">
+                    Text To Speech Voice
+                  </span>
+                  <div className="w-full">{renderSearchFilter()}</div>
                 </div>
-                <button
-                  onClick={playSampleText}
-                  className="px-4 py-2 bg-dark-secondary text-light-background rounded-md hover:bg-dark-accent transition-colors duration-300"
-                  disabled={isPlayLoading}
-                >
-                  {isPlayLoading ? <Loader className="animate-spin" /> : "Play"}
-                </button>
-              </div>
+              ) : (
+                <div className="flex flex-row w-full gap-2">
+                  <div className="flex-1">
+                    <CustomSelect
+                      label="Text To Speech Voice"
+                      options={filteredVoices}
+                      selectedOption={ttsVoice.value!}
+                      onChange={(value: string) => {
+                        const selectedVoice = filteredVoices.find(
+                          (voice) => voice.value === value
+                        );
+                        if (selectedVoice) {
+                          setTtsVoice({
+                            value: selectedVoice.value,
+                            label: selectedVoice.label,
+                          });
+                        }
+                      }}
+                    />
+                  </div>
+                  <button
+                    onClick={toggleSearchMode}
+                    className="px-4 py-2 h-10 mt-8 bg-dark-secondary text-light-background rounded-md hover:bg-dark-accent transition-colors duration-300"
+                  >
+                    Search
+                  </button>
+                </div>
+              )}
             </div>
+            <div className="flex items-center gap-2 mt-10">
+              <div className="relative flex-1">
+                <input
+                  id="sample-text"
+                  name="sample-text"
+                  type="text"
+                  value={sampleText}
+                  onChange={(e) => setSampleText(e.target.value)}
+                  required
+                  className="w-full px-3 py-2 pl-10 bg-dark-background border border-dark-accent/70 rounded-lg shadow-sm placeholder-gray-600 focus:outline-none focus:ring-2 focus:ring-dark-primary focus:border-transparent text-dark-foreground"
+                  placeholder="Enter sample text"
+                />
+                <Type className="h-5 w-5 text-dark-secondary absolute left-3 top-1/2 transform -translate-y-1/2" />
+              </div>
+              <button
+                onClick={playSampleText}
+                className="px-4 py-2 bg-dark-secondary text-light-background rounded-md hover:bg-dark-accent transition-colors duration-300"
+                disabled={isPlayLoading}
+              >
+                {isPlayLoading ? <Loader className="animate-spin" /> : "Play"}
+              </button>
+            </div>
+
             <div className="flex flex-col mt-6">
               <CustomSelect
                 label="Book Theme"
@@ -691,5 +761,4 @@ export const SettingsModal: React.FC<SettingsModalProps> = ({
     </div>
   );
 };
-
 export default SettingsModal;
