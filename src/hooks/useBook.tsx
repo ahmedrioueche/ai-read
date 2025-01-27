@@ -1,18 +1,21 @@
 import { useState, useEffect, useRef, useCallback } from "react";
 import { franc } from "franc-min";
 import pdfToText from "react-pdftotext";
+import { useSettings } from "@/context/SettingsContext";
+import { Settings } from "lucide-react";
+import { formatLanguageToName } from "@/utils/helper";
 
 type SetStateAction<T> = T | ((prevState: T) => T);
 type SetHighlightElements = (value: SetStateAction<HTMLElement[]>) => void;
 
 const useBook = (bookUrl: string, isFullScreen: boolean) => {
   const [fullText, setFullText] = useState<string>("");
-  const [bookLanguage, setBookLanguage] = useState<string | null>(null);
   const rootRef = useRef<HTMLDivElement | null>(null);
   const [selectionTimeout, setSelectionTimeout] =
     useState<NodeJS.Timeout | null>(null);
   const [selectedText, setSelectedText] = useState<string | null>(null);
   const [bookContext, setBookContext] = useState<string | null>(null);
+  const { settings, updateSettings } = useSettings();
 
   // Function to extract text from the PDF
   const extractText = async (fileUrl: string) => {
@@ -27,7 +30,8 @@ const useBook = (bookUrl: string, isFullScreen: boolean) => {
       setBookContext(limitedText);
 
       const detectedLanguage = franc(limitedText);
-      setBookLanguage(detectedLanguage);
+      const formattedLanguage = formatLanguageToName(detectedLanguage);
+      updateSettings({ ...settings, bookLanguage: formattedLanguage });
     } catch (error) {
       console.error("Failed to extract text from PDF:", error);
     }
@@ -254,7 +258,6 @@ const useBook = (bookUrl: string, isFullScreen: boolean) => {
     fullText,
     selectedText,
     setSelectedText,
-    bookLanguage,
     rootRef,
     extractText,
     getVisibleText,

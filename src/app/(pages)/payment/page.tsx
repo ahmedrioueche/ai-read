@@ -188,7 +188,7 @@ const Payment: React.FC = () => {
                       <div className="w-[60%]">
                         <CustomSelect
                           options={paymentOptions}
-                          label={""}
+                          title={""}
                           selectedOption={selectedPaymentOptionValue}
                           onChange={setSelectedPaymentOptionValue}
                           disabled={isProcessing}

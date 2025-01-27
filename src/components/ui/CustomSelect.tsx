@@ -1,17 +1,19 @@
 import { useEffect, useRef, useState } from "react";
 
 interface CustomSelectProps<T> {
-  label: string;
+  title: string;
   options: { value: T; label: string }[];
   selectedOption: T;
+  label?: T;
   onChange: (value: T) => void;
   disabled?: boolean;
 }
 
 const CustomSelect = <T extends string>({
-  label,
+  title,
   options,
   selectedOption,
+  label,
   onChange,
   disabled,
 }: CustomSelectProps<T>) => {
@@ -82,13 +84,13 @@ const CustomSelect = <T extends string>({
 
   return (
     <div className="relative" ref={selectRef}>
-      <label className="font-semibold text-dark-foreground">{label}</label>
+      <label className="font-semibold text-dark-foreground">{title}</label>
       <div
         role="button"
         tabIndex={disabled ? -1 : 0}
         aria-haspopup="listbox"
         aria-expanded={isOpen}
-        aria-label={label}
+        aria-label={title}
         aria-disabled={disabled}
         className={`mt-2 p-2 border rounded-md bg-light-background dark:bg-dark-background hover:border-light-secondary dark:hover:border-dark-secondary focus:ring-2 focus:ring-light-secondary dark:focus:ring-dark-secondary cursor-pointer text-light-foreground dark:hover:text-dark-foreground dark:text-dark-foreground ${
           disabled
@@ -103,11 +105,12 @@ const CustomSelect = <T extends string>({
         }}
       >
         {options.find((option) => option.value === selectedOption)?.label ||
+          label ||
           selectedOption}
       </div>
       {isOpen && !disabled && (
         <ul
-          ref={listRef} // Attach the ref to the list
+          ref={listRef}
           role="listbox"
           className="absolute z-10 mt-1 w-full bg-light-background dark:bg-dark-background border border-light-secondary dark:border-dark-secondary rounded-md shadow-lg max-h-60 overflow-auto"
           onScroll={handleListScroll} // Save scroll position on scroll
@@ -118,7 +121,7 @@ const CustomSelect = <T extends string>({
               role="option"
               aria-selected={option.value === selectedOption}
               tabIndex={0}
-              className="px-4 py-2 hover:bg-light-secondary dark:hover:bg-dark-secondary hover:cursor-pointer text-light-foreground dark:text-dark-foreground dark:hover:text-dark-background focus:bg-light-secondary dark:focus:bg-dark-secondary focus:outline-none"
+              className="px-4 py-2 hover:bg-light-secondary hover:text-dark-foreground dark:hover:bg-dark-secondary hover:cursor-pointer text-light-foreground dark:text-dark-foreground dark:hover:text-dark-background focus:bg-light-secondary dark:focus:bg-dark-secondary focus:outline-none"
               onClick={() => {
                 onChange(option.value);
                 setIsOpen(false);

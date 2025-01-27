@@ -9,18 +9,18 @@ type SettingsContextType = {
 };
 
 const defaultSettings: Settings = {
-  translationLanguage: { language: "en", rtl: false },
+  translationLanguage: { language: "English", rtl: false },
   theme: "light",
   enableTranslation: false,
   enableReading: false,
   readingSpeed: "normal",
-  appLanguage: "en",
+  appLanguage: "English",
   ttsType: "basic",
   ttsVoice: {
     label: "Undefined",
     value: "",
   },
-  bookLanguage: "en",
+  bookLanguage: "English",
   enableAutoScrolling: false,
   enableHighlighting: false,
 };

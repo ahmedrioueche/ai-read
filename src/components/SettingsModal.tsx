@@ -1,6 +1,8 @@
 import {
   Loader,
   LucideIcon,
+  Play,
+  Search,
   Settings as SettingsIcon,
   Type,
   X,
@@ -190,6 +192,7 @@ export const SettingsModal: React.FC<SettingsModalProps> = ({
       //   setPremiumVoices(apiVoices);
       // }
       const voices = await voiceApi2.getVoices();
+
       if (voices && Array.isArray(voices)) {
         const apiVoices = voices.map((voice: any) => ({
           value: voice.Name,
@@ -249,6 +252,7 @@ export const SettingsModal: React.FC<SettingsModalProps> = ({
     } else if (ttsType === "premium" && premiumVoices.length > 0) {
       if (settings.ttsType === "premium") {
         //display the selected voice
+        console.log("settings.ttsVoice in useEffect", settings.ttsVoice);
         setTtsVoice(settings.ttsVoice);
         return;
       }
@@ -404,9 +408,9 @@ export const SettingsModal: React.FC<SettingsModalProps> = ({
         />
         <button
           onClick={toggleSearchMode}
-          className="px-4 py-2 h-10 bg-dark-secondary text-light-background rounded-md hover:bg-dark-accent transition-colors duration-300"
+          className="px-3 py-2 h-10 bg-dark-secondary text-light-background rounded-md hover:bg-dark-accent transition-colors duration-300"
         >
-          Cancel
+          <X />
         </button>
       </div>
       {/* Set a fixed height for the search results container */}
@@ -450,7 +454,7 @@ export const SettingsModal: React.FC<SettingsModalProps> = ({
           <div className="flex flex-col mt-0">
             <div className="">
               <CustomSelect
-                label="Book Language"
+                title="Book Language"
                 options={languages}
                 selectedOption={bookLanguage}
                 onChange={setBookLanguage}
@@ -535,9 +539,10 @@ export const SettingsModal: React.FC<SettingsModalProps> = ({
                 <div className="flex flex-row w-full gap-2">
                   <div className="flex-1">
                     <CustomSelect
-                      label="Text To Speech Voice"
+                      title="Text To Speech Voice"
                       options={filteredVoices}
                       selectedOption={ttsVoice.value!}
+                      label={ttsVoice.label}
                       onChange={(value: string) => {
                         const selectedVoice = filteredVoices.find(
                           (voice) => voice.value === value
@@ -553,14 +558,14 @@ export const SettingsModal: React.FC<SettingsModalProps> = ({
                   </div>
                   <button
                     onClick={toggleSearchMode}
-                    className="px-4 py-2 h-10 mt-8 bg-dark-secondary text-light-background rounded-md hover:bg-dark-accent transition-colors duration-300"
+                    className="px-3 py-2 h-10 mt-8 bg-dark-secondary text-light-background rounded-md hover:bg-dark-accent transition-colors duration-300"
                   >
-                    Search
+                    <Search />
                   </button>
                 </div>
               )}
             </div>
-            <div className="flex items-center gap-2 mt-10">
+            <div className="flex items-center gap-2 mt-6">
               <div className="relative flex-1">
                 <input
                   id="sample-text"
@@ -574,18 +579,19 @@ export const SettingsModal: React.FC<SettingsModalProps> = ({
                 />
                 <Type className="h-5 w-5 text-dark-secondary absolute left-3 top-1/2 transform -translate-y-1/2" />
               </div>
+
               <button
                 onClick={playSampleText}
-                className="px-4 py-2 bg-dark-secondary text-light-background rounded-md hover:bg-dark-accent transition-colors duration-300"
+                className="px-3 py-2 h-10 bg-dark-secondary text-light-background rounded-md hover:bg-dark-accent transition-colors duration-300"
                 disabled={isPlayLoading}
               >
-                {isPlayLoading ? <Loader className="animate-spin" /> : "Play"}
+                {isPlayLoading ? <Loader className="animate-spin" /> : <Play />}
               </button>
             </div>
 
             <div className="flex flex-col mt-6">
               <CustomSelect
-                label="Book Theme"
+                title="Book Theme"
                 options={themes}
                 selectedOption={currentTheme}
                 onChange={handleThemeChange}
@@ -598,7 +604,7 @@ export const SettingsModal: React.FC<SettingsModalProps> = ({
           <div className="flex flex-col">
             <div className="flex flex-col">
               <CustomSelect
-                label={text.General.translation_language}
+                title={text.General.translation_language}
                 options={languages}
                 selectedOption={language}
                 onChange={setTranslationLanguage}
@@ -668,7 +674,7 @@ export const SettingsModal: React.FC<SettingsModalProps> = ({
 
             <div className="flex flex-col mt-6">
               <CustomSelect
-                label={text.General.reading_speed}
+                title={text.General.reading_speed}
                 options={[
                   { value: "slow", label: text.General.slow },
                   { value: "normal", label: text.General.normal },

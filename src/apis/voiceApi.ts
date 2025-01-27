@@ -168,8 +168,6 @@ export class VoiceApi2 {
 
   // Method to fetch available voices
   async getVoices(): Promise<any[]> {
-    console.log("getVoices");
-
     const voicesUrl = `https://eastus.tts.speech.microsoft.com/cognitiveservices/voices/list`;
 
     const headers = {
@@ -178,7 +176,6 @@ export class VoiceApi2 {
 
     try {
       const response = await axios.get(voicesUrl, { headers });
-      console.log("response", response);
       return response.data;
     } catch (error) {
       console.error("Error fetching available voices:", error);

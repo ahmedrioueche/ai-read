@@ -239,6 +239,29 @@ export const languageMap: { [key: string]: string } = {
   zulu: "zu",
 };
 
+/**
+ * Converts an ISO 639-3 language code (e.g., "eng") to the full language name (e.g., "English").
+ * @param languageCode - The ISO 639-3 language code (e.g., "eng").
+ * @returns The full language name (e.g., "English").
+ */
+export const formatLanguageToName = (languageCode: string | null): string => {
+  if (!languageCode) return "English"; // Default to English for null or undefined
+
+  // Convert the ISO 639-3 code to ISO 639-1 code using the existing map
+  const iso6391Code = iso6393ToIso6391Map[languageCode.toLowerCase()];
+
+  if (!iso6391Code) return "English"; // Default to English if the code is not recognized
+
+  // Find the full language name from the languageMap
+  for (const [fullName, code] of Object.entries(languageMap)) {
+    if (code === iso6391Code) {
+      return fullName.charAt(0).toUpperCase() + fullName.slice(1); // Capitalize the first letter
+    }
+  }
+
+  return "English"; // Default to English if no match is found
+};
+
 export function getLanguages(dict: Record<string, any>): string[] {
   return Object.keys(dict);
 }

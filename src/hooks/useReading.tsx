@@ -72,7 +72,7 @@ const useReading = () => {
   //};
 
   const fetchTtsAudio = async (text: string): Promise<Blob> => {
-    const audioBuffer = await voiceApi2.textToSpeech(text);
+    const audioBuffer = await voiceApi2.textToSpeech(text, ttsVoice.value);
     return new Blob([audioBuffer], { type: "audio/mpeg" });
   };
 
@@ -105,7 +105,6 @@ const useReading = () => {
             const chunk = chunks[i];
             try {
               const audioBlob = await fetchTtsAudio(chunk);
-              console.log(`audioBlob for chunk ${i + 1}`, audioBlob);
               audioQueue.push(audioBlob); // Add to the queue
               setCurrentTextChunk(chunk);
             } catch (error) {
