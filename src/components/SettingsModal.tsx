@@ -253,7 +253,6 @@ export const SettingsModal: React.FC<SettingsModalProps> = ({
     } else if (ttsType === "premium" && premiumVoices.length > 0) {
       if (settings.ttsType === "premium") {
         //display the selected voice
-        console.log("settings.ttsVoice in useEffect", settings.ttsVoice);
         setTtsVoice(settings.ttsVoice);
         return;
       }
