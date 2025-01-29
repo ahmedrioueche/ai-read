@@ -302,6 +302,7 @@ export const preprocessText = (text: string) => {
 
   return cleanedText;
 };
+
 export const splitTextIntoChunks = (
   text: string,
   maxLength: number
@@ -310,7 +311,9 @@ export const splitTextIntoChunks = (
 
   const chunks: string[] = [];
   let currentIndex = 0;
-  const urlNumberRegex = /((https?:\/\/|www\.)[^\s]+|\$\d+\.\d|\d+\.\d)/gi;
+  // Improved regex to detect URLs and numbers
+  const urlNumberRegex =
+    /((?:https?:\/\/|www\.|[\w-]+\.)[\w-]+\.[a-z]{2,}(?:\.[a-z]{2,})*|\$\d+\.\d+|\d+\.\d+)/i;
 
   while (currentIndex < text.length) {
     let endIndex = Math.min(currentIndex + maxLength, text.length);
@@ -319,7 +322,7 @@ export const splitTextIntoChunks = (
     // Look for natural sentence boundaries
     let lastGoodBreak = -1;
 
-    // Search backward from endIndex for proper sentence endings
+    // Search backward for proper sentence endings
     for (let i = endIndex; i > currentIndex; i--) {
       const prevChar = text[i - 1];
       const nextChar = text[i];
@@ -329,9 +332,11 @@ export const splitTextIntoChunks = (
         /[.!?]/.test(prevChar) &&
         (/\s|$/.test(nextChar) || i === text.length)
       ) {
-        // Check if the punctuation is part of URL/number
+        // Check if punctuation is part of URL/number
         const precedingText = text.slice(currentIndex, i);
-        if (!urlNumberRegex.test(precedingText)) {
+        const isSpecial = urlNumberRegex.test(precedingText);
+
+        if (!isSpecial) {
           lastGoodBreak = i;
           break;
         }
@@ -342,23 +347,26 @@ export const splitTextIntoChunks = (
     if (lastGoodBreak > currentIndex) {
       endIndex = lastGoodBreak;
     } else {
-      // Find the next whitespace if no sentence end found
-      while (endIndex > currentIndex && !/\s/.test(text[endIndex - 1])) {
+      // Find next whitespace or maintain URL/numbers
+      while (endIndex > currentIndex) {
+        const precedingText = text.slice(currentIndex, endIndex);
+        const isSpecial = urlNumberRegex.test(precedingText);
+
+        if (isSpecial || /\s/.test(text[endIndex - 1])) {
+          break;
+        }
         endIndex--;
       }
 
-      // If no whitespace found, do hard break but check for URL/number
+      // If no break found, extend to preserve special patterns
       if (endIndex === currentIndex) {
-        endIndex = Math.min(currentIndex + maxLength, text.length);
-        const chunkCandidate = text.slice(currentIndex, endIndex);
-        const matches = chunkCandidate.match(urlNumberRegex);
+        const remainingText = text.slice(currentIndex);
+        const specialMatch = remainingText.match(urlNumberRegex);
 
-        // If URL/number is detected, extend to include full entity
-        if (matches) {
-          const lastMatch = matches[matches.length - 1];
-          const matchEnd =
-            chunkCandidate.lastIndexOf(lastMatch) + lastMatch.length;
-          endIndex = currentIndex + matchEnd;
+        if (specialMatch) {
+          endIndex = currentIndex + specialMatch[0].length;
+        } else {
+          endIndex = Math.min(currentIndex + maxLength, text.length);
         }
       }
     }
