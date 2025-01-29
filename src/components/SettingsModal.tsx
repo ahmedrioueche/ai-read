@@ -566,7 +566,7 @@ export const SettingsModal: React.FC<SettingsModalProps> = ({
                 </div>
               )}
             </div>
-            <div className="flex items-center gap-2 mt-6">
+            <div className="flex items-center gap-2 mt-10">
               <div className="relative flex-1">
                 <input
                   id="sample-text"

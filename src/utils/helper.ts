@@ -302,48 +302,69 @@ export const preprocessText = (text: string) => {
 
   return cleanedText;
 };
-
 export const splitTextIntoChunks = (
   text: string,
   maxLength: number
 ): string[] => {
-  // Input validation
-  if (!text || maxLength <= 0) {
-    return [];
-  }
+  if (!text || maxLength <= 0) return [];
 
   const chunks: string[] = [];
   let currentIndex = 0;
+  const urlNumberRegex = /((https?:\/\/|www\.)[^\s]+|\$\d+\.\d|\d+\.\d)/gi;
 
   while (currentIndex < text.length) {
-    // Determine the potential end of the current chunk
     let endIndex = Math.min(currentIndex + maxLength, text.length);
+    let searchEnd = endIndex;
 
-    // Look for the last comma or full stop within the chunk
-    const lastCommaIndex = text.lastIndexOf(",", endIndex);
-    const lastFullStopIndex = text.lastIndexOf(".", endIndex);
+    // Look for natural sentence boundaries
+    let lastGoodBreak = -1;
 
-    // Prioritize splitting at full stops, then commas
-    if (lastFullStopIndex > currentIndex) {
-      endIndex = lastFullStopIndex + 1; // Include the full stop
-    } else if (lastCommaIndex > currentIndex) {
-      endIndex = lastCommaIndex + 1; // Include the comma
+    // Search backward from endIndex for proper sentence endings
+    for (let i = endIndex; i > currentIndex; i--) {
+      const prevChar = text[i - 1];
+      const nextChar = text[i];
+
+      // Check for sentence-ending punctuation followed by space or end
+      if (
+        /[.!?]/.test(prevChar) &&
+        (/\s|$/.test(nextChar) || i === text.length)
+      ) {
+        // Check if the punctuation is part of URL/number
+        const precedingText = text.slice(currentIndex, i);
+        if (!urlNumberRegex.test(precedingText)) {
+          lastGoodBreak = i;
+          break;
+        }
+      }
     }
 
-    // If no comma or full stop is found, split at the maxLength
-    if (endIndex <= currentIndex) {
-      endIndex = Math.min(currentIndex + maxLength, text.length);
+    // If we found a good break point, use it
+    if (lastGoodBreak > currentIndex) {
+      endIndex = lastGoodBreak;
+    } else {
+      // Find the next whitespace if no sentence end found
+      while (endIndex > currentIndex && !/\s/.test(text[endIndex - 1])) {
+        endIndex--;
+      }
+
+      // If no whitespace found, do hard break but check for URL/number
+      if (endIndex === currentIndex) {
+        endIndex = Math.min(currentIndex + maxLength, text.length);
+        const chunkCandidate = text.slice(currentIndex, endIndex);
+        const matches = chunkCandidate.match(urlNumberRegex);
+
+        // If URL/number is detected, extend to include full entity
+        if (matches) {
+          const lastMatch = matches[matches.length - 1];
+          const matchEnd =
+            chunkCandidate.lastIndexOf(lastMatch) + lastMatch.length;
+          endIndex = currentIndex + matchEnd;
+        }
+      }
     }
 
-    // Extract and clean the chunk
-    let chunk = text.slice(currentIndex, endIndex).trim();
-
-    // Only add non-empty chunks
-    if (chunk.length > 0) {
-      chunks.push(chunk);
-    }
-
-    // Move to the next chunk
+    const chunk = text.slice(currentIndex, endIndex).trim();
+    if (chunk) chunks.push(chunk);
     currentIndex = endIndex;
   }
 
