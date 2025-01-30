@@ -302,7 +302,6 @@ export const preprocessText = (text: string) => {
 
   return cleanedText;
 };
-
 export const splitTextIntoChunks = (
   text: string,
   maxLength: number
@@ -312,89 +311,55 @@ export const splitTextIntoChunks = (
   const chunks: string[] = [];
   let currentIndex = 0;
 
-  // Enhanced URL/domain pattern with TLD validation
-  const urlRegex =
-    /\b(?:https?:\/\/|www\.|[\w-]+\.)+(?:[a-z]{2,63})(?:[\/?#][^\s]*)?\b/gi;
+  // Pre-process all URLs once (drastically reduces regex operations)
+  const urlRanges = getUrlRanges(text);
 
   while (currentIndex < text.length) {
     let chunkStart = currentIndex;
     let chunkEnd = currentIndex + maxLength;
     let bestBreak = chunkEnd;
 
-    // Phase 1: URL protection
-    const urlMatches = [...text.slice(chunkStart).matchAll(urlRegex)];
-    let urlBoundary = -1;
+    // Phase 1: URL protection using pre-processed ranges
+    const urlInRange = findUrlInRange(chunkStart, chunkEnd, urlRanges);
+    if (urlInRange) {
+      bestBreak = urlInRange.end;
+    } else {
+      // Phase 2: Sentence boundary detection
+      bestBreak = findSentenceBreak(
+        chunkStart,
+        chunkEnd,
+        text,
+        urlRanges,
+        maxLength
+      );
 
-    if (urlMatches.length > 0) {
-      const firstUrl = urlMatches[0][0];
-      urlBoundary = chunkStart + urlMatches[0].index! + firstUrl.length;
-
-      // If URL exists within chunk window, extend to include full URL
-      if (
-        urlBoundary > chunkStart &&
-        urlBoundary <= chunkStart + maxLength * 2
-      ) {
-        bestBreak = urlBoundary;
-      }
-    }
-
-    // Phase 2: Sentence boundary detection (only outside URLs)
-    if (bestBreak === chunkEnd) {
-      let sentenceEnd = -1;
-      for (
-        let i = chunkStart;
-        i < Math.min(chunkStart + maxLength * 2, text.length);
-        i++
-      ) {
-        if (!isInUrl(text, i, urlRegex) && /[.!?]/.test(text[i])) {
-          // Verify valid sentence end with lookahead
-          if (i === text.length - 1 || /\s/.test(text[i + 1])) {
-            sentenceEnd = i + 1;
-            break;
-          }
+      // Phase 3: Word boundary fallback
+      if (bestBreak === chunkEnd) {
+        bestBreak = text.lastIndexOf(" ", Math.min(chunkEnd, text.length));
+        if (bestBreak <= chunkStart) {
+          bestBreak = Math.min(chunkStart + maxLength, text.length);
         }
       }
-      if (sentenceEnd > chunkStart) bestBreak = sentenceEnd;
     }
 
-    // Phase 3: Word boundary fallback
-    if (bestBreak === chunkEnd) {
-      bestBreak = text.lastIndexOf(
-        " ",
-        Math.min(chunkStart + maxLength, text.length)
-      );
-      if (bestBreak <= chunkStart)
-        bestBreak = Math.min(chunkStart + maxLength, text.length);
-    }
-
-    // Final validation and cleanup
+    // Extract and validate chunk
     let chunk = text.slice(chunkStart, bestBreak).trim();
 
-    // Prevent URL fragmentation
-    const finalUrlCheck = chunk.match(urlRegex);
-    if (finalUrlCheck) {
-      const lastUrl = finalUrlCheck[finalUrlCheck.length - 1];
-      const cleanEnd = chunk.lastIndexOf(lastUrl) + lastUrl.length;
-      chunk = chunk.slice(0, cleanEnd).trim();
-      bestBreak = chunkStart + cleanEnd;
+    // Post-processing checks
+    chunk = cleanChunkEnd(chunk, urlRanges);
+    if (!chunk) {
+      currentIndex = bestBreak;
+      continue;
     }
 
-    // Prevent single character artifacts
-    if (chunk.length === 1 && /[^.!?]/.test(chunk)) {
-      chunk = "";
-      bestBreak = chunkStart;
-    }
-
-    if (chunk.length > 0) {
-      // Merge with previous chunk if it's a small fragment
-      if (
-        chunks.length > 0 &&
-        chunks[chunks.length - 1].length + chunk.length < maxLength * 1.2
-      ) {
-        chunks[chunks.length - 1] += " " + chunk;
-      } else {
-        chunks.push(chunk);
-      }
+    // Merge small fragments
+    if (
+      chunks.length > 0 &&
+      chunks[chunks.length - 1].length + chunk.length < maxLength * 1.2
+    ) {
+      chunks[chunks.length - 1] += " " + chunk;
+    } else {
+      chunks.push(chunk);
     }
 
     currentIndex = bestBreak;
@@ -403,14 +368,71 @@ export const splitTextIntoChunks = (
   return chunks.filter((c) => c.length > 0);
 };
 
-// Helper function to check if position is within a URL
-const isInUrl = (text: string, position: number, urlRegex: RegExp): boolean => {
-  const matches = [...text.matchAll(urlRegex)];
-  return matches.some((match) => {
-    const start = match.index!;
-    const end = start + match[0].length;
-    return position >= start && position <= end;
-  });
+// Pre-process URLs once at startup
+const getUrlRanges = (text: string): Array<{ start: number; end: number }> => {
+  const urlRegex =
+    /\b(?:https?:\/\/|www\.|[\w-]+\.)+(?:[a-z]{2,63})(?:[\/?#][^\s]*)?\b/gi;
+  return [...text.matchAll(urlRegex)].map((match) => ({
+    start: match.index!,
+    end: match.index! + match[0].length,
+  }));
+};
+
+// Binary search for URL ranges
+const findUrlInRange = (
+  start: number,
+  end: number,
+  urlRanges: Array<{ start: number; end: number }>
+) => {
+  return urlRanges.find((url) => start < url.end && end > url.start);
+};
+
+// Optimized sentence boundary detection
+const findSentenceBreak = (
+  start: number,
+  end: number,
+  text: string,
+  urlRanges: Array<{ start: number; end: number }>,
+  maxLength: number
+) => {
+  let sentenceEnd = -1;
+  const limit = Math.min(start + maxLength * 2, text.length);
+
+  for (let i = start; i < limit; i++) {
+    // Skip URL regions
+    if (isInUrlRange(i, urlRanges)) continue;
+
+    if (/[.!?]/.test(text[i])) {
+      if (i === text.length - 1 || /\s/.test(text[i + 1])) {
+        sentenceEnd = i + 1;
+        break;
+      }
+    }
+  }
+  return sentenceEnd > start ? sentenceEnd : end;
+};
+
+// Fast URL range check using pre-processed data
+const isInUrlRange = (
+  position: number,
+  urlRanges: Array<{ start: number; end: number }>
+) => {
+  return urlRanges.some((url) => position >= url.start && position <= url.end);
+};
+
+// Clean chunk endings
+const cleanChunkEnd = (
+  chunk: string,
+  urlRanges: Array<{ start: number; end: number }>
+) => {
+  // Check if we're in the middle of a URL
+  const lastUrl = urlRanges.find(
+    (url) => chunk.length >= url.start && chunk.length < url.end
+  );
+  if (lastUrl) {
+    return chunk.slice(0, lastUrl.end);
+  }
+  return chunk.replace(/[^.!?\w]$/, "").trim();
 };
 export const calculateRemainingTime = (endDate: Date | string): string => {
   const now = new Date().getTime();
