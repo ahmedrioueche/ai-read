@@ -302,6 +302,55 @@ export const preprocessText = (text: string) => {
 
   return cleanedText;
 };
+
+const isTitleEnd = (text: string, position: number): boolean => {
+  // Look ahead to check if next word starts with non-uppercase
+  const nextWords = text.slice(position).trim();
+  const firstWord = nextWords.split(/\s+/)[0];
+
+  // Check if we're transitioning from uppercase to normal case
+  const previousText = text.slice(Math.max(0, position - 50), position);
+  const previousWords = previousText.trim().split(/\s+/);
+  const lastUppercaseWord = previousWords[previousWords.length - 1];
+
+  // Ensure we have valid words to compare
+  if (!lastUppercaseWord || !firstWord) {
+    return false;
+  }
+
+  // Remove all possible punctuation from the last word
+  // This includes: colons, commas, semicolons, periods, exclamation marks,
+  // question marks, parentheses, brackets, braces, hash symbols, etc.
+  const cleanLastWord = lastUppercaseWord.replace(
+    /[:\.,;!?\(\)\[\]\{\}#@$%&*\-_+='"]+$/,
+    ""
+  );
+
+  // Handle special cases:
+  // 1. Numbers in titles (like "#1", "2.0", etc.)
+  // 2. Common abbreviations that might appear in titles
+  if (cleanLastWord.match(/^[0-9.]+$/) || cleanLastWord.length <= 1) {
+    // If the last word is just a number or single character, look at the previous word
+    const previousWord = previousWords[previousWords.length - 2];
+    if (previousWord) {
+      const cleanPreviousWord = previousWord.replace(
+        /[:\.,;!?\(\)\[\]\{\}#@$%&*\-_+='"]+$/,
+        ""
+      );
+      const isPreviousWordUppercase =
+        cleanPreviousWord.toUpperCase() === cleanPreviousWord;
+      const isNextWordMixedCase = firstWord.toUpperCase() !== firstWord;
+      return isPreviousWordUppercase && isNextWordMixedCase;
+    }
+  }
+
+  // Compare uppercase versions to ensure boolean result
+  const isLastWordUppercase = cleanLastWord.toUpperCase() === cleanLastWord;
+  const isNextWordMixedCase = firstWord.toUpperCase() !== firstWord;
+
+  return isLastWordUppercase && isNextWordMixedCase;
+};
+
 export const splitTextIntoChunks = (
   text: string,
   maxLength: number
@@ -314,7 +363,16 @@ export const splitTextIntoChunks = (
   // Pre-process all URLs once (drastically reduces regex operations)
   const urlRanges = getUrlRanges(text);
 
-  while (currentIndex < text.length) {
+  // Add fullstop after title if detected
+  let processedText = text;
+  for (let i = 0; i < text.length - 1; i++) {
+    if (isTitleEnd(text, i)) {
+      processedText = processedText.slice(0, i) + "." + processedText.slice(i);
+      break;
+    }
+  }
+
+  while (currentIndex < processedText.length) {
     let chunkStart = currentIndex;
     let chunkEnd = currentIndex + maxLength;
     let bestBreak = chunkEnd;
@@ -328,22 +386,25 @@ export const splitTextIntoChunks = (
       bestBreak = findSentenceBreak(
         chunkStart,
         chunkEnd,
-        text,
+        processedText,
         urlRanges,
         maxLength
       );
 
       // Phase 3: Word boundary fallback
       if (bestBreak === chunkEnd) {
-        bestBreak = text.lastIndexOf(" ", Math.min(chunkEnd, text.length));
+        bestBreak = processedText.lastIndexOf(
+          " ",
+          Math.min(chunkEnd, processedText.length)
+        );
         if (bestBreak <= chunkStart) {
-          bestBreak = Math.min(chunkStart + maxLength, text.length);
+          bestBreak = Math.min(chunkStart + maxLength, processedText.length);
         }
       }
     }
 
     // Extract and validate chunk
-    let chunk = text.slice(chunkStart, bestBreak).trim();
+    let chunk = processedText.slice(chunkStart, bestBreak).trim();
 
     // Post-processing checks
     chunk = cleanChunkEnd(chunk, urlRanges);
