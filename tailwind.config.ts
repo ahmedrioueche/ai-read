@@ -38,6 +38,10 @@ const config: Config = {
         "0%": { opacity: "0", transform: "translateY(-10px)" },
         "100%": { opacity: "1", transform: "translateY(0)" },
       },
+      "inplace-fade": {
+        "0%": { opacity: "0" },
+        "100%": { opacity: "1" },
+      },
       spin: {
         to: { transform: "rotate(360deg)" },
       },
@@ -46,6 +50,7 @@ const config: Config = {
       "bounce-slow": "bounce 1s ease-in-out infinite",
       spin: "spin 1s linear infinite",
       "fade-in": "fade-in 0.5s ease-out",
+      "inplace-fade": "inplace-fade 300ms ease-out",
     },
   },
   plugins: [require("tailwind-scrollbar-hide")],

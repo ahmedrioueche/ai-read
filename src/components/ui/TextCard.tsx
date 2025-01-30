@@ -73,7 +73,7 @@ const TextCard: React.FC<TextCardProps> = ({
         max-w-[500px]
         max-h-[80vh]
         overflow-y-auto
-        animate-fade-in
+        animate-inplace-fade  
         ${
           isDarkMode ? "filter invert hue-rotate-180" : ""
         } // Flip colors in dark mode

@@ -79,7 +79,6 @@ const useReading = () => {
   // Function to handle text-to-speech for both premium and basic TTS
   const handleTextToSpeech = async (text: string) => {
     const chunks = splitTextIntoChunks(text, ttsType === "premium" ? 200 : 400); // Split text into chunks
-    console.log("chunks", chunks);
     const remainingCredit = await voiceApi.getValidKeyRemainingCredit();
 
     if (ttsType === "premium") {

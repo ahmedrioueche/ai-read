@@ -17,6 +17,8 @@ import useHighlighting from "@/hooks/useHighlighting";
 import useTextProcessing from "@/hooks/useTextProcessing";
 import { ZoomIn, ZoomOut } from "lucide-react";
 import { pageNavigationPlugin } from "@react-pdf-viewer/page-navigation";
+import PageOptionsMenu from "./ui/PageOptionsMenu";
+import usePage from "@/hooks/usePage";
 
 const Main = ({
   book,
@@ -340,6 +342,10 @@ const Main = ({
     jumpToPage(pageNumber);
   };
 
+  const shouldRenderMinimalCard = (text: string) => {
+    return text && text?.trim()?.split(" ")?.length < 20;
+  };
+
   return (
     <div
       ref={rootRef}
@@ -435,6 +441,16 @@ const Main = ({
           plugins={[zoomPluginInstance, pageNavigationPluginInstance]}
         />
       </Worker>
+      {/*  <PageOptionsMenu
+        selectedText={selectedText || savedSelectedText}
+        getExplanation={() => getExplanation(selectedText || savedSelectedText)}
+        getSummary={() => getSummary(selectedText || savedSelectedText)}
+        stopReading={handleStopReading}
+        startReading={startReading}
+        readingState={readingState}
+        isDarkMode={isDarkMode}
+        isFullScreen={isFullScreen}
+      /> */}
 
       <OptionsMenu
         selectedText={selectedText || savedSelectedText}
@@ -448,7 +464,8 @@ const Main = ({
       />
 
       {translation &&
-        (selectedText && selectedText?.trim()?.split(" ")?.length < 20 ? (
+        (shouldRenderMinimalCard(selectedText!) ||
+        shouldRenderMinimalCard(savedSelectedText) ? (
           <div className="flex justify-center items-center fixed bottom-0 left-1/2 transform -translate-x-1/2 md:w-[80%] w-full z-50">
             <MinimalCard
               text={translation}

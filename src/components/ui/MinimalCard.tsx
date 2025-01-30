@@ -56,7 +56,7 @@ const MinimalCard: React.FC<MinimalCardProps> = ({
         items-center
         justify-between
         gap-6
-        w-[90%]
+        w-[77%]
         max-w-2xl
         border
         border-gray-700/50

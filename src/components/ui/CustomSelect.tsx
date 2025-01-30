@@ -7,6 +7,7 @@ interface CustomSelectProps<T> {
   label?: T;
   onChange: (value: T) => void;
   disabled?: boolean;
+  className?: string;
 }
 
 const CustomSelect = <T extends string>({
@@ -16,6 +17,7 @@ const CustomSelect = <T extends string>({
   label,
   onChange,
   disabled,
+  className,
 }: CustomSelectProps<T>) => {
   const [isOpen, setIsOpen] = useState(false);
   const selectRef = useRef<HTMLDivElement>(null);
@@ -83,7 +85,7 @@ const CustomSelect = <T extends string>({
   }, [isOpen]);
 
   return (
-    <div className="relative" ref={selectRef}>
+    <div className={`relative`} ref={selectRef}>
       <label className="font-semibold text-dark-foreground">{title}</label>
       <div
         role="button"
@@ -112,7 +114,7 @@ const CustomSelect = <T extends string>({
         <ul
           ref={listRef}
           role="listbox"
-          className="absolute z-10 mt-1 w-full bg-light-background dark:bg-dark-background border border-light-secondary dark:border-dark-secondary rounded-md shadow-lg max-h-60 overflow-auto"
+          className={`absolute z-10 mt-1 w-full bg-light-background dark:bg-dark-background border border-light-secondary dark:border-dark-secondary rounded-md shadow-lg max-h-60 overflow-auto ${className}`}
           onScroll={handleListScroll} // Save scroll position on scroll
         >
           {options.map((option) => (
