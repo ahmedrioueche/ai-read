@@ -17,8 +17,7 @@ import useHighlighting from "@/hooks/useHighlighting";
 import useTextProcessing from "@/hooks/useTextProcessing";
 import { ZoomIn, ZoomOut } from "lucide-react";
 import { pageNavigationPlugin } from "@react-pdf-viewer/page-navigation";
-import PageOptionsMenu from "./ui/PageOptionsMenu";
-import usePage from "@/hooks/usePage";
+import useSection from "@/hooks/useSection";
 
 const Main = ({
   book,
@@ -68,7 +67,7 @@ const Main = ({
     rootRef,
     extractText,
     getVisibleText,
-    findRemainingFullText,
+    getRemainingFullText,
     bookContext,
   } = useBook(bookUrl, isFullScreen);
 
@@ -95,6 +94,12 @@ const Main = ({
     stopReading,
     readSelectedText,
   } = useReading();
+
+  const { getSectionText } = useSection(
+    getVisibleText,
+    getRemainingFullText,
+    fullText
+  );
 
   const { startScrolling, stopScrolling, visibleElements } = useScrolling(
     enableAutoScrolling,
@@ -203,7 +208,6 @@ const Main = ({
     try {
       // Fetch initial visible text and elements
       const { text, elements } = await getVisibleText();
-
       // Process and handle initial visible text
       const processedText = preprocessText(text);
       await handleTextToSpeech(processedText);
@@ -211,7 +215,7 @@ const Main = ({
       startHighlighting();
 
       // Find remaining text
-      const remainingText = findRemainingFullText(text, fullText);
+      const remainingText = getRemainingFullText(text, fullText);
       if (remainingText.trim() !== "") {
         // Process and speak remaining text
         const processedRemainingText = preprocessText(remainingText);
@@ -230,7 +234,13 @@ const Main = ({
         const preprocessedText = preprocessText(selectedText);
         if (!isValidText(preprocessedText, isSettingsModalOpen)) return;
 
-        if (settings && settings.enableReading) {
+        if (
+          settings &&
+          settings.enableReading &&
+          !autoReading.isActivated &&
+          !autoReading.isReading &&
+          readingState !== "reading"
+        ) {
           readSelectedText(preprocessedText);
         }
         if (settings && settings.enableTranslation) {
@@ -441,16 +451,17 @@ const Main = ({
           plugins={[zoomPluginInstance, pageNavigationPluginInstance]}
         />
       </Worker>
-      {/*  <PageOptionsMenu
-        selectedText={selectedText || savedSelectedText}
-        getExplanation={() => getExplanation(selectedText || savedSelectedText)}
-        getSummary={() => getSummary(selectedText || savedSelectedText)}
-        stopReading={handleStopReading}
-        startReading={startReading}
-        readingState={readingState}
-        isDarkMode={isDarkMode}
-        isFullScreen={isFullScreen}
-      /> */}
+      {/*
+        <PageOptionsMenu
+          sectionText={selectedText || savedSelectedText}
+          getExplanation={() =>
+            getExplanation(selectedText || savedSelectedText)
+          }
+          getSummary={() => getSummary(selectedText || savedSelectedText)}
+          isDarkMode={isDarkMode}
+          isFullScreen={isFullScreen}
+        />
+        */}
 
       <OptionsMenu
         selectedText={selectedText || savedSelectedText}

@@ -64,7 +64,7 @@ const Home: React.FC = () => {
     if (isPremium) {
       setBookLimit(100);
     }
-  }, []);
+  }, [isPremium]);
 
   //update new user's free trial period to visitor's (no new free trial on every account creation on same machine)
   useEffect(() => {

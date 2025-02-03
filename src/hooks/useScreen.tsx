@@ -14,7 +14,7 @@ const useScreen = () => {
     const handleResize = () => {
       setIsSmallScreen(smallScreenQuery.matches);
       setIsMidScreen(midScreenQuery.matches);
-      setIsMobile(smallScreenQuery.matches); // Same breakpoint as small screen
+      setIsMobile(smallScreenQuery.matches);
     };
 
     // Set the initial screen size

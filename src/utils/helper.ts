@@ -282,6 +282,38 @@ export function shortenLocaleName(localeName: string): string {
 }
 
 export const preprocessText = (text: string) => {
+  let cleanedText = text;
+
+  // Fix hyphenated words broken across lines (e.g., "be- fore" → "before")
+  cleanedText = cleanedText.replace(/-\s*\n\s*/g, "");
+
+  // Remove inline annotations like "[22]", "[PP03]", or "[BOH10]"
+  cleanedText = cleanedText.replace(/\[\w+\]/g, "");
+
+  // Remove superscript numbers (e.g., "1", "2") at the end of sentences
+  cleanedText = cleanedText.replace(/\s\d+(?=\s|\.|$)/g, "");
+
+  // Fix spaced-out uppercase letters (e.g., "W O R L D" → "WORLD")
+  cleanedText = cleanedText.replace(/([A-Z])\s+(?=[A-Z])/g, "$1");
+
+  // Add commas after titles that are followed by blank space
+  cleanedText = cleanedText.replace(
+    /^([A-Z][^\n]*?)([A-Za-z0-9])(\s*?\n\s+)/gm,
+    "$1$2,\n"
+  );
+
+  // Replace multiple spaces within a sentence with a single space
+  cleanedText = cleanedText.replace(/([^\n\S]+|\s{2,})/g, " ");
+
+  // Normalize line breaks for natural reading
+  cleanedText = cleanedText.replace(/(\s*\n\s*){2,}/g, "\n\n");
+
+  // Trim extra spaces at the beginning and end
+  cleanedText = cleanedText.trim();
+
+  return cleanedText;
+};
+export const oldPreprocessText = (text: string) => {
   // Step 1: Remove inline annotations like "[22]" or similar
   let cleanedText = text.replace(/\[\d+\]/g, "");
 
@@ -303,7 +335,7 @@ export const preprocessText = (text: string) => {
   return cleanedText;
 };
 
-const isTitleEnd = (text: string, position: number): boolean => {
+export const isTitleEnd = (text: string, position: number): boolean => {
   // Look ahead to check if next word starts with non-uppercase
   const nextWords = text.slice(position).trim();
   const firstWord = nextWords.split(/\s+/)[0];

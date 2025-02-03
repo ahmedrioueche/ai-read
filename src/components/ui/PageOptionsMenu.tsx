@@ -2,38 +2,23 @@ import React, { useEffect, useState } from "react";
 import { Info, FileText, StopCircle, Loader, Repeat2 } from "lucide-react";
 
 const PageOptionsMenu: React.FC<{
-  selectedText: string | null;
+  sectionText: string | null;
   getExplanation: () => void;
   getSummary: () => void;
-  stopReading: () => void;
-  startReading: () => void;
-  readingState: "loading" | "reading" | "off";
   isDarkMode: boolean;
   isFullScreen: boolean;
 }> = ({
-  selectedText,
+  sectionText,
   getExplanation,
   getSummary,
-  stopReading,
-  startReading,
-  readingState,
   isDarkMode,
   isFullScreen,
 }) => {
   const [isExpanded, setIsExpanded] = useState(false);
-  const [isStartReadingClicked, setIsStartReadingClicked] = useState(false);
-
-  useEffect(() => {
-    if (readingState === "reading") {
-      setIsStartReadingClicked(false);
-    }
-  }, [readingState]);
 
   return (
     <div
-      className={`fixed ${
-        isDarkMode ? "top-24" : "bottom-6"
-      } right-6 z-20 group`}
+      className={`fixed ${isDarkMode ? "top-20" : "top-6"} right-6 z-20 group`}
       onMouseEnter={() => setIsExpanded(true)}
       onMouseLeave={() => setIsExpanded(false)}
     >
@@ -49,7 +34,7 @@ const PageOptionsMenu: React.FC<{
           border shadow-lg 
           flex flex-col items-start 
           transition-all duration-300 ease-in-out
-          ${isExpanded ? "w-40 p-2 rounded-lg" : "w-12 p-1.5 rounded-full"}
+          ${isExpanded ? "w-44 p-2 rounded-lg" : "w-12 p-1.5 rounded-full"}
           overflow-hidden
         `}
       >
@@ -78,7 +63,7 @@ const PageOptionsMenu: React.FC<{
                   isDarkMode ? "text-gray-100" : "text-gray-700"
                 }`}
               >
-                Summarize this page
+                Summarize section
               </span>
             )}
           </div>
@@ -105,7 +90,7 @@ const PageOptionsMenu: React.FC<{
                   isDarkMode ? "text-gray-100" : "text-gray-700"
                 }`}
               >
-                Explain this page
+                Explain section
               </span>
             )}
           </div>
@@ -132,7 +117,7 @@ const PageOptionsMenu: React.FC<{
                   isDarkMode ? "text-gray-100" : "text-gray-700"
                 }`}
               >
-                Translate this page
+                Translate section
               </span>
             )}
           </div>

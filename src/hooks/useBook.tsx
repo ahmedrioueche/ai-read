@@ -185,7 +185,7 @@ const useBook = (bookUrl: string, isFullScreen: boolean) => {
   };
 
   // Function to find the remaining full text after the visible portion
-  const findRemainingFullText = (
+  const getRemainingFullText = (
     visibleText: string,
     fullText: string
   ): string => {
@@ -205,13 +205,13 @@ const useBook = (bookUrl: string, isFullScreen: boolean) => {
 
     if (!lastVisibleChunk) {
       console.error("Could not extract chunk from visible text");
-      return fullText;
+      return "";
     }
 
     const chunkPosition = cleanFullText.indexOf(lastVisibleChunk);
     if (chunkPosition === -1) {
       console.error("Could not find visible chunk in full text");
-      return fullText;
+      return "";
     }
 
     const endPosition = chunkPosition + lastVisibleChunk.length;
@@ -261,7 +261,7 @@ const useBook = (bookUrl: string, isFullScreen: boolean) => {
     rootRef,
     extractText,
     getVisibleText,
-    findRemainingFullText,
+    getRemainingFullText,
     handleTextSelection,
     bookContext,
     setBookContext,
