@@ -21,6 +21,7 @@ const FreeTrialModal: React.FC<FreeTrialModalProps> = ({
   trialEndDate,
 }) => {
   const router = useRouter();
+  const isUpgradeDisabled = true;
 
   const handleUpgrade = (plan: string) => {
     const planRoute = plan.toLowerCase();
@@ -134,8 +135,15 @@ const FreeTrialModal: React.FC<FreeTrialModalProps> = ({
 
               {plan.name === "Premium" && (
                 <button
-                  className="w-full py-2 rounded-lg text-sm font-medium bg-dark-secondary text-white hover:bg-dark-secondary/90 transition-colors"
-                  onClick={() => handleUpgrade("premium")}
+                  className={`w-full py-2 rounded-lg text-sm font-medium text-white transition-colors
+                  ${
+                    isUpgradeDisabled
+                      ? "bg-dark-secondary/80 cursor-auto"
+                      : "bg-dark-secondary  hover:bg-dark-secondary/90 cursor-pointer "
+                  }`}
+                  onClick={() =>
+                    isUpgradeDisabled ? undefined : handleUpgrade("premium")
+                  }
                 >
                   Upgrade to Premium
                 </button>

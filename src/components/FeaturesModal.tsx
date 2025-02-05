@@ -11,6 +11,7 @@ const FeaturesModal: React.FC<{
 }> = ({ user, isOpen, onClose }) => {
   const router = useRouter();
   const currentPlan = user.email.trim() !== "" ? user.plan : "basic";
+  const isUpgradeDisabled = true;
 
   const handleUpgrade = (plan: string) => {
     if (plan == "premium") {
@@ -111,12 +112,14 @@ const FeaturesModal: React.FC<{
                   className={`w-full py-2 rounded-lg text-sm font-medium ${
                     currentPlan === "premium"
                       ? "border border-1 bg-dark-background border-dark-secondary cursor-auto"
+                      : isUpgradeDisabled
+                      ? "bg-dark-secondary/30 cursor-auto text-gray-300"
                       : "bg-dark-secondary hover:bg-dark-secondary/90"
                   } text-white  transition-colors`}
                   onClick={() => handleUpgrade("premium")}
                 >
                   {currentPlan === "premium"
-                    ? "Current Plans"
+                    ? "Current Plan"
                     : "Upgrade to Premium"}
                 </button>
               )}

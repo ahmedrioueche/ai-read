@@ -33,7 +33,7 @@ const Home: React.FC = () => {
   const [isSettingsModalOpen, setIsSettingsModalOpen] = useState(false);
   const [currentBookId, setCurrentBookId] = useState<string | null>(null);
   const [isFullScreen, setIsFullScreen] = useState(false);
-  const BASIC_BOOK_LIMIT = 3;
+  const BASIC_BOOK_LIMIT = 10;
   const [bookLimit, setBookLimit] = useState(BASIC_BOOK_LIMIT);
   const { user } = useAuth();
   const userApi = new UserApi();
