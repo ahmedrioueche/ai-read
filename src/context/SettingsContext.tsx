@@ -10,9 +10,9 @@ type SettingsContextType = {
 
 const defaultSettings: Settings = {
   translationLanguage: { language: "English", rtl: false },
-  theme: "light",
-  enableTranslation: false,
-  enableReading: false,
+  theme: "dark",
+  enableTranslation: true,
+  enableReading: true,
   readingSpeed: "normal",
   appLanguage: "English",
   ttsType: "basic",
@@ -21,7 +21,7 @@ const defaultSettings: Settings = {
     value: "",
   },
   bookLanguage: "English",
-  enableAutoScrolling: false,
+  enableAutoScrolling: true,
   enableHighlighting: false,
 };
 

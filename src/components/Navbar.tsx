@@ -182,6 +182,7 @@ const Navbar: React.FC<{
               {
                 name: "Features",
                 icon: InfoIcon,
+                isDisabled: false,
                 onClick: () => {
                   setIsFeaturesModalOpen(true);
                   setIsMenuOpen(false);
@@ -190,6 +191,8 @@ const Navbar: React.FC<{
               {
                 name: "Settings",
                 icon: CogIcon,
+                isDisabled: false,
+
                 onClick: () => {
                   setIsSettingModalOpen(true);
                   onToggleSettingsModal(true);
@@ -199,6 +202,7 @@ const Navbar: React.FC<{
               {
                 name: isPremium ? "Manage Subscription" : "Upgrade",
                 icon: isPremium ? CreditCard : ArrowUpCircle,
+                isDisabled: true,
                 onClick: () => {
                   if (!isAuth) {
                     router.push("/login?redirect=/payment");
@@ -215,8 +219,13 @@ const Navbar: React.FC<{
             ].map((item, index) => (
               <div
                 key={index}
-                className="flex items-center px-2 py-1.5 w-full cursor-pointer text-sm font-medium font-satisfy text-light-text dark:text-dark-text hover:bg-dark-secondary transition-colors duration-300"
-                onClick={item.onClick}
+                className={`flex items-center px-2 py-1.5 w-full text-sm font-medium font-satisfy text-light-text dark:text-dark-text  transition-colors duration-300
+                ${
+                  item.isDisabled
+                    ? "text-gray-500 cursor-auto"
+                    : "hover:bg-dark-secondary cursor-pointer"
+                }`}
+                onClick={!item.isDisabled ? item.onClick : undefined}
               >
                 <item.icon className="mr-2 h-4 w-4" />
                 {item.name}

@@ -108,8 +108,8 @@ export const SettingsModal: React.FC<SettingsModalProps> = ({
   const aiApi = new AiApi();
   const text = dict["en"];
   const { plan, isFreeTrial } = usePlan();
-  const isPremium: boolean =
-    plan === "premium" || plan === "pro" || isFreeTrial;
+  const isPremium: boolean = true;
+  //plan === "premium" || plan === "pro" || isFreeTrial;
   const isAndroid = /android/i.test(navigator.userAgent);
   const isChrome =
     navigator.userAgent.includes("Chrome") &&

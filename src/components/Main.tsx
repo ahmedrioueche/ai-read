@@ -38,7 +38,6 @@ const Main = ({
   const viewerRef = useRef<any>(null);
   const [lastPage, setLastPage] = useState<number>();
   const bookUrl = book?.fileUrl;
-  const [scrollY, setScrollY] = useState(0);
   const [isHighlighting, setIsHighlighting] = useState(false);
   const SCROLL_INTERVAL = 5250;
   const [enableAutoScrolling, setEnableAutoScrolling] = useState(false);
@@ -52,9 +51,8 @@ const Main = ({
   );
   const [currentPage, setCurrentPage] = useState<number>(1);
   const [totalPages, setTotalPages] = useState<number>(0);
-  const [isControlsVisible, setIsControlsVisible] = useState(false); // State for controls visibility
+  const [isControlsVisible, setIsControlsVisible] = useState(false);
 
-  // Create the zoom plugin instance
   const zoomPluginInstance = zoomPlugin();
   const { zoomTo } = zoomPluginInstance;
   const pageNavigationPluginInstance = pageNavigationPlugin();
@@ -94,12 +92,6 @@ const Main = ({
     stopReading,
     readSelectedText,
   } = useReading();
-
-  const { getSectionText } = useSection(
-    getVisibleText,
-    getRemainingFullText,
-    fullText
-  );
 
   const { startScrolling, stopScrolling, visibleElements } = useScrolling(
     enableAutoScrolling,
@@ -287,20 +279,6 @@ const Main = ({
     }
   }, [settings]);
 
-  // useEffect(() => {
-  //   const handleScroll = () => {
-  //     setScrollY(window.scrollY); // Update the vertical scroll position
-  //   };
-  //
-  //   // Add scroll event listener
-  //   window.addEventListener("scroll", handleScroll);
-  //
-  //   // Cleanup event listener on component unmount
-  //   return () => {
-  //     window.removeEventListener("scroll", handleScroll);
-  //   };
-  // }, []);
-
   useEffect(() => {
     const handleBeforeUnload = () => {
       // Stop speech synthesis before the page unloads
@@ -451,17 +429,6 @@ const Main = ({
           plugins={[zoomPluginInstance, pageNavigationPluginInstance]}
         />
       </Worker>
-      {/*
-        <PageOptionsMenu
-          sectionText={selectedText || savedSelectedText}
-          getExplanation={() =>
-            getExplanation(selectedText || savedSelectedText)
-          }
-          getSummary={() => getSummary(selectedText || savedSelectedText)}
-          isDarkMode={isDarkMode}
-          isFullScreen={isFullScreen}
-        />
-        */}
 
       <OptionsMenu
         selectedText={selectedText || savedSelectedText}

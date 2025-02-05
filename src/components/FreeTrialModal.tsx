@@ -10,7 +10,7 @@ interface FreeTrialModalProps {
   isOpen: boolean;
   onClose: () => void;
   isTrialActive: boolean; // Prop to differentiate between active and ended trial
-  trialEndDate?: Date; // Optional prop for trial end date
+  trialEndDate?: Date; //
 }
 
 const FreeTrialModal: React.FC<FreeTrialModalProps> = ({

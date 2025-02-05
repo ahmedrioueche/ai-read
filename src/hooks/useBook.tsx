@@ -2,11 +2,9 @@ import { useState, useEffect, useRef, useCallback } from "react";
 import { franc } from "franc-min";
 import pdfToText from "react-pdftotext";
 import { useSettings } from "@/context/SettingsContext";
-import { Settings } from "lucide-react";
 import { formatLanguageToName } from "@/utils/helper";
 
 type SetStateAction<T> = T | ((prevState: T) => T);
-type SetHighlightElements = (value: SetStateAction<HTMLElement[]>) => void;
 
 const useBook = (bookUrl: string, isFullScreen: boolean) => {
   const [fullText, setFullText] = useState<string>("");

@@ -30,7 +30,7 @@ export const PlanProvider = ({ children }: { children: React.ReactNode }) => {
   const visitorApi = new VisitorApi();
 
   const calculateFreeTrialEndDate = useCallback((startDate: Date): Date => {
-    const freeTrialDurationInDays = 1;
+    const freeTrialDurationInDays = 30;
     const endDate = new Date(startDate);
     endDate.setDate(endDate.getDate() + freeTrialDurationInDays);
     return endDate;

@@ -9,6 +9,7 @@ const EXCLUDED_TEXT = [
   "explanation",
   "explain",
   "stop reading",
+  "manage subscribtion",
 ];
 
 const useTextProcessing = (
