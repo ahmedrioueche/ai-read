@@ -7,7 +7,7 @@ import "@react-pdf-viewer/zoom/lib/styles/index.css";
 import { useState, useEffect, useRef, FormEvent } from "react";
 import TextCard from "./ui/TextCard";
 import OptionsMenu from "./ui/OptionsMenu";
-import { BookData } from "@/components/Home";
+import { BookData } from "@/app/Home";
 import MinimalCard from "./ui/MinimalCard";
 import { useSettings } from "@/context/SettingsContext";
 import useBook from "@/hooks/useBook";

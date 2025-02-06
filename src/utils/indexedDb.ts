@@ -1,4 +1,4 @@
-import { BookData } from "@/components/Home";
+import { BookData } from "@/app/Home";
 import { openDB, IDBPDatabase } from "idb";
 
 const DB_NAME = "bookAppDB";

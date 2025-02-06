@@ -14,10 +14,10 @@ import { useAuth } from "@/context/AuthContext";
 import { usePlan } from "@/context/PlanContext";
 import { useVisitor } from "@/context/VisitorContext";
 import { UserApi } from "@/apis/userApi";
-import LoadingPage from "./ui/LoadingPage";
+import LoadingPage from "../components/ui/LoadingPage";
 
-const FreeTrialModal = lazy(() => import("./FreeTrialModal"));
-const BookList = lazy(() => import("./BookList"));
+const FreeTrialModal = lazy(() => import("../components/FreeTrialModal"));
+const BookList = lazy(() => import("../components/BookList"));
 
 export interface BookData {
   id: string;

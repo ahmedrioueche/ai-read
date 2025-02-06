@@ -1,6 +1,6 @@
 import React, { useState, useRef, useEffect } from "react";
 import { ChevronRight } from "lucide-react";
-import { BookData } from "@/components/Home";
+import { BookData } from "@/app/Home";
 
 interface BookListProps {
   books: BookData[];
