@@ -5,7 +5,7 @@ const genAI = API_KEY ? new GoogleGenerativeAI(API_KEY) : null;
 const model = genAI?.getGenerativeModel({ model: "gemini-1.5-flash" });
 
 export class AiApi {
-  MAIN_PROMPT = `This a AI reader application, you are going to receive some text, with an instruction
+  MAIN_PROMPT = `This an AI reader application, you are going to receive some text, with an instruction
   such as "translate, explain, summarize ..." you will receive the language to translate to, or the context of the text.
   Give directly the desired result with no introdution nor conclusion.`;
 
@@ -37,8 +37,8 @@ export class AiApi {
 
   getSummary = async (text: string, language: string) => {
     const prompt = `${this.MAIN_PROMPT} Summarize this text: "${text}" in this language: "${language}"
-    you should use on the ${language} language and nothing else. 
-    You should give the meaining with as few words as possible
+    you should use only the ${language} language and nothing else. 
+    You should give the meaining with as few words as possible.
     `;
     try {
       const response = await this.promptAi(prompt);
@@ -54,7 +54,8 @@ export class AiApi {
     bookContext: string
   ) => {
     const prompt = `${this.MAIN_PROMPT} Explain this text: "${text}" in this language: "${language}",
-    you should use on the ${language} language and nothing else.  
+    you should use only the ${language} language and nothing else (dont use letters from a language in 
+      another different language like english letters in arabic translation).  
     given this book context: "${bookContext}". if the text is a few words, explain them without 
     refering to the context, the context is only given to enhance your undertanding of the text.`;
     try {

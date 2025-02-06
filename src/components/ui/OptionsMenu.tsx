@@ -32,7 +32,7 @@ const OptionsMenu: React.FC<{
   return (
     <div
       className={`fixed ${
-        isDarkMode ? (isFullScreen ? "bottom-6" : "bottom-20") : "bottom-6"
+        isDarkMode ? (isFullScreen ? "bottom-6" : "bottom-24") : "bottom-6"
       } right-6 z-20 group`}
       onMouseEnter={() => setIsExpanded(true)}
       onMouseLeave={() => setIsExpanded(false)}
