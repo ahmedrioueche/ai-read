@@ -1,6 +1,7 @@
 import {
   Loader,
   LucideIcon,
+  Pause,
   Play,
   Search,
   Settings as SettingsIcon,
@@ -8,7 +9,7 @@ import {
   X,
   XCircle,
 } from "lucide-react";
-import React, { useEffect, useState } from "react";
+import React, { useEffect, useRef, useState } from "react";
 import CustomSelect from "./ui/CustomSelect";
 import { dict } from "@/utils/dict";
 import { User } from "@prisma/client";
@@ -90,6 +91,7 @@ export const SettingsModal: React.FC<SettingsModalProps> = ({
   const [premiumVoices, setPremiumVoices] = useState<Voice[]>([]);
   const [voicesLoading, setVoicesLoading] = useState<boolean>(false);
   const [isPlayLoading, setIsPlayLoading] = useState(false);
+  const [isPlaying, setIsPlaying] = useState(false);
   const [status, setStatus] = useState<{
     status: string;
     message: string;
@@ -102,7 +104,7 @@ export const SettingsModal: React.FC<SettingsModalProps> = ({
   );
   const [isSearchMode, setIsSearchMode] = useState(false); // State for search mode
   const [searchQuery, setSearchQuery] = useState(""); // State for search query
-
+  const audioElementRef = useRef<HTMLAudioElement | null>(null);
   const voiceApi = new VoiceApi();
   const voiceApi2 = new VoiceApi2();
   const aiApi = new AiApi();
@@ -262,7 +264,19 @@ export const SettingsModal: React.FC<SettingsModalProps> = ({
     }
   }, [ttsType, basicVoices, premiumVoices, bookLanguage]);
 
-  const playSampleText = async () => {
+  const playPauseSampleText = async () => {
+    console.log("isPlaying", isPlaying);
+    if (isPlaying) {
+      setIsPlaying(false);
+      window.speechSynthesis.cancel();
+      if (audioElementRef.current) {
+        audioElementRef.current.pause();
+        URL.revokeObjectURL(audioElementRef.current.src);
+        audioElementRef.current = null;
+      }
+      return;
+    }
+
     setIsPlayLoading(true);
 
     if (ttsType === "basic") {
@@ -287,6 +301,7 @@ export const SettingsModal: React.FC<SettingsModalProps> = ({
             utterance.onend = resolve;
             utterance.onerror = reject;
             window.speechSynthesis.speak(utterance);
+            setIsPlaying(true);
           });
         } catch (error) {
           console.error("Speech synthesis failed:", error);
@@ -298,9 +313,14 @@ export const SettingsModal: React.FC<SettingsModalProps> = ({
         const audioBlob = new Blob([audio], { type: "audio/mpeg" });
         const audioUrl = URL.createObjectURL(audioBlob);
         const audioElement = new Audio(audioUrl);
+        audioElementRef.current = audioElement;
+
         audioElement.play();
+        setIsPlaying(true);
+
         audioElement.onended = () => {
           URL.revokeObjectURL(audioUrl);
+          setIsPlaying(false);
         };
       } catch (error) {
         console.error("Failed to play sample text using API:", error);
@@ -581,11 +601,17 @@ export const SettingsModal: React.FC<SettingsModalProps> = ({
               </div>
 
               <button
-                onClick={playSampleText}
+                onClick={playPauseSampleText}
                 className="px-3 py-2 h-10 bg-dark-secondary text-light-background rounded-md hover:bg-dark-accent transition-colors duration-300"
                 disabled={isPlayLoading}
               >
-                {isPlayLoading ? <Loader className="animate-spin" /> : <Play />}
+                {isPlayLoading ? (
+                  <Loader className="animate-spin" />
+                ) : isPlaying ? (
+                  <Pause />
+                ) : (
+                  <Play />
+                )}
               </button>
             </div>
 
