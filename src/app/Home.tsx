@@ -9,6 +9,7 @@ import {
   saveBookToIndexedDB,
   getBooksFromIndexedDB,
   deleteOldestBookFromIndexedDB,
+  deleteBookFromIndexedDB,
 } from "@/utils/indexedDb";
 import { useAuth } from "@/context/AuthContext";
 import { usePlan } from "@/context/PlanContext";
@@ -246,6 +247,23 @@ const Home: React.FC = () => {
     setIsSettingsModalOpen(isOpen);
   };
 
+  const handleDeleteBook = async (bookId: string) => {
+    try {
+      await deleteBookFromIndexedDB(bookId);
+
+      const updatedBooks = books.filter((book) => book.id !== bookId);
+      setBooks(updatedBooks);
+
+      // If the deleted book was the current one, clear the view
+      if (currentBookId === bookId) {
+        setPdfFileUrl(null);
+        setCurrentBookId(null);
+      }
+    } catch (err) {
+      console.error("Failed to delete book:", err);
+    }
+  };
+
   const currentBook = books.find((book) => book.id === currentBookId);
 
   return (
@@ -276,7 +294,7 @@ const Home: React.FC = () => {
             />
           )
         )}
-        {!isFullScreen && currentBook && (
+        {!isFullScreen && books.length > 0 && (
           <Suspense fallback={<LoadingPage />}>
             <BookList
               books={books}
@@ -286,6 +304,7 @@ const Home: React.FC = () => {
                 setPdfFileUrl(book.fileUrl);
                 setCurrentBookId(book.id);
               }}
+              onBookDelete={handleDeleteBook}
             />
           </Suspense>
         )}

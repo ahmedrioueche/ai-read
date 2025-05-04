@@ -4,8 +4,6 @@ import pdfToText from "react-pdftotext";
 import { useSettings } from "@/context/SettingsContext";
 import { formatLanguageToName } from "@/utils/helper";
 
-type SetStateAction<T> = T | ((prevState: T) => T);
-
 const useBook = (bookUrl: string, isFullScreen: boolean) => {
   const [fullText, setFullText] = useState<string>("");
   const rootRef = useRef<HTMLDivElement | null>(null);

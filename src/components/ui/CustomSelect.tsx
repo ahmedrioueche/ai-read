@@ -21,8 +21,8 @@ const CustomSelect = <T extends string>({
 }: CustomSelectProps<T>) => {
   const [isOpen, setIsOpen] = useState(false);
   const selectRef = useRef<HTMLDivElement>(null);
-  const listRef = useRef<HTMLUListElement>(null); // Ref for the dropdown list
-  const scrollPositionRef = useRef<number>(0); // Ref to store scroll position
+  const listRef = useRef<HTMLUListElement>(null);
+  const scrollPositionRef = useRef<number>(0);
 
   // Close the dropdown when clicking outside
   useEffect(() => {
@@ -70,14 +70,12 @@ const CustomSelect = <T extends string>({
     };
   }, [isOpen, disabled]);
 
-  // Save scroll position when the list is scrolled
   const handleListScroll = () => {
     if (listRef.current) {
       scrollPositionRef.current = listRef.current.scrollTop;
     }
   };
 
-  // Restore scroll position when the dropdown is reopened
   useEffect(() => {
     if (isOpen && listRef.current) {
       listRef.current.scrollTop = scrollPositionRef.current;
@@ -85,7 +83,7 @@ const CustomSelect = <T extends string>({
   }, [isOpen]);
 
   return (
-    <div className={`relative`} ref={selectRef}>
+    <div className={`relative w-full`} ref={selectRef}>
       <label className="font-semibold text-dark-foreground">{title}</label>
       <div
         role="button"
@@ -114,8 +112,20 @@ const CustomSelect = <T extends string>({
         <ul
           ref={listRef}
           role="listbox"
-          className={`absolute z-10 mt-1 w-full bg-light-background dark:bg-dark-background border border-light-secondary dark:border-dark-secondary rounded-md shadow-lg max-h-60 overflow-auto ${className}`}
-          onScroll={handleListScroll} // Save scroll position on scroll
+          className={`absolute z-50 mt-1 w-full bg-light-background dark:bg-dark-background border border-light-secondary dark:border-dark-secondary rounded-md shadow-lg max-h-60 overflow-auto ${className}`}
+          onScroll={handleListScroll}
+          style={{
+            // Ensure dropdown renders above modal
+            position: "fixed",
+            width: selectRef.current?.clientWidth,
+            top: selectRef.current
+              ? selectRef.current.getBoundingClientRect().bottom +
+                window.scrollY
+              : "auto",
+            left: selectRef.current
+              ? selectRef.current.getBoundingClientRect().left + window.scrollX
+              : "auto",
+          }}
         >
           {options.map((option) => (
             <li

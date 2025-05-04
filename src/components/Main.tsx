@@ -473,6 +473,7 @@ const Main = ({
           className="flex justify-center items-end w-full h-full"
           onMouseEnter={() => setIsHoveredOver(true)}
           onMouseLeave={() => setIsHoveredOver(false)}
+          onClick={() => console.log("TextCard clicked")}
         >
           <TextCard
             text={explanation}

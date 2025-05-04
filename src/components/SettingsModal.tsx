@@ -117,6 +117,7 @@ export const SettingsModal: React.FC<SettingsModalProps> = ({
     navigator.userAgent.includes("Chrome") &&
     !navigator.userAgent.includes("Edg");
   const appAlerts = new AppAlerts();
+  const modalRef = useRef<HTMLDivElement>(null);
 
   useEffect(() => {
     if (settings) {
@@ -265,7 +266,6 @@ export const SettingsModal: React.FC<SettingsModalProps> = ({
   }, [ttsType, basicVoices, premiumVoices, bookLanguage]);
 
   const playPauseSampleText = async () => {
-    console.log("isPlaying", isPlaying);
     if (isPlaying) {
       setIsPlaying(false);
       window.speechSynthesis.cancel();
@@ -415,6 +415,25 @@ export const SettingsModal: React.FC<SettingsModalProps> = ({
     setIsSearchMode(false); // Switch back to CustomSelect
   };
 
+  useEffect(() => {
+    const handleClickOutside = (event: MouseEvent) => {
+      if (
+        modalRef.current &&
+        !modalRef.current.contains(event.target as Node)
+      ) {
+        onClose();
+      }
+    };
+
+    if (isOpen) {
+      document.addEventListener("mousedown", handleClickOutside);
+    }
+
+    return () => {
+      document.removeEventListener("mousedown", handleClickOutside);
+    };
+  }, [isOpen, onClose]);
+
   // Render the searchable filter
   const renderSearchFilter = () => (
     <div className="flex flex-col gap-2">
@@ -453,8 +472,14 @@ export const SettingsModal: React.FC<SettingsModalProps> = ({
       className={`fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50 transition-transform duration-300 ${
         isOpen ? "scale-100 opacity-100" : "scale-0 opacity-0"
       }`}
+      ref={modalRef}
+      onClick={(e) => {
+        if (e.target === e.currentTarget) {
+          onClose();
+        }
+      }}
     >
-      <div className="bg-dark-background text-dark-foreground rounded-lg shadow-lg p-5 w-full sm:w-[90%] max-w-4xl md:max-h-[95vh] md:h-[95vh] h-[95vh] overflow-y-auto hide-scrollbar">
+      <div className="bg-dark-background text-dark-foreground rounded-lg shadow-lg p-5 pb-8 w-full sm:w-[90%] max-w-4xl md:max-h-[95vh] md:h-auto h-[95vh] overflow-y-auto hide-scrollbar">
         <div className="flex justify-between items-center mb-1">
           <div className="flex items-center text-dark-foreground">
             <SettingsIcon className="mr-2" />

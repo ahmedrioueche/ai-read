@@ -1,19 +1,22 @@
 import React, { useState, useRef, useEffect } from "react";
-import { ChevronRight } from "lucide-react";
+import { ChevronRight, Trash2, X } from "lucide-react";
 import { BookData } from "@/app/Home";
 
 interface BookListProps {
   books: BookData[];
   currentBookId: string | null;
   onBookSelect: (book: BookData) => void;
+  onBookDelete: (bookId: string) => void; // Add delete handler prop
 }
 
 const BookList: React.FC<BookListProps> = ({
   books,
   currentBookId,
   onBookSelect,
+  onBookDelete,
 }) => {
   const [isOpen, setIsOpen] = useState(false);
+  const [bookToDelete, setBookToDelete] = useState<BookData | null>(null);
   const panelRef = useRef<HTMLDivElement>(null);
 
   const handleClickOutside = (e: MouseEvent) => {
@@ -24,14 +27,62 @@ const BookList: React.FC<BookListProps> = ({
 
   useEffect(() => {
     document.addEventListener("mousedown", handleClickOutside);
-
     return () => {
       document.removeEventListener("mousedown", handleClickOutside);
     };
   }, []);
 
+  const handleDeleteClick = (e: React.MouseEvent, book: BookData) => {
+    e.stopPropagation(); // Prevent triggering the book selection
+    setBookToDelete(book);
+  };
+
+  const confirmDelete = () => {
+    if (bookToDelete) {
+      onBookDelete(bookToDelete.id);
+      setBookToDelete(null);
+    }
+  };
+
   return (
     <>
+      {/* Delete Confirmation Modal */}
+      {bookToDelete && (
+        <div className="fixed inset-0 bg-black/50 z-[1000] flex items-center justify-center animate-fade-in">
+          <div className="bg-dark-background dark:bg-dark-background p-6 sm:p-8 rounded-2xl max-w-md w-full mx-4 shadow-lg">
+            <div className="flex justify-between items-center mb-4">
+              <h3 className="text-xl font-semibold text-dark-foreground dark:text-dark-foreground">
+                Delete Book
+              </h3>
+              <button
+                onClick={() => setBookToDelete(null)}
+                className="text-dark-foreground hover:text-white transition-colors"
+              >
+                <X size={22} />
+              </button>
+            </div>
+            <p className="text-dark-foreground mb-6">
+              Are you sure you want to delete "
+              <span className="font-medium">{bookToDelete.fileName}</span>"?
+            </p>
+            <div className="flex justify-end space-x-3">
+              <button
+                onClick={() => setBookToDelete(null)}
+                className="px-4 py-2 rounded-md border border-dark-foreground text-dark-foreground hover:bg-dark-foreground hover:text-dark-background transition-colors"
+              >
+                Cancel
+              </button>
+              <button
+                onClick={confirmDelete}
+                className="px-4 py-2 bg-red-600 text-white rounded-md hover:bg-red-700 transition-colors"
+              >
+                Delete
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
+
       {/* Overlay when panel is open */}
       {isOpen && (
         <div
@@ -70,14 +121,28 @@ const BookList: React.FC<BookListProps> = ({
                       onBookSelect(book);
                       setIsOpen(false);
                     }}
-                    className={`p-3 rounded cursor-pointer transition-colors ${
+                    className={`p-3 rounded cursor-pointer transition-colors group ${
                       book.id === currentBookId
                         ? "bg-dark-secondary text-white"
                         : "bg-dark-background text-dark-foreground hover:bg-dark-secondary/50"
                     }`}
                   >
-                    <p className="font-medium truncate">{book.fileName}</p>
-                    <p className="text-sm opacity-75">Page {book.lastPage}</p>
+                    <div className="flex justify-between items-start">
+                      <div className="flex-1 min-w-0">
+                        <p className="font-medium truncate">{book.fileName}</p>
+                        <p className="text-sm opacity-75">
+                          Page {book.lastPage}
+                        </p>
+                      </div>
+                      <button
+                        onClick={(e) => handleDeleteClick(e, book)}
+                        className={`opacity-0 group-hover:opacity-100 text-dark-foreground hover:scale-105 transition-opacity ${
+                          book.id === currentBookId ? "text-white" : ""
+                        }`}
+                      >
+                        <Trash2 size={16} />
+                      </button>
+                    </div>
                   </div>
                 ))}
             </div>
