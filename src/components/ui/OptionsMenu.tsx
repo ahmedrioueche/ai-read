@@ -1,5 +1,6 @@
 import React, { useEffect, useState } from "react";
 import { Info, FileText, StopCircle, Loader } from "lucide-react";
+import useScreen from "@/hooks/useScreen";
 
 const OptionsMenu: React.FC<{
   selectedText: string | null;
@@ -28,11 +29,18 @@ const OptionsMenu: React.FC<{
       setIsStartReadingClicked(false);
     }
   }, [readingState]);
+  const { isMobile } = useScreen();
 
   return (
     <div
       className={`fixed ${
-        isDarkMode ? (isFullScreen ? "bottom-6" : "bottom-24") : "bottom-6"
+        isDarkMode
+          ? isFullScreen
+            ? "bottom-6"
+            : isMobile
+            ? "bottom-36"
+            : "bottom-24"
+          : "bottom-6"
       } right-6 z-20 group`}
       onMouseEnter={() => setIsExpanded(true)}
       onMouseLeave={() => setIsExpanded(false)}
