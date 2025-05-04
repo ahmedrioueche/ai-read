@@ -68,7 +68,7 @@ const BookList: React.FC<BookListProps> = ({
             <div className="flex justify-end space-x-3">
               <button
                 onClick={() => setBookToDelete(null)}
-                className="px-4 py-2 rounded-md border border-dark-foreground text-dark-foreground hover:bg-dark-foreground hover:text-dark-background transition-colors"
+                className="px-4 py-2 rounded-md text-dark-foreground hover:bg-dark-foreground hover:text-dark-background transition-colors"
               >
                 Cancel
               </button>
@@ -100,6 +100,8 @@ const BookList: React.FC<BookListProps> = ({
             position: "absolute",
             left: 0,
             top: 0,
+            scrollbarWidth: "none" /* Firefox */,
+            msOverflowStyle: "none" /* IE and Edge */,
           }}
           className="h-full bg-dark-background shadow-lg transition-transform duration-300 ease-in-out"
         >
@@ -110,7 +112,10 @@ const BookList: React.FC<BookListProps> = ({
               <span className="text-white">Read</span>
             </div>
           </div>
-          <div className="p-4 h-full overflow-y-auto">
+          <div
+            className="p-4 h-full overflow-y-auto"
+            style={{ scrollbarWidth: "none", msOverflowStyle: "none" }}
+          >
             <div className="space-y-2">
               {books &&
                 books.length > 0 &&
@@ -136,7 +141,7 @@ const BookList: React.FC<BookListProps> = ({
                       </div>
                       <button
                         onClick={(e) => handleDeleteClick(e, book)}
-                        className={`opacity-0 group-hover:opacity-100 text-dark-foreground hover:scale-105 transition-opacity ${
+                        className={`text-dark-foreground hover:scale-105 transition-opacity ${
                           book.id === currentBookId ? "text-white" : ""
                         }`}
                       >
@@ -147,6 +152,13 @@ const BookList: React.FC<BookListProps> = ({
                 ))}
             </div>
           </div>
+
+          {/* Add CSS to hide scrollbar for Webkit browsers */}
+          <style jsx>{`
+            div::-webkit-scrollbar {
+              display: none;
+            }
+          `}</style>
         </div>
 
         <button
