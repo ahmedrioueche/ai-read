@@ -202,6 +202,7 @@ const Main = ({
       const { text, elements } = await getVisibleText();
       // Process and handle initial visible text
       const processedText = preprocessText(text);
+
       await handleTextToSpeech(processedText);
       setActiveHighlightElements(elements);
       startHighlighting();

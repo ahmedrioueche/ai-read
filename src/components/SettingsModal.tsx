@@ -194,7 +194,7 @@ export const SettingsModal: React.FC<SettingsModalProps> = ({
       //   }));
       //   setPremiumVoices(apiVoices);
       // }
-      const voices = await voiceApi2.getVoices();
+      const voices = await voiceApi.getVoices();
 
       if (voices && Array.isArray(voices)) {
         const apiVoices = voices.map((voice: any) => ({
@@ -309,7 +309,7 @@ export const SettingsModal: React.FC<SettingsModalProps> = ({
       }
     } else {
       try {
-        const audio = await voiceApi2.textToSpeech(sampleText, ttsVoice.value);
+        const audio = await voiceApi.textToSpeech(sampleText, ttsVoice.value!);
         const audioBlob = new Blob([audio], { type: "audio/mpeg" });
         const audioUrl = URL.createObjectURL(audioBlob);
         const audioElement = new Audio(audioUrl);

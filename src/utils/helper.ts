@@ -397,12 +397,6 @@ export const splitTextIntoChunks = (
 
   // Add fullstop after title if detected
   let processedText = text;
-  for (let i = 0; i < text.length - 1; i++) {
-    if (isTitleEnd(text, i)) {
-      processedText = processedText.slice(0, i) + "." + processedText.slice(i);
-      break;
-    }
-  }
 
   while (currentIndex < processedText.length) {
     let chunkStart = currentIndex;

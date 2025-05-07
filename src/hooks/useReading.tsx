@@ -64,23 +64,22 @@ const useReading = () => {
     }
   };
 
-  // Function to fetch TTS audio for premium voices
-  //const fetchTtsAudio = async (text: string): Promise<Blob> => {
-  //  const voiceId = ttsVoice || "nPczCjzI2devNBz1zQrb"; // Default voice ID
-  //  const audioBuffer = await voiceApi.textToSpeech(text, voiceId);
-  //  return new Blob([audioBuffer], { type: "audio/mpeg" });
-  //};
-
+  //Function to fetch TTS audio for premium voices
   const fetchTtsAudio = async (text: string): Promise<Blob> => {
-    const audioBuffer = await voiceApi2.textToSpeech(text, ttsVoice.value);
+    const voiceId = ttsVoice.value || "nPczCjzI2devNBz1zQrb"; // Default voice ID
+    const audioBuffer = await voiceApi.textToSpeech(text, voiceId);
     return new Blob([audioBuffer], { type: "audio/mpeg" });
   };
+
+  //const fetchTtsAudio = async (text: string): Promise<Blob> => {
+  //  const audioBuffer = await voiceApi2.textToSpeech(text, ttsVoice.value);
+  //  return new Blob([audioBuffer], { type: "audio/mpeg" });
+  //};
 
   // Function to handle text-to-speech for both premium and basic TTS
   const handleTextToSpeech = async (text: string) => {
     const chunks = splitTextIntoChunks(text, ttsType === "premium" ? 200 : 400); // Split text into chunks
     const remainingCredit = await voiceApi.getValidKeyRemainingCredit();
-
     if (ttsType === "premium") {
       // TTS API is enabled
       try {

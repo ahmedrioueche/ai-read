@@ -19,6 +19,14 @@ export default class VoiceApi {
 
   constructor() {
     this.apiKeys = [
+      process.env.NEXT_PUBLIC_ELEVENLABS_KEY_1 || "",
+      process.env.NEXT_PUBLIC_ELEVENLABS_KEY_2 || "",
+      process.env.NEXT_PUBLIC_ELEVENLABS_KEY_3 || "",
+      process.env.NEXT_PUBLIC_ELEVENLABS_KEY_4 || "",
+      process.env.NEXT_PUBLIC_ELEVENLABS_KEY_5 || "",
+      process.env.NEXT_PUBLIC_ELEVENLABS_KEY_6 || "",
+      process.env.NEXT_PUBLIC_ELEVENLABS_KEY_7 || "",
+      process.env.NEXT_PUBLIC_ELEVENLABS_KEY_8 || "",
       process.env.NEXT_PUBLIC_ELEVENLABS_KEY_9 || "",
       process.env.NEXT_PUBLIC_ELEVENLABS_KEY_10 || "",
       process.env.NEXT_PUBLIC_ELEVENLABS_KEY_11 || "",
