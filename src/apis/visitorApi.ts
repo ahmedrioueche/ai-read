@@ -1,21 +1,12 @@
-import { Settings, User, Visitor } from "@prisma/client";
+import { Visitor } from "@prisma/client";
 import axios from "axios";
 
 export class VisitorApi {
   getVisitor = async (fingerprint: string) => {
     try {
-      const response = await axios.post(
-        "/api/visitor/get",
-        {
-          fingerprint,
-        },
-        {
-          headers: {
-            "Content-Type": "application/json",
-          },
-        }
-      );
-
+      const response = await axios.get(`/api/visitor`, {
+        params: { fingerprint },
+      });
       return response.data;
     } catch (error) {
       console.error("Error getting visitor:", error);
@@ -26,7 +17,7 @@ export class VisitorApi {
   addVisitor = async (fingerprint: string) => {
     try {
       const response = await axios.post(
-        "/api/visitor/add",
+        "/api/visitor",
         {
           fingerprint,
         },
@@ -46,8 +37,8 @@ export class VisitorApi {
 
   updateVisitor = async (id: string, userData: Partial<Visitor>) => {
     try {
-      const response = await axios.post(
-        "/api/visitor/update",
+      const response = await axios.patch(
+        "/api/visitor",
         {
           id,
           updateData: userData,

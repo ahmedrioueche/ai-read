@@ -6,7 +6,7 @@ export class UserApi {
   updateUser = async (email: string, userData: Partial<User>) => {
     try {
       const response = await axios.post(
-        "/api/user/update",
+        "/api/user",
         {
           email,
           updateData: userData,
@@ -27,17 +27,7 @@ export class UserApi {
 
   getSettings = async (id: string) => {
     try {
-      const response = await axios.post(
-        "/api/settings/get",
-        {
-          id,
-        },
-        {
-          headers: {
-            "Content-Type": "application/json",
-          },
-        }
-      );
+      const response = await axios.get("/api/settings", { params: { id } });
 
       return response.data;
     } catch (error) {
@@ -49,7 +39,7 @@ export class UserApi {
   updateSettings = async (id: string, updatedSettings: Partial<Settings>) => {
     try {
       const response = await axios.post(
-        "/api/settings/update",
+        "/api/settings",
         {
           id,
           updatedSettings,

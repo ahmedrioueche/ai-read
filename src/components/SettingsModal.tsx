@@ -309,8 +309,16 @@ export const SettingsModal: React.FC<SettingsModalProps> = ({
       }
     } else {
       try {
+        let audioBlob: Blob;
         const audio = await voiceApi.textToSpeech(sampleText, ttsVoice.value!);
-        const audioBlob = new Blob([audio], { type: "audio/mpeg" });
+        if (typeof audio === "string") {
+          // Handle base64 or URL string, if that's ever returned (you may skip this if it never returns string)
+          throw new Error("Unexpected string response from voice API");
+        } else {
+          // Convert Node.js Buffer to ArrayBuffer
+          const bufferArray = Uint8Array.from(audio as any).buffer;
+          audioBlob = new Blob([bufferArray], { type: "audio/mpeg" });
+        }
         const audioUrl = URL.createObjectURL(audioBlob);
         const audioElement = new Audio(audioUrl);
         audioElementRef.current = audioElement;

@@ -1,4 +1,4 @@
-import React, { useEffect, useState } from "react";
+import React, { useEffect, useRef, useState } from "react";
 import { X, Repeat2 } from "lucide-react";
 
 interface MinimalCardProps {
@@ -15,6 +15,7 @@ const MinimalCard: React.FC<MinimalCardProps> = ({
   isDarkMode, // Destructure isDarkMode
 }) => {
   const [isExiting, setIsExiting] = useState(false);
+  const cardRef = useRef<HTMLDivElement>(null);
 
   useEffect(() => {
     const viewer = viewerRef.current;
@@ -37,8 +38,25 @@ const MinimalCard: React.FC<MinimalCardProps> = ({
     setTimeout(onClose, 300);
   };
 
+  useEffect(() => {
+    const handleClickOutside = (event: MouseEvent) => {
+      if (cardRef.current && !cardRef.current.contains(event.target as Node)) {
+        onClose();
+      }
+    };
+
+    // Add event listener when component mounts
+    document.addEventListener("mousedown", handleClickOutside);
+
+    // Clean up event listener when component unmounts
+    return () => {
+      document.removeEventListener("mousedown", handleClickOutside);
+    };
+  }, [onClose]);
+
   return (
     <div
+      ref={cardRef}
       className={`
         fixed
         bottom-[72px] // Position above Google's selection toolbar (usually ~60px)

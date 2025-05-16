@@ -6,7 +6,7 @@ interface BookListProps {
   books: BookData[];
   currentBookId: string | null;
   onBookSelect: (book: BookData) => void;
-  onBookDelete: (bookId: string) => void; // Add delete handler prop
+  onBookDelete: (bookId: string) => void;
 }
 
 const BookList: React.FC<BookListProps> = ({
@@ -161,19 +161,17 @@ const BookList: React.FC<BookListProps> = ({
           `}</style>
         </div>
 
-        <button
-          onClick={() => setIsOpen(!isOpen)}
-          style={{
-            transform: isOpen ? "translateX(300px)" : "translateX(0)",
-          }}
-          className="absolute left-0 top-1/2 -translate-y-1/2 text-dark-accent bg-dark-background p-2 rounded-r-md shadow-md transition-transform duration-300"
-        >
-          <ChevronRight
-            className={`transition-transform duration-300 ${
-              isOpen ? "rotate-180" : "rotate-0"
-            }`}
-          />
-        </button>
+        {!isOpen && (
+          <button
+            onClick={() => setIsOpen(!isOpen)}
+            style={{
+              transform: isOpen ? "translateX(300px)" : "translateX(0)",
+            }}
+            className="absolute left-0 top-1/2 -translate-y-1/2 text-dark-accent bg-dark-background p-2 rounded-r-md shadow-md transition-transform duration-300"
+          >
+            <ChevronRight className={`transition-transform duration-300`} />
+          </button>
+        )}
       </div>
     </>
   );
