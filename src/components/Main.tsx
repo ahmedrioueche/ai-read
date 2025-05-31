@@ -222,7 +222,7 @@ const Main = ({
 
       setActiveHighlightElements(elements);
       startHighlighting();
-      await delay(5000);
+      await delay(3000);
       // Process remaining visible chunks in sequence
       for (
         let i = 1;
@@ -235,7 +235,7 @@ const Main = ({
           if (!isProcessingRef.current && autoReading.isActivated) {
             processQueue();
           }
-          await delay(20000);
+          await delay(15000);
         } catch (e) {
           console.error("Error processing visible chunk:", e);
         }
