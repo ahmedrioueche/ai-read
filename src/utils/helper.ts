@@ -284,35 +284,54 @@ export function shortenLocaleName(localeName: string): string {
 export const preprocessText = (text: string) => {
   let cleanedText = text;
 
-  // Fix hyphenated words broken across lines (e.g., "be- fore" → "before")
-  cleanedText = cleanedText.replace(/-\s*\n\s*/g, "");
+  // Step 1: First normalize all whitespace to single spaces
+  cleanedText = cleanedText.replace(/\s+/g, " ");
 
-  // Remove inline annotations like "[22]", "[PP03]", or "[BOH10]"
-  cleanedText = cleanedText.replace(/\[\w+\]/g, "");
+  // Step 2: Fix spaced-out words (including titles and proper nouns)
+  // Use an iterative approach to catch all spaced letters
+  let prevText;
+  do {
+    prevText = cleanedText;
+    // Join any letter followed by space and another letter
+    cleanedText = cleanedText.replace(/\b([a-zA-Z])\s+([a-zA-Z])\b/g, "$1$2");
+    // Also handle cases where there are more letters after
+    cleanedText = cleanedText.replace(
+      /\b([a-zA-Z])\s+([a-zA-Z])(?=\s+[a-zA-Z])/g,
+      "$1$2"
+    );
+  } while (cleanedText !== prevText);
 
-  // Remove superscript numbers (e.g., "1", "2") at the end of sentences
-  cleanedText = cleanedText.replace(/\s\d+(?=\s|\.|$)/g, "");
-
-  // Fix spaced-out uppercase letters (e.g., "W O R L D" → "WORLD")
-  cleanedText = cleanedText.replace(/([A-Z])\s+(?=[A-Z])/g, "$1");
-
-  // Add commas after titles that are followed by blank space
+  // Step 3: Handle hyphenated words by fixing the hyphen spacing
   cleanedText = cleanedText.replace(
-    /^([A-Z][^\n]*?)([A-Za-z0-9])(\s*?\n\s+)/gm,
-    "$1$2,\n"
+    /(\w+)\s*-\s*(\w+)/g,
+    (match, word1, word2) => {
+      return `${word1}-${word2}`;
+    }
   );
 
-  // Replace multiple spaces within a sentence with a single space
-  cleanedText = cleanedText.replace(/([^\n\S]+|\s{2,})/g, " ");
+  // Step 4: Handle contractions by normalizing apostrophe spacing
+  cleanedText = cleanedText.replace(
+    /(\w+)\s*'\s*(\w+)\b/g,
+    (match, word1, word2) => {
+      return `${word1}'${word2}`;
+    }
+  );
 
-  // Normalize line breaks for natural reading
-  cleanedText = cleanedText.replace(/(\s*\n\s*){2,}/g, "\n\n");
+  // Step 5: Fix spacing around punctuation and quotes
+  cleanedText = cleanedText.replace(/\s*([,.!?:;])\s*/g, "$1 ");
+  cleanedText = cleanedText.replace(/\s*"\s*/g, '"');
+  cleanedText = cleanedText.replace(/"\s+(\w)/g, '"$1');
+  cleanedText = cleanedText.replace(/(\w)\s+"/g, '$1"');
 
-  // Trim extra spaces at the beginning and end
+  // Step 6: Clean up any remaining multiple spaces
+  cleanedText = cleanedText.replace(/\s{2,}/g, " ");
+
+  // Step 7: Final trim
   cleanedText = cleanedText.trim();
 
   return cleanedText;
 };
+
 export const oldPreprocessText = (text: string) => {
   // Step 1: Remove inline annotations like "[22]" or similar
   let cleanedText = text.replace(/\[\d+\]/g, "");
@@ -385,22 +404,25 @@ export const isTitleEnd = (text: string, position: number): boolean => {
 
 export const splitTextIntoChunks = (
   text: string,
-  maxLength: number
+  maxLength: number,
+  firstChunkLength?: number
 ): string[] => {
   if (!text || maxLength <= 0) return [];
 
   const chunks: string[] = [];
   let currentIndex = 0;
 
-  // Pre-process all URLs once (drastically reduces regex operations)
   const urlRanges = getUrlRanges(text);
-
-  // Add fullstop after title if detected
   let processedText = text;
 
+  let isFirstChunk = true;
+
   while (currentIndex < processedText.length) {
+    const currentMaxLength =
+      isFirstChunk && firstChunkLength ? firstChunkLength : maxLength;
+
     let chunkStart = currentIndex;
-    let chunkEnd = currentIndex + maxLength;
+    let chunkEnd = chunkStart + currentMaxLength;
     let bestBreak = chunkEnd;
 
     // Phase 1: URL protection using pre-processed ranges
@@ -414,7 +436,7 @@ export const splitTextIntoChunks = (
         chunkEnd,
         processedText,
         urlRanges,
-        maxLength
+        currentMaxLength
       );
 
       // Phase 3: Word boundary fallback
@@ -424,7 +446,10 @@ export const splitTextIntoChunks = (
           Math.min(chunkEnd, processedText.length)
         );
         if (bestBreak <= chunkStart) {
-          bestBreak = Math.min(chunkStart + maxLength, processedText.length);
+          bestBreak = Math.min(
+            chunkStart + currentMaxLength,
+            processedText.length
+          );
         }
       }
     }
@@ -436,6 +461,7 @@ export const splitTextIntoChunks = (
     chunk = cleanChunkEnd(chunk, urlRanges);
     if (!chunk) {
       currentIndex = bestBreak;
+      isFirstChunk = false;
       continue;
     }
 
@@ -450,6 +476,7 @@ export const splitTextIntoChunks = (
     }
 
     currentIndex = bestBreak;
+    isFirstChunk = false;
   }
 
   return chunks.filter((c) => c.length > 0);
@@ -671,3 +698,7 @@ export const formatCurrency = (value: string) => {
     currency: "USD",
   }).format(parseFloat(value));
 };
+
+// Helper function to delay execution
+export const delay = (ms: number) =>
+  new Promise((resolve) => setTimeout(resolve, ms));

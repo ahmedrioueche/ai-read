@@ -1,5 +1,5 @@
 "use client";
-import { preprocessText } from "@/utils/helper";
+import { delay, preprocessText } from "@/utils/helper";
 import { Viewer, Worker, SpecialZoomLevel } from "@react-pdf-viewer/core";
 import "@react-pdf-viewer/core/lib/styles/index.css";
 import { zoomPlugin } from "@react-pdf-viewer/zoom";
@@ -17,7 +17,8 @@ import useHighlighting from "@/hooks/useHighlighting";
 import useTextProcessing from "@/hooks/useTextProcessing";
 import { ZoomIn, ZoomOut } from "lucide-react";
 import { pageNavigationPlugin } from "@react-pdf-viewer/page-navigation";
-import useSection from "@/hooks/useSection";
+import { AiApi } from "@/apis/aiApi";
+import { splitTextIntoChunks } from "@/utils/helper";
 
 const Main = ({
   book,
@@ -52,11 +53,14 @@ const Main = ({
   const [currentPage, setCurrentPage] = useState<number>(1);
   const [totalPages, setTotalPages] = useState<number>(0);
   const [isControlsVisible, setIsControlsVisible] = useState(false);
-
+  const aiApi = new AiApi();
   const zoomPluginInstance = zoomPlugin();
   const { zoomTo } = zoomPluginInstance;
   const pageNavigationPluginInstance = pageNavigationPlugin();
   const { jumpToPage } = pageNavigationPluginInstance;
+  const textQueueRef = useRef<string[]>([]);
+  const isProcessingRef = useRef(false);
+  const MAX_CHUNK_LENGTH = 1000;
 
   const {
     selectedText,
@@ -90,7 +94,8 @@ const Main = ({
     setReadingSpeed,
     handleTextToSpeech,
     stopReading,
-    readSelectedText,
+    readText,
+    ttsType,
   } = useReading();
 
   const { startScrolling, stopScrolling, visibleElements } = useScrolling(
@@ -200,23 +205,92 @@ const Main = ({
     try {
       // Fetch initial visible text and elements
       const { text, elements } = await getVisibleText();
-      // Process and handle initial visible text
-      const processedText = preprocessText(text);
 
-      await handleTextToSpeech(processedText);
+      // Split text into chunks immediately
+      const visibleChunks = splitTextIntoChunks(text, 500, 50);
+
+      if (visibleChunks.length === 0) {
+        throw new Error("No visible text chunks found.");
+      }
+
+      // Process the first chunk and start reading
+      const firstProcessed = await aiApi.preprocessText(visibleChunks[0]);
+      textQueueRef.current = [firstProcessed];
+
+      setReadingState("reading");
+      processQueue(); // Start processing the queue
+
       setActiveHighlightElements(elements);
       startHighlighting();
+      await delay(5000);
+      // Process remaining visible chunks in sequence
+      for (
+        let i = 1;
+        i < visibleChunks.length && autoReading.isActivated;
+        i++
+      ) {
+        try {
+          const processed = await aiApi.preprocessText(visibleChunks[i]);
+          textQueueRef.current.push(processed);
+          if (!isProcessingRef.current && autoReading.isActivated) {
+            processQueue();
+          }
+          await delay(20000);
+        } catch (e) {
+          console.error("Error processing visible chunk:", e);
+        }
+      }
 
-      // Find remaining text
-      const remainingText = getRemainingFullText(text, fullText);
-      if (remainingText.trim() !== "") {
-        // Process and speak remaining text
-        const processedRemainingText = preprocessText(remainingText);
-        await handleTextToSpeech(processedRemainingText);
+      // Only process remaining text if reading is still active
+      if (autoReading.isActivated) {
+        const remainingText = getRemainingFullText(text, fullText);
+        if (remainingText.trim() !== "") {
+          const preChunks = splitTextIntoChunks(
+            remainingText,
+            MAX_CHUNK_LENGTH
+          );
+
+          for (const chunk of preChunks) {
+            if (!autoReading.isActivated) break; // Exit if reading stopped
+
+            try {
+              const processed = await aiApi.preprocessText(chunk);
+              textQueueRef.current.push(processed);
+              if (!isProcessingRef.current && autoReading.isActivated) {
+                processQueue();
+              }
+              await delay(60000);
+            } catch (e) {
+              console.error("Error processing chunk:", e);
+            }
+          }
+        }
       }
     } catch (error) {
       console.error("Error in startReading:", error);
       autoReading.isActivated = false;
+      setReadingState("off");
+    }
+  };
+
+  // Updated processQueue function
+  const processQueue = async () => {
+    isProcessingRef.current = true;
+
+    while (textQueueRef.current.length > 0 && autoReading.isActivated) {
+      const chunk = textQueueRef.current.shift()!;
+
+      try {
+        await handleTextToSpeech(chunk);
+      } catch (e) {
+        console.error("Error processing chunk:", e);
+      }
+    }
+
+    isProcessingRef.current = false;
+
+    if (textQueueRef.current.length === 0) {
+      setReadingState("off");
     }
   };
 
@@ -234,7 +308,7 @@ const Main = ({
           !autoReading.isReading &&
           readingState !== "reading"
         ) {
-          readSelectedText(preprocessedText);
+          readText(preprocessedText);
         }
         if (settings && settings.enableTranslation) {
           getTranslation(preprocessedText);
@@ -250,6 +324,13 @@ const Main = ({
   const handleStopReading = () => {
     stopReading();
     stopHighlighting();
+    autoReading.isActivated = false;
+    autoReading.isReading = false;
+    textQueueRef.current.length = 0;
+    isProcessingRef.current = false;
+    if (textQueueRef.current.length === 0) {
+      setReadingState("off");
+    }
   };
 
   useEffect(() => {
@@ -435,8 +516,8 @@ const Main = ({
         selectedText={selectedText || savedSelectedText}
         getExplanation={() => getExplanation(selectedText || savedSelectedText)}
         getSummary={() => getSummary(selectedText || savedSelectedText)}
-        stopReading={handleStopReading}
         startReading={startReading}
+        stopReading={handleStopReading}
         readingState={readingState}
         isDarkMode={isDarkMode}
         isFullScreen={isFullScreen}

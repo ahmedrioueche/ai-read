@@ -114,27 +114,36 @@ export default class VoiceApi {
     text: string,
     voiceId: string,
     voiceSettings: VoiceSettings = {}
-  ): Promise<Buffer | string> {
+  ): Promise<ArrayBuffer> {
     return this.tryApiKeys(async (apiKey) => {
-      const url = `${this.apiUrl}/text-to-speech/${voiceId}`;
-      const payload = {
-        text,
-        voice_settings: {
-          stability: voiceSettings.stability || 0.5,
-          similarity_boost: voiceSettings.similarity_boost || 0.5,
-        },
-        model_id: "eleven_multilingual_v2",
-      };
+      try {
+        const url = `${this.apiUrl}/text-to-speech/${voiceId}`;
+        const payload = {
+          text,
+          voice_settings: {
+            stability: voiceSettings.stability || 0.5,
+            similarity_boost: voiceSettings.similarity_boost || 0.5,
+          },
+          model_id: "eleven_multilingual_v2",
+        };
 
-      const response = await axios.post(url, payload, {
-        headers: {
-          "Content-Type": "application/json",
-          "xi-api-key": apiKey,
-        },
-        responseType: "arraybuffer",
-      });
+        const response = await axios.post<ArrayBuffer>(url, payload, {
+          headers: {
+            "Content-Type": "application/json",
+            "xi-api-key": apiKey,
+          },
+          responseType: "arraybuffer",
+        });
 
-      return response.data;
+        if (!(response.data instanceof ArrayBuffer)) {
+          throw new Error("Invalid audio data format received");
+        }
+
+        return response.data;
+      } catch (error) {
+        console.error("Error in textToSpeech:", error);
+        throw new Error("Failed to generate speech");
+      }
     });
   }
 

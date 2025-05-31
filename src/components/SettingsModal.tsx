@@ -186,24 +186,24 @@ export const SettingsModal: React.FC<SettingsModalProps> = ({
       }
 
       setVoicesLoading(true);
-      // const response = await voiceApi.getVoices();
-      // if (response?.voices && Array.isArray(response.voices)) {
-      //   const apiVoices = response.voices.map((voice: any) => ({
-      //     value: voice.voice_id,
-      //     label: voice.name,
-      //   }));
-      //   setPremiumVoices(apiVoices);
-      // }
-      const voices = await voiceApi.getVoices();
-
-      if (voices && Array.isArray(voices)) {
-        const apiVoices = voices.map((voice: any) => ({
-          value: voice.Name,
-          label:
-            voice.DisplayName + " - " + shortenLocaleName(voice.LocaleName),
+      const response = await voiceApi.getVoices();
+      if (response?.voices && Array.isArray(response.voices)) {
+        const apiVoices = response.voices.map((voice: any) => ({
+          value: voice.voice_id,
+          label: voice.name,
         }));
         setPremiumVoices(apiVoices);
       }
+      //const voices = await voiceApi.getVoices();
+      //
+      //if (voices && Array.isArray(voices)) {
+      //  const apiVoices = voices.map((voice: any) => ({
+      //    value: voice.Name,
+      //    label:
+      //      voice.DisplayName + " - " + shortenLocaleName(voice.LocaleName),
+      //  }));
+      //  setPremiumVoices(apiVoices);
+      //}
     } catch (error) {
       console.error("Failed to fetch API voices:", error);
     }
@@ -397,7 +397,7 @@ export const SettingsModal: React.FC<SettingsModalProps> = ({
           }
         })
       : (premiumVoices as PremiumVoice[]).filter((voice) => {
-          return voice.label.toLowerCase().includes(bookLanguage.toLowerCase());
+          return voice.label.toLowerCase();
         });
 
   const handleThemeChange = (value: string) => {

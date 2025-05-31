@@ -1,5 +1,9 @@
 import { useState } from "react";
-import { formatLanguageToLocalCode, splitTextIntoChunks } from "@/utils/helper";
+import {
+  delay,
+  formatLanguageToLocalCode,
+  splitTextIntoChunks,
+} from "@/utils/helper";
 import VoiceApi, { VoiceApi2 } from "@/apis/voiceApi";
 import { useSettings } from "@/context/SettingsContext";
 
@@ -19,7 +23,6 @@ const useReading = () => {
     useState<HTMLAudioElement | null>(null);
   const [readingSpeed, setReadingSpeed] = useState<number>(0.9);
   let audioQueue: Blob[] = []; // Queue for premium TTS audio chunks
-  let basicTtsQueue: string[] = []; // Queue for basic TTS text chunks
   const voiceApi = new VoiceApi();
   const voiceApi2 = new VoiceApi2();
 
@@ -29,7 +32,7 @@ const useReading = () => {
   const bookLanguage = settings.bookLanguage;
 
   // Function to read text using the browser's speech synthesis
-  const readTextWebSpeechApi = (text: string) => {
+  const readTextWebSpeechApi = (text: string, resolve: () => void) => {
     if ("speechSynthesis" in window) {
       const utterance = new SpeechSynthesisUtterance(text);
       const selectedVoice = window.speechSynthesis
@@ -44,31 +47,42 @@ const useReading = () => {
         utterance.voice = selectedVoice;
       }
 
-      utterance.onstart = () => {
-        setReadingState("reading");
-        autoReading.isReading = true;
-      };
-
       utterance.onend = () => {
         if (!autoReading.isActivated) {
           setReadingState("off");
         }
         autoReading.isReading = false;
-        playNextBasicTts(); // Play the next chunk in the basic TTS queue
+        resolve();
       };
 
-      // Speak the text
+      utterance.onerror = (event) => {
+        console.error("Speech synthesis error:", event);
+        resolve();
+      };
+
       window.speechSynthesis.speak(utterance);
     } else {
-      console.error("Speech synthesis is not supported in this browser.");
+      console.error("Speech synthesis not supported");
+      resolve();
     }
   };
 
   //Function to fetch TTS audio for premium voices
   const fetchTtsAudio = async (text: string): Promise<Blob> => {
-    const voiceId = ttsVoice.value || "nPczCjzI2devNBz1zQrb"; // Default voice ID
-    const audioBuffer = await voiceApi.textToSpeech(text, voiceId);
-    return new Blob([audioBuffer], { type: "audio/mpeg" });
+    try {
+      const voiceId = ttsVoice.value || "nPczCjzI2devNBz1zQrb";
+      const audioBuffer = await voiceApi.textToSpeech(text, voiceId);
+
+      // Validate the buffer
+      if (!audioBuffer || audioBuffer.byteLength === 0) {
+        throw new Error("Empty audio buffer received");
+      }
+
+      return new Blob([audioBuffer], { type: "audio/mpeg" });
+    } catch (error) {
+      console.error("Error in fetchTtsAudio:", error);
+      throw new Error("Failed to create audio blob");
+    }
   };
 
   //const fetchTtsAudio = async (text: string): Promise<Blob> => {
@@ -77,85 +91,37 @@ const useReading = () => {
   //};
 
   // Function to handle text-to-speech for both premium and basic TTS
-  const handleTextToSpeech = async (text: string) => {
-    const chunks = splitTextIntoChunks(text, ttsType === "premium" ? 200 : 400); // Split text into chunks
-    const remainingCredit = await voiceApi.getValidKeyRemainingCredit();
-    if (ttsType === "premium") {
-      // TTS API is enabled
-      try {
-        // Fetch and store audio for the first chunk
-        const firstChunk = chunks[0];
-        if (firstChunk) {
-          if (autoReading.isActivated) {
-            const audioBlob = await fetchTtsAudio(firstChunk);
-            audioQueue.push(audioBlob); // Add the first chunk to the queue
-            playNextAudio(); // Start playback immediately
-            setCurrentTextChunk(firstChunk);
-          }
-        }
+  const handleTextToSpeech = async (text: string): Promise<void> => {
+    return new Promise(async (resolve) => {
+      if (ttsType === "premium") {
+        try {
+          const audioBlob = await fetchTtsAudio(text);
+          const audioUrl = URL.createObjectURL(audioBlob);
+          const audio = new Audio(audioUrl);
 
-        // Fetch and store audio for the remaining chunks in the background
-        for (let i = 1; i < chunks.length; i++) {
-          if (autoReading.isActivated) {
-            const previousChunk = chunks[i - 1];
-            const delayDuration = calculateChunkDuration(previousChunk);
-            await delay(delayDuration);
-
-            const chunk = chunks[i];
-            try {
-              const audioBlob = await fetchTtsAudio(chunk);
-              audioQueue.push(audioBlob); // Add to the queue
-              setCurrentTextChunk(chunk);
-            } catch (error) {
-              console.error("Error f  etching audio for chunk:", chunk, error);
-            }
-          }
+          audio.play();
+          audio.onended = () => {
+            URL.revokeObjectURL(audioUrl);
+            resolve();
+          };
+          audio.onerror = (error) => {
+            console.error("Audio playback error:", error);
+            resolve();
+          };
+        } catch (error) {
+          console.error("Error fetching TTS audio:", error);
+          // Fallback to basic TTS
+          readTextWebSpeechApi(text, resolve);
         }
-      } catch (error) {
-        console.error("Error fetching TTS API audio:", error);
-        // Fallback to built-in TTS if TTS API fails
-        for (const chunk of chunks) {
-          if (!autoReading.isReading) {
-            basicTtsQueue.push(chunk); // Add chunks to the basic TTS queue
-            setCurrentTextChunk(chunk);
-          }
-        }
-        playNextBasicTts(); // Start playing the first chunk in the basic TTS queue
+      } else {
+        readTextWebSpeechApi(text, resolve);
       }
-    } else {
-      // TTS API is disabled, use built-in TTS
-      console.log({ autoReading });
-      for (const chunk of chunks) {
-        if (!autoReading.isReading) {
-          basicTtsQueue.push(chunk); // Add chunks to the basic TTS queue
-          setCurrentTextChunk(chunk);
-        }
-      }
-      playNextBasicTts(); // Start playing the first chunk in the basic TTS queue
-    }
-  };
-
-  // Function to play the next chunk in the basic TTS queue
-  const playNextBasicTts = () => {
-    if (basicTtsQueue.length > 0 && !autoReading.isReading) {
-      const nextChunk = basicTtsQueue.shift(); // Get the next chunk from the queue
-      if (nextChunk) {
-        readTextWebSpeechApi(nextChunk); // Read the chunk
-      }
-    } else if (basicTtsQueue.length === 0) {
-      stopReading(); // Stop reading if the queue is empty
-    }
+    });
   };
 
   // Function to read selected text
-  const readSelectedText = async (text: string) => {
-    if (ttsType === "premium") {
-      const audioBlob = await fetchTtsAudio(text);
-      playAudio(audioBlob);
-      setReadingState("reading");
-    } else {
-      readTextWebSpeechApi(text);
-    }
+  const readText = async (text: string) => {
+    handleTextToSpeech(text);
   };
 
   // Function to play audio from the queue
@@ -185,36 +151,30 @@ const useReading = () => {
     }
   };
 
-  // Function to stop premium audio playback
-  const stopPremiumAudio = () => {
+  // Function to stop reading
+  const stopReading = () => {
+    // Stop any active premium audio
     if (currentPremiumAudio) {
       currentPremiumAudio.pause();
       currentPremiumAudio.currentTime = 0;
-      currentPremiumAudio.onended = null; // Remove the onended handler
+      currentPremiumAudio.onended = null;
       setCurrentPremiumAudio(null);
     }
-    audioQueue = []; // Clear the audio queue
-  };
 
-  // Function to stop reading
-  const stopReading = () => {
-    stopPremiumAudio();
-    window.speechSynthesis.cancel();
-    setAutoReading({ isActivated: false, isReading: false });
+    // Clear the audio queue
+    audioQueue = [];
+
+    // Cancel any speech synthesis
+    if (window.speechSynthesis) {
+      window.speechSynthesis.cancel();
+    }
+
+    // Update state immediately
     autoReading.isActivated = false;
     autoReading.isReading = false;
+    setAutoReading({ isActivated: false, isReading: false });
     setReadingState("off");
   };
-
-  // Helper function to calculate chunk duration
-  const calculateChunkDuration = (text: string): number => {
-    const length = text.length; // Estimate word count
-    return length * 38; // Convert to milliseconds
-  };
-
-  // Helper function to delay execution
-  const delay = (ms: number) =>
-    new Promise((resolve) => setTimeout(resolve, ms));
 
   return {
     readingState,
@@ -223,11 +183,10 @@ const useReading = () => {
     ttsType,
     ttsVoice,
     readingSpeed,
-    readSelectedText,
+    readText,
     setReadingSpeed,
     setReadingState,
     setAutoReading,
-    readText: readTextWebSpeechApi,
     handleTextToSpeech,
     stopReading,
   };
