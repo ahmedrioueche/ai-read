@@ -4,7 +4,6 @@ import { UserService } from "@/services/userService";
 async function handlePost(req: Request) {
   try {
     const { email, updateData } = await req.json();
-    console.log("Received request data:", { email, updateData });
 
     if (!email || !updateData) {
       return NextResponse.json(

@@ -1,37 +1,100 @@
-import { useState } from "react";
-import {
-  delay,
-  formatLanguageToLocalCode,
-  splitTextIntoChunks,
-} from "@/utils/helper";
-import VoiceApi, { VoiceApi2 } from "@/apis/voiceApi";
+import { useState, useRef } from "react";
+import { formatLanguageToLocalCode } from "@/utils/helper";
+import VoiceApi from "@/apis/voiceApi";
 import { useSettings } from "@/context/SettingsContext";
 
 const useReading = () => {
   const [readingState, setReadingState] = useState<
     "loading" | "reading" | "off"
   >("off");
-  const [autoReading, setAutoReading] = useState<{
-    isActivated: boolean;
-    isReading: boolean;
-  }>({
+  const [autoReading, setAutoReading] = useState({
     isActivated: false,
     isReading: false,
   });
-  const [currentTextChunk, setCurrentTextChunk] = useState("");
-  const [currentPremiumAudio, setCurrentPremiumAudio] =
-    useState<HTMLAudioElement | null>(null);
   const [readingSpeed, setReadingSpeed] = useState<number>(0.9);
-  let audioQueue: Blob[] = []; // Queue for premium TTS audio chunks
+
+  const audioQueue = useRef<Blob[]>([]); // Using ref for queue persistence
+  const currentAudio = useRef<HTMLAudioElement | null>(null);
   const voiceApi = new VoiceApi();
-  const voiceApi2 = new VoiceApi2();
+  //const voiceApi2 = new VoiceApi2();
 
   const { settings } = useSettings();
-  const ttsType = settings.ttsType;
-  const ttsVoice = settings.ttsVoice;
-  const bookLanguage = settings.bookLanguage;
+  const { ttsType, ttsVoice, bookLanguage } = settings;
 
-  // Function to read text using the browser's speech synthesis
+  // Unified audio playback handler
+  const playAudio = (audioBlob: Blob, onEnd?: () => void) => {
+    // Clean up previous audio if exists
+    if (currentAudio.current) {
+      currentAudio.current.pause();
+      currentAudio.current = null;
+    }
+
+    const audio = new Audio(URL.createObjectURL(audioBlob));
+    currentAudio.current = audio;
+
+    audio.onended = () => {
+      URL.revokeObjectURL(audio.src);
+      onEnd?.();
+    };
+
+    audio.onerror = (error) => {
+      console.error("Audio playback error:", error);
+      onEnd?.();
+    };
+
+    audio.play().catch((error) => {
+      console.error("Playback failed to start:", error);
+      onEnd?.();
+    });
+
+    return audio;
+  };
+
+  // Process next item in queue
+  const processQueue = () => {
+    if (audioQueue.current.length > 0 && autoReading.isActivated) {
+      setReadingState("reading");
+      const nextBlob = audioQueue.current.shift();
+      if (nextBlob) {
+        playAudio(nextBlob, () => {
+          if (audioQueue.current.length > 0) {
+            processQueue();
+          } else {
+            stopReading();
+          }
+        });
+      }
+    }
+  };
+
+  const handleTextToSpeech = async (text: string): Promise<void> => {
+    return new Promise(async (resolve) => {
+      try {
+        if (ttsType === "premium") {
+          const audioBlob = await fetchTtsAudio(text);
+
+          if (autoReading.isActivated) {
+            // Add to queue for auto-reading flow
+            audioQueue.current.push(audioBlob);
+            if (!autoReading.isReading) {
+              processQueue();
+              setReadingState("reading");
+            }
+          } else {
+            // Immediate playback for single utterances
+            playAudio(audioBlob, resolve);
+            setReadingState("reading");
+          }
+        } else {
+          readTextWebSpeechApi(text, resolve);
+        }
+      } catch (error) {
+        console.error("TTS Error:", error);
+        readTextWebSpeechApi(text, resolve); // Fallback
+      }
+    });
+  };
+
   const readTextWebSpeechApi = (text: string, resolve: () => void) => {
     if ("speechSynthesis" in window) {
       const utterance = new SpeechSynthesisUtterance(text);
@@ -39,27 +102,18 @@ const useReading = () => {
         .getVoices()
         .find((voice) => voice.name === ttsVoice.value);
 
-      const lang = formatLanguageToLocalCode(bookLanguage);
-      utterance.lang = lang;
-      utterance.pitch = 1.1; // Set pitch (range 0 to 2)
-      utterance.rate = readingSpeed; // Set rate (range 0.1 to 10)
-      if (selectedVoice) {
-        utterance.voice = selectedVoice;
-      }
+      utterance.lang = formatLanguageToLocalCode(bookLanguage);
+      utterance.pitch = 1.1;
+      utterance.rate = readingSpeed;
+      if (selectedVoice) utterance.voice = selectedVoice;
 
       utterance.onend = () => {
-        if (!autoReading.isActivated) {
-          setReadingState("off");
-        }
-        autoReading.isReading = false;
+        if (!autoReading.isActivated) setReadingState("off");
+        setAutoReading((prev) => ({ ...prev, isReading: false }));
         resolve();
       };
 
-      utterance.onerror = (event) => {
-        console.error("Speech synthesis error:", event);
-        resolve();
-      };
-
+      utterance.onerror = () => resolve();
       window.speechSynthesis.speak(utterance);
     } else {
       console.error("Speech synthesis not supported");
@@ -67,119 +121,56 @@ const useReading = () => {
     }
   };
 
-  //Function to fetch TTS audio for premium voices
   const fetchTtsAudio = async (text: string): Promise<Blob> => {
     try {
       const voiceId = ttsVoice.value || "nPczCjzI2devNBz1zQrb";
       const audioBuffer = await voiceApi.textToSpeech(text, voiceId);
 
-      // Validate the buffer
-      if (!audioBuffer || audioBuffer.byteLength === 0) {
-        throw new Error("Empty audio buffer received");
+      if (!audioBuffer?.byteLength) {
+        throw new Error("Empty audio buffer");
       }
 
       return new Blob([audioBuffer], { type: "audio/mpeg" });
     } catch (error) {
-      console.error("Error in fetchTtsAudio:", error);
-      throw new Error("Failed to create audio blob");
+      console.error("TTS fetch error:", error);
+      throw error;
     }
   };
-
-  //const fetchTtsAudio = async (text: string): Promise<Blob> => {
-  //  const audioBuffer = await voiceApi2.textToSpeech(text, ttsVoice.value);
-  //  return new Blob([audioBuffer], { type: "audio/mpeg" });
-  //};
-
-  // Function to handle text-to-speech for both premium and basic TTS
-  const handleTextToSpeech = async (text: string): Promise<void> => {
-    return new Promise(async (resolve) => {
-      if (ttsType === "premium") {
-        try {
-          const audioBlob = await fetchTtsAudio(text);
-          const audioUrl = URL.createObjectURL(audioBlob);
-          const audio = new Audio(audioUrl);
-
-          audio.play();
-          audio.onended = () => {
-            URL.revokeObjectURL(audioUrl);
-            resolve();
-          };
-          audio.onerror = (error) => {
-            console.error("Audio playback error:", error);
-            resolve();
-          };
-        } catch (error) {
-          console.error("Error fetching TTS audio:", error);
-          // Fallback to basic TTS
-          readTextWebSpeechApi(text, resolve);
-        }
-      } else {
-        readTextWebSpeechApi(text, resolve);
-      }
-    });
-  };
-
-  // Function to read selected text
-  const readText = async (text: string) => {
-    handleTextToSpeech(text);
-  };
-
-  // Function to play audio from the queue
-  const playAudio = (audioBlob: Blob) => {
-    const audio = new Audio(URL.createObjectURL(audioBlob));
-    audio.play();
-    setCurrentPremiumAudio(audio);
-    audio.onended = () => {
-      autoReading.isReading = false; // Update reading state
-      playNextAudio(); // Play the next audio in the queue
-    };
-    autoReading.isReading = true; // Update reading state
-  };
-
-  // Function to play the next audio in the queue
-  const playNextAudio = () => {
-    if (audioQueue.length > 0) {
-      if (autoReading.isActivated && !autoReading.isReading) {
-        setReadingState("reading");
-        const audioBlob = audioQueue.shift(); // Get the next audio from the queue
-        if (audioBlob) {
-          playAudio(audioBlob);
-        }
-      }
-    } else {
-      stopReading();
-    }
-  };
-
-  // Function to stop reading
+  
   const stopReading = () => {
-    // Stop any active premium audio
-    if (currentPremiumAudio) {
-      currentPremiumAudio.pause();
-      currentPremiumAudio.currentTime = 0;
-      currentPremiumAudio.onended = null;
-      setCurrentPremiumAudio(null);
+    // Stop audio playback and clean up
+    if (currentAudio.current) {
+      currentAudio.current.pause();
+      currentAudio.current.currentTime = 0; // Reset playback position
+      currentAudio.current.src = ""; // Clear the audio source
+      currentAudio.current.removeAttribute("src"); // Force cleanup
+      currentAudio.current = null;
     }
 
-    // Clear the audio queue
-    audioQueue = [];
+    // Clear queue
+    audioQueue.current = [];
 
-    // Cancel any speech synthesis
+    // Cancel speech synthesis and flush the queue
     if (window.speechSynthesis) {
+      window.speechSynthesis.cancel();
+      // Force reset on Chrome (which sometimes keeps internal state)
+      const utterance = new SpeechSynthesisUtterance("");
+      window.speechSynthesis.speak(utterance);
       window.speechSynthesis.cancel();
     }
 
-    // Update state immediately
-    autoReading.isActivated = false;
-    autoReading.isReading = false;
-    setAutoReading({ isActivated: false, isReading: false });
+    // Reset state
     setReadingState("off");
+    setAutoReading({ isActivated: false, isReading: false });
+  };
+
+  const readText = (text: string) => {
+    handleTextToSpeech(text);
   };
 
   return {
     readingState,
     autoReading,
-    currentTextChunk,
     ttsType,
     ttsVoice,
     readingSpeed,

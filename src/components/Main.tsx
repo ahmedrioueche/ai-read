@@ -1,5 +1,5 @@
 "use client";
-import { delay, preprocessText } from "@/utils/helper";
+import { delay } from "@/utils/helper";
 import { Viewer, Worker, SpecialZoomLevel } from "@react-pdf-viewer/core";
 import "@react-pdf-viewer/core/lib/styles/index.css";
 import { zoomPlugin } from "@react-pdf-viewer/zoom";
@@ -95,7 +95,6 @@ const Main = ({
     handleTextToSpeech,
     stopReading,
     readText,
-    ttsType,
   } = useReading();
 
   const { startScrolling, stopScrolling, visibleElements } = useScrolling(
@@ -217,7 +216,6 @@ const Main = ({
       const firstProcessed = await aiApi.preprocessText(visibleChunks[0]);
       textQueueRef.current = [firstProcessed];
 
-      setReadingState("reading");
       processQueue(); // Start processing the queue
 
       setActiveHighlightElements(elements);
@@ -273,7 +271,6 @@ const Main = ({
     }
   };
 
-  // Updated processQueue function
   const processQueue = async () => {
     isProcessingRef.current = true;
 
@@ -298,7 +295,7 @@ const Main = ({
     const handleSelectedtext = async () => {
       if (selectedText && selectedText.trim() !== "") {
         setSavedSelectedText(selectedText);
-        const preprocessedText = preprocessText(selectedText);
+        const preprocessedText = await aiApi.preprocessText(selectedText);
         if (!isValidText(preprocessedText, isSettingsModalOpen)) return;
 
         if (
@@ -360,21 +357,6 @@ const Main = ({
       }
     }
   }, [settings]);
-
-  useEffect(() => {
-    const handleBeforeUnload = () => {
-      // Stop speech synthesis before the page unloads
-      handleStopReading();
-    };
-
-    // Add event listener to stop reading on page refresh or navigation
-    window.addEventListener("beforeunload", handleBeforeUnload);
-
-    return () => {
-      // Clean up event listener
-      window.removeEventListener("beforeunload", handleBeforeUnload);
-    };
-  }, []);
 
   // Custom zoom and page controls
   const handleZoomIn = () => {
