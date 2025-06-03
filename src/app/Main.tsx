@@ -204,9 +204,9 @@ const Main = ({
     try {
       // Fetch initial visible text and elements
       const { text, elements } = await getVisibleText();
-
       // Split text into chunks immediately
       const visibleChunks = splitTextIntoChunks(text, 500, 50);
+      console.log({ visibleChunks });
 
       if (visibleChunks.length === 0) {
         throw new Error("No visible text chunks found.");
@@ -229,7 +229,11 @@ const Main = ({
       ) {
         try {
           const processed = await aiApi.preprocessText(visibleChunks[i]);
+
           textQueueRef.current.push(processed);
+          console.log({ textQueueRef });
+          console.log({ autoReading });
+
           if (!isProcessingRef.current && autoReading.isActivated) {
             processQueue();
           }

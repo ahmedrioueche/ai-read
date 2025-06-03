@@ -68,6 +68,7 @@ const useReading = () => {
   };
 
   const handleTextToSpeech = async (text: string): Promise<void> => {
+    console.log("handleTextToSpeech");
     return new Promise(async (resolve) => {
       try {
         if (ttsType === "premium") {
