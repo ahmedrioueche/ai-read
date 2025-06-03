@@ -87,10 +87,12 @@ const useReading = () => {
           }
         } else {
           readTextWebSpeechApi(text, resolve);
+          setReadingState("reading");
         }
       } catch (error) {
         console.error("TTS Error:", error);
         readTextWebSpeechApi(text, resolve); // Fallback
+        setReadingState("reading");
       }
     });
   };
@@ -136,7 +138,7 @@ const useReading = () => {
       throw error;
     }
   };
-  
+
   const stopReading = () => {
     // Stop audio playback and clean up
     if (currentAudio.current) {

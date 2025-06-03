@@ -4,12 +4,7 @@ import { Viewer, Worker, SpecialZoomLevel } from "@react-pdf-viewer/core";
 import "@react-pdf-viewer/core/lib/styles/index.css";
 import { zoomPlugin } from "@react-pdf-viewer/zoom";
 import "@react-pdf-viewer/zoom/lib/styles/index.css";
-import { useState, useEffect, useRef, FormEvent } from "react";
-import TextCard from "./ui/TextCard";
-import OptionsMenu from "./ui/OptionsMenu";
-import { BookData } from "@/app/Home";
-import MinimalCard from "./ui/MinimalCard";
-import { useSettings } from "@/context/SettingsContext";
+import { useState, useEffect, useRef } from "react";
 import useBook from "@/hooks/useBook";
 import useReading from "@/hooks/useReading";
 import useScrolling from "@/hooks/useScrolling";
@@ -19,6 +14,11 @@ import { ZoomIn, ZoomOut } from "lucide-react";
 import { pageNavigationPlugin } from "@react-pdf-viewer/page-navigation";
 import { AiApi } from "@/apis/aiApi";
 import { splitTextIntoChunks } from "@/utils/helper";
+import { BookData } from "@/hooks/useBookManager";
+import { useSettings } from "@/context/SettingsContext";
+import MinimalCard from "@/components/ui/MinimalCard";
+import OptionsMenu from "@/components/ui/OptionsMenu";
+import TextCard from "@/components/ui/TextCard";
 
 const Main = ({
   book,

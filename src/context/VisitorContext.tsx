@@ -1,4 +1,4 @@
-import React, { createContext, useContext, useState, useEffect } from "react";
+import React, { createContext, useContext, useState, useEffect, useRef } from "react";
 import { VisitorApi } from "@/apis/visitorApi";
 import { getFingerprint } from "@/utils/getFingerprint";
 import { Visitor } from "@prisma/client";
@@ -21,7 +21,7 @@ export const VisitorProvider = ({
   const [visitor, setVisitor] = useState<Visitor>();
   const [visitorId, setVisitorId] = useState<string | null>(null);
   const visitorApi = new VisitorApi();
-  let isInitialized = false;
+  const isInitializedRef = useRef(false);
 
   const getVisitor = async (fingerprint: string) => {
     try {
@@ -44,23 +44,31 @@ export const VisitorProvider = ({
   };
 
   const initializeVisitor = async () => {
-    if (!isInitialized) {
+    if (!isInitializedRef.current) {
       const fingerprint = await getFingerprint();
-      const visitor = await getVisitor(fingerprint);
-      if (visitor) {
-        setVisitorId(visitor.id);
-        setVisitor(visitor);
-        isInitialized = true;
+      const existingVisitor = await getVisitor(fingerprint);
+      
+      if (existingVisitor) {
+        setVisitorId(existingVisitor.id);
+        setVisitor(existingVisitor);
       } else {
         const newVisitor = await addVisitor(fingerprint);
         if (newVisitor) {
           setVisitorId(newVisitor.id);
           setVisitor(newVisitor);
-          isInitialized = true;
         }
       }
+      
+      isInitializedRef.current = true;
     }
   };
+
+  // Clean up initialization flag when component unmounts
+  useEffect(() => {
+    return () => {
+      isInitializedRef.current = false;
+    };
+  }, []);
 
   return (
     <VisitorContext.Provider
