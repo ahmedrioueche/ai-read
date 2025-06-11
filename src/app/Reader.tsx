@@ -20,7 +20,7 @@ import MinimalCard from "@/components/ui/MinimalCard";
 import OptionsMenu from "@/components/ui/OptionsMenu";
 import TextCard from "@/components/ui/TextCard";
 
-const Main = ({
+const Reader = ({
   book,
   onLastPageChange,
   isSettingsModalOpen,
@@ -206,7 +206,6 @@ const Main = ({
       const { text, elements } = await getVisibleText();
       // Split text into chunks immediately
       const visibleChunks = splitTextIntoChunks(text, 500, 50);
-      console.log({ visibleChunks });
 
       if (visibleChunks.length === 0) {
         throw new Error("No visible text chunks found.");
@@ -220,7 +219,9 @@ const Main = ({
 
       setActiveHighlightElements(elements);
       startHighlighting();
-      await delay(3000);
+
+      //delay only on basic tts (premium takes a while to fetch)
+      if (settings.ttsType === "basic") await delay(3000);
       // Process remaining visible chunks in sequence
       for (
         let i = 1;
@@ -231,13 +232,11 @@ const Main = ({
           const processed = await aiApi.preprocessText(visibleChunks[i]);
 
           textQueueRef.current.push(processed);
-          console.log({ textQueueRef });
-          console.log({ autoReading });
 
           if (!isProcessingRef.current && autoReading.isActivated) {
             processQueue();
           }
-          await delay(15000);
+          settings.ttsType === "basic" ? await delay(15000) : await delay(5000);
         } catch (e) {
           console.error("Error processing visible chunk:", e);
         }
@@ -261,7 +260,9 @@ const Main = ({
               if (!isProcessingRef.current && autoReading.isActivated) {
                 processQueue();
               }
-              await delay(60000);
+              settings.ttsType === "basic"
+                ? await delay(60000)
+                : await delay(30000);
             } catch (e) {
               console.error("Error processing chunk:", e);
             }
@@ -572,4 +573,4 @@ const Main = ({
   );
 };
 
-export default Main;
+export default Reader;

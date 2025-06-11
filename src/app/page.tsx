@@ -1,7 +1,7 @@
 "use client";
 
 import React, { lazy, Suspense, useState, useEffect } from "react";
-import Main from "./Main";
+import Reader from "./Reader";
 import Landing from "@/components/Landing";
 import Navbar from "@/components/Navbar";
 import Footer from "@/components/Footer";
@@ -52,7 +52,9 @@ const Page: React.FC = () => {
       if (user && user?.email?.trim() !== "" && visitor) {
         // Normalize both dates to UTC
         const userDateUTC = new Date(user.freeTrialStartDate).toISOString();
-        const visitorDateUTC = new Date(visitor.freeTrialStartDate).toISOString();
+        const visitorDateUTC = new Date(
+          visitor.freeTrialStartDate
+        ).toISOString();
 
         // Compare the normalized UTC dates
         if (userDateUTC !== visitorDateUTC) {
@@ -64,7 +66,7 @@ const Page: React.FC = () => {
               freeTrialStartDate: adjustedVisitorDate,
             });
           } catch (error) {
-            console.error('Failed to update user free trial date:', error);
+            console.error("Failed to update user free trial date:", error);
           }
         }
       }
@@ -117,12 +119,14 @@ const Page: React.FC = () => {
         onToggleFullScreen={setIsFullScreen}
         onFreeTrialClick={() => setIsFreeTrialModalOpen(true)}
       />
-      <div className={`flex flex-col items-center z-0 ${!pdfFileUrl ? "" : ""}`}>
+      <div
+        className={`flex flex-col items-center z-0 ${!pdfFileUrl ? "" : ""}`}
+      >
         {!pdfFileUrl ? (
           <Landing onFileChange={handleFileChange} />
         ) : (
           currentBook && (
-            <Main
+            <Reader
               key={currentBookId}
               book={currentBook}
               onLastPageChange={(lastPage: number) => {

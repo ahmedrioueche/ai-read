@@ -1,10 +1,10 @@
-import { useState, useEffect, useCallback } from 'react';
+import { useState, useEffect, useCallback } from "react";
 import {
   saveBookToIndexedDB,
   getBooksFromIndexedDB,
   deleteOldestBookFromIndexedDB,
   deleteBookFromIndexedDB,
-} from '@/utils/indexedDb';
+} from "@/utils/indexedDb";
 
 export interface BookData {
   id: string;
@@ -31,23 +31,26 @@ interface UseBookManagerResult {
 
 const saveToLocalStorage = (book: BookData) => {
   try {
-    localStorage.setItem('latestBook', JSON.stringify(book));
+    localStorage.setItem("latestBook", JSON.stringify(book));
   } catch (error) {
-    console.error('Failed to save to localStorage:', error);
+    console.error("Failed to save to localStorage:", error);
   }
 };
 
 const loadFromLocalStorage = (): BookData | null => {
   try {
-    const storedBook = localStorage.getItem('latestBook');
+    const storedBook = localStorage.getItem("latestBook");
     return storedBook ? JSON.parse(storedBook) : null;
   } catch (error) {
-    console.error('Failed to load from localStorage:', error);
+    console.error("Failed to load from localStorage:", error);
     return null;
   }
 };
 
-export function useBookManager({ bookLimit, onBookLimitExceeded }: UseBookManagerOptions): UseBookManagerResult {
+export function useBookManager({
+  bookLimit,
+  onBookLimitExceeded,
+}: UseBookManagerOptions): UseBookManagerResult {
   const [books, setBooks] = useState<BookData[]>([]);
   const [currentBookId, setCurrentBookId] = useState<string | null>(null);
   const [currentFileUrl, setCurrentFileUrl] = useState<string | null>(null);
@@ -70,7 +73,7 @@ export function useBookManager({ bookLimit, onBookLimitExceeded }: UseBookManage
           setCurrentBookId(mostRecentBook.id);
         }
       } catch (error) {
-        console.error('Failed to load books from IndexedDB:', error);
+        console.error("Failed to load books from IndexedDB:", error);
         // Try loading from localStorage as fallback
         const lastBook = loadFromLocalStorage();
         if (lastBook) {
@@ -84,96 +87,117 @@ export function useBookManager({ bookLimit, onBookLimitExceeded }: UseBookManage
     loadBooksFromDB();
   }, []);
 
-  const updateBookAccess = useCallback(async (bookId: string) => {
-    const updatedBooks = books.map((book) =>
-      book.id === bookId ? { ...book, lastAccessed: Date.now() } : book
-    );
+  const updateBookAccess = useCallback(
+    async (bookId: string) => {
+      const updatedBooks = books.map((book) =>
+        book.id === bookId ? { ...book, lastAccessed: Date.now() } : book
+      );
 
-    const updatedBook = updatedBooks.find((book) => book.id === bookId);
-    if (updatedBook) {
+      const updatedBook = updatedBooks.find((book) => book.id === bookId);
+      if (updatedBook) {
+        try {
+          await saveBookToIndexedDB(updatedBook);
+          setBooks(updatedBooks);
+          setCurrentBookId(bookId);
+          setCurrentFileUrl(updatedBook.fileUrl);
+        } catch (error) {
+          console.error("Failed to update book access time:", error);
+          saveToLocalStorage(updatedBook);
+        }
+      }
+    },
+    [books]
+  );
+
+  const addBook = useCallback(
+    async (fileName: string, fileUrl: string): Promise<BookData> => {
+      setCurrentBookId(null);
+      setCurrentFileUrl(null);
+
+      const existingBook = books.find((book) => book.fileName === fileName);
+
+      if (existingBook) {
+        await updateBookAccess(existingBook.id);
+        return existingBook;
+      }
+
+      const newBook: BookData = {
+        id: `${Date.now()}`,
+        fileName,
+        fileUrl,
+        lastPage: 0,
+        lastAccessed: Date.now(),
+      };
+
+      const updatedBooks = [...books, newBook];
+      if (updatedBooks.length > bookLimit) {
+        try {
+          await deleteOldestBookFromIndexedDB();
+          updatedBooks.shift();
+          onBookLimitExceeded?.();
+        } catch (error) {
+          console.error("Failed to delete oldest book:", error);
+        }
+      }
+
       try {
-        await saveBookToIndexedDB(updatedBook);
+        await saveBookToIndexedDB(newBook);
         setBooks(updatedBooks);
-        setCurrentBookId(bookId);
-        setCurrentFileUrl(updatedBook.fileUrl);
+        setCurrentBookId(newBook.id);
+        setCurrentFileUrl(newBook.fileUrl);
       } catch (error) {
-        console.error('Failed to update book access time:', error);
-        saveToLocalStorage(updatedBook);
+        console.error("Failed to save book to IndexedDB:", error);
+        saveToLocalStorage(newBook);
       }
-    }
-  }, [books]);
 
-  const addBook = useCallback(async (fileName: string, fileUrl: string): Promise<BookData> => {
-    const existingBook = books.find((book) => book.fileName === fileName);
+      return newBook;
+    },
+    [books, bookLimit, updateBookAccess, onBookLimitExceeded]
+  );
 
-    if (existingBook) {
-      await updateBookAccess(existingBook.id);
-      return existingBook;
-    }
+  const updateLastPage = useCallback(
+    async (bookId: string, lastPage: number) => {
+      const updatedBooks = books.map((book) =>
+        book.id === bookId
+          ? { ...book, lastPage, lastAccessed: Date.now() }
+          : book
+      );
 
-    const newBook: BookData = {
-      id: `${Date.now()}`,
-      fileName,
-      fileUrl,
-      lastPage: 0,
-      lastAccessed: Date.now(),
-    };
+      const updatedBook = updatedBooks.find((book) => book.id === bookId);
+      if (updatedBook) {
+        try {
+          await saveBookToIndexedDB(updatedBook);
+          setBooks(updatedBooks);
+        } catch (error) {
+          console.error("Failed to update last page:", error);
+          saveToLocalStorage(updatedBook);
+        }
+      }
+    },
+    [books]
+  );
 
-    const updatedBooks = [...books, newBook];
-    if (updatedBooks.length > bookLimit) {
+  const deleteBook = useCallback(
+    async (bookId: string) => {
       try {
-        await deleteOldestBookFromIndexedDB();
-        updatedBooks.shift();
-        onBookLimitExceeded?.();
+        await deleteBookFromIndexedDB(bookId);
+        setBooks((prevBooks) => {
+          const updatedBooks = prevBooks.filter((book) => book.id !== bookId);
+
+          // Reset current book if we're deleting the active book
+          if (bookId === currentBookId) {
+            setCurrentBookId(null);
+            setCurrentFileUrl(null);
+          }
+
+          return updatedBooks;
+        });
       } catch (error) {
-        console.error('Failed to delete oldest book:', error);
+        console.error("Failed to delete book:", error);
       }
-    }
-
-    try {
-      await saveBookToIndexedDB(newBook);
-      setBooks(updatedBooks);
-      setCurrentBookId(newBook.id);
-      setCurrentFileUrl(newBook.fileUrl);
-    } catch (error) {
-      console.error('Failed to save book to IndexedDB:', error);
-      saveToLocalStorage(newBook);
-    }
-
-    return newBook;
-  }, [books, bookLimit, updateBookAccess, onBookLimitExceeded]);
-
-  const updateLastPage = useCallback(async (bookId: string, lastPage: number) => {
-    const updatedBooks = books.map((book) =>
-      book.id === bookId ? { ...book, lastPage, lastAccessed: Date.now() } : book
-    );
-
-    const updatedBook = updatedBooks.find((book) => book.id === bookId);
-    if (updatedBook) {
-      try {
-        await saveBookToIndexedDB(updatedBook);
-        setBooks(updatedBooks);
-      } catch (error) {
-        console.error('Failed to update last page:', error);
-        saveToLocalStorage(updatedBook);
-      }
-    }
-  }, [books]);
-
-  const deleteBook = useCallback(async (bookId: string) => {
-    try {
-      await deleteBookFromIndexedDB(bookId);
-      const updatedBooks = books.filter((book) => book.id !== bookId);
-      setBooks(updatedBooks);
-
-      if (bookId === currentBookId) {
-        setCurrentBookId(null);
-        setCurrentFileUrl(null);
-      }
-    } catch (error) {
-      console.error('Failed to delete book:', error);
-    }
-  }, [books, currentBookId]);
+    },
+    [currentBookId]
+  );
 
   return {
     books,
@@ -184,4 +208,4 @@ export function useBookManager({ bookLimit, onBookLimitExceeded }: UseBookManage
     deleteBook,
     updateBookAccess,
   };
-} 
+}
