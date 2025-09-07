@@ -1,24 +1,23 @@
-"use client";
-import { delay } from "@/utils/helper";
-import { Viewer, Worker, SpecialZoomLevel } from "@react-pdf-viewer/core";
-import "@react-pdf-viewer/core/lib/styles/index.css";
-import { zoomPlugin } from "@react-pdf-viewer/zoom";
-import "@react-pdf-viewer/zoom/lib/styles/index.css";
-import { useState, useEffect, useRef } from "react";
-import useBook from "@/hooks/useBook";
-import useReading from "@/hooks/useReading";
-import useScrolling from "@/hooks/useScrolling";
-import useHighlighting from "@/hooks/useHighlighting";
-import useTextProcessing from "@/hooks/useTextProcessing";
-import { ZoomIn, ZoomOut } from "lucide-react";
-import { pageNavigationPlugin } from "@react-pdf-viewer/page-navigation";
-import { AiApi } from "@/apis/aiApi";
-import { splitTextIntoChunks } from "@/utils/helper";
-import { BookData } from "@/hooks/useBookManager";
-import { useSettings } from "@/context/SettingsContext";
-import MinimalCard from "@/components/ui/MinimalCard";
-import OptionsMenu from "@/components/ui/OptionsMenu";
-import TextCard from "@/components/ui/TextCard";
+'use client';
+import { AiApi } from '@/apis/aiApi';
+import MinimalCard from '@/components/ui/MinimalCard';
+import OptionsMenu from '@/components/ui/OptionsMenu';
+import TextCard from '@/components/ui/TextCard';
+import { useSettings } from '@/context/SettingsContext';
+import useBook from '@/hooks/useBook';
+import { BookData } from '@/hooks/useBookManager';
+import useHighlighting from '@/hooks/useHighlighting';
+import useReading from '@/hooks/useReading';
+import useScrolling from '@/hooks/useScrolling';
+import useTextProcessing from '@/hooks/useTextProcessing';
+import { cancellableDelay, splitTextIntoChunks } from '@/utils/helper';
+import { SpecialZoomLevel, Viewer, Worker } from '@react-pdf-viewer/core';
+import '@react-pdf-viewer/core/lib/styles/index.css';
+import { pageNavigationPlugin } from '@react-pdf-viewer/page-navigation';
+import { zoomPlugin } from '@react-pdf-viewer/zoom';
+import '@react-pdf-viewer/zoom/lib/styles/index.css';
+import { ZoomIn, ZoomOut } from 'lucide-react';
+import { useEffect, useRef, useState } from 'react';
 
 const Reader = ({
   book,
@@ -31,9 +30,9 @@ const Reader = ({
   isSettingsModalOpen: boolean;
   isFullScreen: boolean;
 }) => {
-  const [currentBookId, setCurrentBookId] = useState("");
+  const [currentBookId, setCurrentBookId] = useState('');
   const [isHoveredOver, setIsHoveredOver] = useState(false);
-  const [savedSelectedText, setSavedSelectedText] = useState("");
+  const [savedSelectedText, setSavedSelectedText] = useState('');
   const { settings } = useSettings();
   const translationLanguageData = settings.translationLanguage;
   const viewerRef = useRef<any>(null);
@@ -43,9 +42,7 @@ const Reader = ({
   const SCROLL_INTERVAL = 5250;
   const [enableAutoScrolling, setEnableAutoScrolling] = useState(false);
   const [enableHighlighting, setEnableHighlighting] = useState(false);
-  const [activeHighlightElements, setActiveHighlightElements] = useState<
-    HTMLElement[]
-  >([]);
+  const [activeHighlightElements, setActiveHighlightElements] = useState<HTMLElement[]>([]);
   const [isDarkMode, setIsDarkMode] = useState(false);
   const [zoomLevel, setZoomLevel] = useState<number | SpecialZoomLevel>(
     SpecialZoomLevel.ActualSize
@@ -113,7 +110,7 @@ const Reader = ({
   useEffect(() => {
     setEnableAutoScrolling(settings?.enableAutoScrolling);
     setEnableHighlighting(settings?.enableHighlighting);
-    setIsDarkMode(settings?.theme === "dark" ? true : false);
+    setIsDarkMode(settings?.theme === 'dark' ? true : false);
   }, [settings]);
 
   useEffect(() => {
@@ -148,7 +145,7 @@ const Reader = ({
   }, [bookUrl]);
 
   useEffect(() => {
-    if (readingState === "reading") {
+    if (readingState === 'reading') {
       startScrolling(SCROLL_INTERVAL);
     } else {
       stopScrolling();
@@ -172,8 +169,7 @@ const Reader = ({
           return (
             !existingElement ||
             el.textContent !== existingElement.textContent || // Compare text content
-            el.getBoundingClientRect().top !==
-              existingElement.getBoundingClientRect().top // Compare position
+            el.getBoundingClientRect().top !== existingElement.getBoundingClientRect().top // Compare position
           );
         });
 
@@ -187,8 +183,7 @@ const Reader = ({
               self.findIndex(
                 (e) =>
                   e.textContent === el.textContent && // Compare text content
-                  e.getBoundingClientRect().top ===
-                    el.getBoundingClientRect().top // Compare position
+                  e.getBoundingClientRect().top === el.getBoundingClientRect().top // Compare position
               )
           );
           return uniqueElements;
@@ -198,7 +193,7 @@ const Reader = ({
   }, [visibleElements]);
 
   const startReading = async () => {
-    setReadingState("loading");
+    setReadingState('loading');
     autoReading.isActivated = true;
 
     try {
@@ -208,7 +203,7 @@ const Reader = ({
       const visibleChunks = splitTextIntoChunks(text, 500, 50);
 
       if (visibleChunks.length === 0) {
-        throw new Error("No visible text chunks found.");
+        throw new Error('No visible text chunks found.');
       }
 
       // Process the first chunk and start reading
@@ -221,13 +216,9 @@ const Reader = ({
       startHighlighting();
 
       //delay only on basic tts (premium takes a while to fetch)
-      if (settings.ttsType === "basic") await delay(3000);
+      if (settings.ttsType === 'basic') await cancellableDelay(3000, () => autoReading.isActivated);
       // Process remaining visible chunks in sequence
-      for (
-        let i = 1;
-        i < visibleChunks.length && autoReading.isActivated;
-        i++
-      ) {
+      for (let i = 1; i < visibleChunks.length && autoReading.isActivated; i++) {
         try {
           const processed = await aiApi.preprocessText(visibleChunks[i]);
 
@@ -236,20 +227,21 @@ const Reader = ({
           if (!isProcessingRef.current && autoReading.isActivated) {
             processQueue();
           }
-          settings.ttsType === "basic" ? await delay(15000) : await delay(5000);
+          if (!autoReading.isActivated) break;
+          settings.ttsType === 'basic'
+            ? await cancellableDelay(15000, () => autoReading.isActivated)
+            : await cancellableDelay(5000, () => autoReading.isActivated);
+          if (!autoReading.isActivated) break;
         } catch (e) {
-          console.error("Error processing visible chunk:", e);
+          console.error('Error processing visible chunk:', e);
         }
       }
 
       // Only process remaining text if reading is still active
       if (autoReading.isActivated) {
         const remainingText = getRemainingFullText(text, fullText);
-        if (remainingText.trim() !== "") {
-          const preChunks = splitTextIntoChunks(
-            remainingText,
-            MAX_CHUNK_LENGTH
-          );
+        if (remainingText.trim() !== '') {
+          const preChunks = splitTextIntoChunks(remainingText, MAX_CHUNK_LENGTH);
 
           for (const chunk of preChunks) {
             if (!autoReading.isActivated) break; // Exit if reading stopped
@@ -260,19 +252,21 @@ const Reader = ({
               if (!isProcessingRef.current && autoReading.isActivated) {
                 processQueue();
               }
-              settings.ttsType === "basic"
-                ? await delay(60000)
-                : await delay(30000);
+              if (!autoReading.isActivated) break;
+              settings.ttsType === 'basic'
+                ? await cancellableDelay(60000, () => autoReading.isActivated)
+                : await cancellableDelay(30000, () => autoReading.isActivated);
+              if (!autoReading.isActivated) break;
             } catch (e) {
-              console.error("Error processing chunk:", e);
+              console.error('Error processing chunk:', e);
             }
           }
         }
       }
     } catch (error) {
-      console.error("Error in startReading:", error);
+      console.error('Error in startReading:', error);
       autoReading.isActivated = false;
-      setReadingState("off");
+      setReadingState('off');
     }
   };
 
@@ -285,20 +279,20 @@ const Reader = ({
       try {
         await handleTextToSpeech(chunk);
       } catch (e) {
-        console.error("Error processing chunk:", e);
+        console.error('Error processing chunk:', e);
       }
     }
 
     isProcessingRef.current = false;
 
     if (textQueueRef.current.length === 0) {
-      setReadingState("off");
+      setReadingState('off');
     }
   };
 
   useEffect(() => {
     const handleSelectedtext = async () => {
-      if (selectedText && selectedText.trim() !== "") {
+      if (selectedText && selectedText.trim() !== '') {
         setSavedSelectedText(selectedText);
         const preprocessedText = await aiApi.preprocessText(selectedText);
         if (!isValidText(preprocessedText, isSettingsModalOpen)) return;
@@ -308,7 +302,7 @@ const Reader = ({
           settings.enableReading &&
           !autoReading.isActivated &&
           !autoReading.isReading &&
-          readingState !== "reading"
+          readingState !== 'reading'
         ) {
           readText(preprocessedText);
         }
@@ -331,32 +325,30 @@ const Reader = ({
     textQueueRef.current.length = 0;
     isProcessingRef.current = false;
     if (textQueueRef.current.length === 0) {
-      setReadingState("off");
+      setReadingState('off');
     }
   };
 
   useEffect(() => {
-    if (isHighlighting && readingState === "reading") {
+    if (isHighlighting && readingState === 'reading') {
       handleHighlighting();
     } else {
       // Clear any existing highlights when highlighting is turned off
-      activeHighlightElements.forEach((el) =>
-        el.classList.remove("highlighted-text")
-      );
+      activeHighlightElements.forEach((el) => el.classList.remove('highlighted-text'));
     }
   }, [isHighlighting, activeHighlightElements, readingState]);
 
   useEffect(() => {
     if (settings) {
       switch (settings.readingSpeed) {
-        case "normal":
+        case 'normal':
           setReadingSpeed(0.9);
           break;
-        case "slow":
+        case 'slow':
           setReadingSpeed(0.7);
 
           break;
-        case "fast":
+        case 'fast':
           setReadingSpeed(1.2);
           break;
       }
@@ -365,15 +357,13 @@ const Reader = ({
 
   // Custom zoom and page controls
   const handleZoomIn = () => {
-    const newZoomLevel =
-      typeof zoomLevel === "number" ? zoomLevel + 0.25 : 1.25;
+    const newZoomLevel = typeof zoomLevel === 'number' ? zoomLevel + 0.25 : 1.25;
     zoomTo(newZoomLevel);
     setZoomLevel(newZoomLevel);
   };
 
   const handleZoomOut = () => {
-    const newZoomLevel =
-      typeof zoomLevel === "number" ? zoomLevel - 0.25 : 0.75;
+    const newZoomLevel = typeof zoomLevel === 'number' ? zoomLevel - 0.25 : 0.75;
     zoomTo(newZoomLevel);
     setZoomLevel(newZoomLevel);
   };
@@ -400,27 +390,25 @@ const Reader = ({
   };
 
   const shouldRenderMinimalCard = (text: string) => {
-    return text && text?.trim()?.split(" ")?.length < 20;
+    return text && text?.trim()?.split(' ')?.length < 20;
   };
 
   return (
     <div
       ref={rootRef}
-      className={`h-screen w-screen bg-gray-100 relative ${
-        isDarkMode ? `dark-mode-pdf` : ""
-      }`}
-      style={{ touchAction: "none" }}
+      className={`h-screen w-screen bg-gray-100 relative ${isDarkMode ? `dark-mode-pdf` : ''}`}
+      style={{ touchAction: 'none' }}
     >
       {/* Custom Zoom and Page Controls */}
       <div
         className={`fixed ${
-          isDarkMode ? "top-4" : "top-16"
+          isDarkMode ? 'top-4' : 'top-16'
         } left-4 z-50 flex items-center space-x-4 ${
           isDarkMode
-            ? "bg-black/90 text-white filter invert hue-rotate-180"
-            : "bg-white/90 text-black"
+            ? 'bg-black/90 text-white filter invert hue-rotate-180'
+            : 'bg-white/90 text-black'
         } backdrop-blur-sm p-2 rounded-lg shadow-lg transition-opacity duration-300 ${
-          isControlsVisible ? "opacity-100" : "opacity-0"
+          isControlsVisible ? 'opacity-100' : 'opacity-0'
         } hover:opacity-100`}
         onMouseEnter={() => setIsControlsVisible(true)}
         onMouseLeave={() => setIsControlsVisible(false)}
@@ -430,8 +418,8 @@ const Reader = ({
           onClick={handleZoomOut}
           className={`p-2 ${
             isDarkMode
-              ? "bg-gray-700 hover:bg-gray-600 filter invert hue-rotate-180"
-              : "bg-gray-200 hover:bg-gray-300"
+              ? 'bg-gray-700 hover:bg-gray-600 filter invert hue-rotate-180'
+              : 'bg-gray-200 hover:bg-gray-300'
           } rounded-full transition-colors`}
         >
           <ZoomOut size={16} />
@@ -439,14 +427,12 @@ const Reader = ({
         <select
           value={zoomLevel}
           onChange={(e) =>
-            handleZoomChange(
-              parseFloat(e.target.value) as unknown as SpecialZoomLevel
-            )
+            handleZoomChange(parseFloat(e.target.value) as unknown as SpecialZoomLevel)
           }
           className={`p-2 ${
             isDarkMode
-              ? "bg-gray-700 text-white filter invert hue-rotate-180"
-              : "bg-gray-200 text-black"
+              ? 'bg-gray-700 text-white filter invert hue-rotate-180'
+              : 'bg-gray-200 text-black'
           } rounded-lg`}
         >
           <option value={SpecialZoomLevel.ActualSize}>100%</option>
@@ -460,34 +446,27 @@ const Reader = ({
         <button
           onClick={handleZoomIn}
           className={`p-2 ${
-            isDarkMode
-              ? "bg-gray-700 hover:bg-gray-600"
-              : "bg-gray-200 hover:bg-gray-300"
+            isDarkMode ? 'bg-gray-700 hover:bg-gray-600' : 'bg-gray-200 hover:bg-gray-300'
           } rounded-full transition-colors`}
         >
           <ZoomIn size={16} />
         </button>
-        <form
-          onSubmit={(e) => handlePageInputSubmit(e)}
-          className="flex items-center space-x-2"
-        >
+        <form onSubmit={(e) => handlePageInputSubmit(e)} className='flex items-center space-x-2'>
           <input
-            type="number"
+            type='number'
             onChange={handlePageInputChange}
             value={currentPage}
             min={1}
             max={totalPages}
             className={`w-12 p-2 ${
-              isDarkMode ? "bg-gray-700 text-white" : "bg-gray-200 text-black"
+              isDarkMode ? 'bg-gray-700 text-white' : 'bg-gray-200 text-black'
             } rounded-lg text-center`}
           />
-          <span className={isDarkMode ? "text-white" : "text-black"}>
-            / {totalPages}
-          </span>
+          <span className={isDarkMode ? 'text-white' : 'text-black'}>/ {totalPages}</span>
         </form>
       </div>
 
-      <Worker workerUrl="https://cdnjs.cloudflare.com/ajax/libs/pdf.js/3.11.174/pdf.worker.min.js">
+      <Worker workerUrl='https://cdnjs.cloudflare.com/ajax/libs/pdf.js/3.11.174/pdf.worker.min.js'>
         <Viewer
           fileUrl={bookUrl}
           initialPage={lastPage}
@@ -511,9 +490,8 @@ const Reader = ({
       />
 
       {translation &&
-        (shouldRenderMinimalCard(selectedText!) ||
-        shouldRenderMinimalCard(savedSelectedText) ? (
-          <div className="flex justify-center items-center fixed bottom-0 left-1/2 transform -translate-x-1/2 md:w-[80%] w-full z-50">
+        (shouldRenderMinimalCard(selectedText!) || shouldRenderMinimalCard(savedSelectedText) ? (
+          <div className='flex justify-center items-center fixed bottom-0 left-1/2 transform -translate-x-1/2 md:w-[80%] w-full z-50'>
             <MinimalCard
               text={translation}
               onClose={() => setTranslation(null)}
@@ -523,13 +501,13 @@ const Reader = ({
           </div>
         ) : (
           <div
-            className="flex justify-center items-end w-full h-full"
+            className='flex justify-center items-end w-full h-full'
             onMouseEnter={() => setIsHoveredOver(true)}
             onMouseLeave={() => setIsHoveredOver(false)}
           >
             <TextCard
               text={translation}
-              type="translation"
+              type='translation'
               languageData={translationLanguageData}
               onClose={() => setTranslation(null)}
               isDarkMode={isDarkMode}
@@ -539,14 +517,14 @@ const Reader = ({
 
       {explanation && (
         <div
-          className="flex justify-center items-end w-full h-full"
+          className='flex justify-center items-end w-full h-full'
           onMouseEnter={() => setIsHoveredOver(true)}
           onMouseLeave={() => setIsHoveredOver(false)}
-          onClick={() => console.log("TextCard clicked")}
+          onClick={() => console.log('TextCard clicked')}
         >
           <TextCard
             text={explanation}
-            type="explanation"
+            type='explanation'
             languageData={translationLanguageData}
             onClose={() => setExplanation(null)}
             isDarkMode={isDarkMode}
@@ -556,13 +534,13 @@ const Reader = ({
 
       {summary && (
         <div
-          className="flex justify-center items-end w-full h-full"
+          className='flex justify-center items-end w-full h-full'
           onMouseEnter={() => setIsHoveredOver(true)}
           onMouseLeave={() => setIsHoveredOver(false)}
         >
           <TextCard
             text={summary}
-            type="summary"
+            type='summary'
             languageData={translationLanguageData}
             onClose={() => setSummary(null)}
             isDarkMode={isDarkMode}
