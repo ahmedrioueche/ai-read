@@ -27,7 +27,7 @@
     "fs": "^0.0.1-security",
     "idb": "^8.0.1",
     "lucide-react": "^0.468.0",
-    "next": "^15.1.0",
+    "next": "15.1.11",
     "nodemailer": "^6.9.16",
     "pdf.js": "^0.1.0",
     "pdfjs-dist": "^3.11.174",
