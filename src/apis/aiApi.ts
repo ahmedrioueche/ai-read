@@ -1,6 +1,6 @@
+import { AppAlerts } from "@/lib/appAlerts";
 import { preprocessText } from "@/utils/helper";
 import { GoogleGenerativeAI } from "@google/generative-ai";
-import { AppAlerts } from "@/lib/appAlerts";
 
 export class AiApi {
   private apiKeys: string[];
@@ -88,7 +88,7 @@ export class AiApi {
   private async geminiGetAnswer(prompt: string): Promise<string | undefined> {
     return this.tryApiKeys(async (apiKey) => {
       const genAI = new GoogleGenerativeAI(apiKey);
-      const model = genAI.getGenerativeModel({ model: "gemini-1.5-flash" });
+      const model = genAI.getGenerativeModel({ model: "gemini-2.5-flash" });
       const result = await model.generateContent(prompt);
       return result.response.text() || undefined;
     });
