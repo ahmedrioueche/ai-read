@@ -1,6 +1,7 @@
-import React, { useEffect, useState } from "react";
-import { Info, FileText, StopCircle, Loader } from "lucide-react";
 import useScreen from "@/hooks/useScreen";
+import { ReadingState } from "@/utils/types";
+import { FileText, Info, Loader, StopCircle } from "lucide-react";
+import React, { useEffect, useState } from "react";
 
 const OptionsMenu: React.FC<{
   selectedText: string | null;
@@ -8,7 +9,7 @@ const OptionsMenu: React.FC<{
   getSummary: () => void;
   stopReading: () => void;
   startReading: () => void;
-  readingState: "loading" | "reading" | "off";
+  readingState: ReadingState;
   isDarkMode: boolean;
   isFullScreen: boolean;
 }> = ({
@@ -38,8 +39,8 @@ const OptionsMenu: React.FC<{
           ? isFullScreen
             ? "bottom-6"
             : isMobile
-            ? "bottom-36"
-            : "bottom-24"
+              ? "bottom-36"
+              : "bottom-24"
           : "bottom-6"
       } right-6 z-20 group`}
       onMouseEnter={() => setIsExpanded(true)}

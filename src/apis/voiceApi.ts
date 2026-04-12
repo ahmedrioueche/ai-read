@@ -50,7 +50,7 @@ export default class VoiceApi {
 
   // Helper method to try API keys
   private async tryApiKeys<T>(
-    requestFn: (apiKey: string) => Promise<T>
+    requestFn: (apiKey: string) => Promise<T>,
   ): Promise<T> {
     let startIndex = 0;
 
@@ -113,7 +113,7 @@ export default class VoiceApi {
   async textToSpeech(
     text: string,
     voiceId: string,
-    voiceSettings: VoiceSettings = {}
+    voiceSettings: VoiceSettings = {},
   ): Promise<ArrayBuffer> {
     return this.tryApiKeys(async (apiKey) => {
       try {
@@ -203,7 +203,7 @@ export class VoiceApi2 {
   // Method to synthesize speech
   async textToSpeech(
     text: string,
-    voiceName: string = "en-US-JennyNeural"
+    voiceName: string = "en-US-JennyNeural",
   ): Promise<ArrayBuffer> {
     const headers = {
       "Ocp-Apim-Subscription-Key": this.apiKey,

@@ -1,8 +1,7 @@
 import { NextConfig } from "next";
 
-/** @type {import('next').NextConfig} */
 const nextConfig: NextConfig = {
-  webpack: (config, { isServer }) => {
+  webpack: (config) => {
     config.resolve.fallback = {
       ...config.resolve.fallback,
       canvas: false,
@@ -12,14 +11,20 @@ const nextConfig: NextConfig = {
     };
     return config;
   },
+  experimental: {
+    turbo: {
+      resolveAlias: {
+        canvas: "./empty.js",
+      },
+    },
+  },
   transpilePackages: [
     "@react-pdf-viewer/core",
     "@react-pdf-viewer/default-layout",
   ],
-
   typescript: {
     ignoreBuildErrors: true,
   },
 };
 
-module.exports = nextConfig;
+export default nextConfig;

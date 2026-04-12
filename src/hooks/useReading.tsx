@@ -2,18 +2,17 @@ import { useState, useRef } from "react";
 import { formatLanguageToLocalCode } from "@/utils/helper";
 import VoiceApi from "@/apis/voiceApi";
 import { useSettings } from "@/context/SettingsContext";
+import { ReadingState } from "@/utils/types";
 
 const useReading = () => {
-  const [readingState, setReadingState] = useState<
-    "loading" | "reading" | "off"
-  >("off");
+  const [readingState, setReadingState] = useState<ReadingState>("off");
   const [autoReading, setAutoReading] = useState({
     isActivated: false,
     isReading: false,
   });
   const [readingSpeed, setReadingSpeed] = useState<number>(0.9);
 
-  const audioQueue = useRef<Blob[]>([]); // Using ref for queue persistence
+
   const currentAudio = useRef<HTMLAudioElement | null>(null);
   const voiceApi = new VoiceApi();
   //const voiceApi2 = new VoiceApi2();
@@ -33,7 +32,9 @@ const useReading = () => {
     currentAudio.current = audio;
 
     audio.onended = () => {
-      URL.revokeObjectURL(audio.src);
+      if (audio.src && typeof audio.src === "string" && audio.src.includes("blob:")) {
+        URL.revokeObjectURL(audio.src);
+      }
       onEnd?.();
     };
 
@@ -50,41 +51,15 @@ const useReading = () => {
     return audio;
   };
 
-  // Process next item in queue
-  const processQueue = () => {
-    if (audioQueue.current.length > 0 && autoReading.isActivated) {
-      setReadingState("reading");
-      const nextBlob = audioQueue.current.shift();
-      if (nextBlob) {
-        playAudio(nextBlob, () => {
-          if (audioQueue.current.length > 0) {
-            processQueue();
-          } else {
-            stopReading();
-          }
-        });
-      }
-    }
-  };
+
 
   const handleTextToSpeech = async (text: string): Promise<void> => {
     return new Promise(async (resolve) => {
       try {
         if (ttsType === "premium") {
           const audioBlob = await fetchTtsAudio(text);
-
-          if (autoReading.isActivated) {
-            // Add to queue for auto-reading flow
-            audioQueue.current.push(audioBlob);
-            if (!autoReading.isReading) {
-              processQueue();
-              setReadingState("reading");
-            }
-          } else {
-            // Immediate playback for single utterances
-            playAudio(audioBlob, resolve);
-            setReadingState("reading");
-          }
+          playAudio(audioBlob, resolve);
+          setReadingState("reading");
         } else {
           readTextWebSpeechApi(text, resolve);
           setReadingState("reading");
@@ -142,15 +117,20 @@ const useReading = () => {
   const stopReading = () => {
     // Stop audio playback and clean up
     if (currentAudio.current) {
-      currentAudio.current.pause();
-      currentAudio.current.currentTime = 0; // Reset playback position
-      currentAudio.current.src = ""; // Clear the audio source
-      currentAudio.current.removeAttribute("src"); // Force cleanup
+      const audioToClean = currentAudio.current;
+      const currentSrc = audioToClean.src;
+      
+      if (typeof currentSrc === "string" && currentSrc.includes("blob:")) {
+        URL.revokeObjectURL(currentSrc);
+      }
+      
+      audioToClean.pause();
+      audioToClean.currentTime = 0;
+      audioToClean.src = "";
+      audioToClean.removeAttribute("src");
       currentAudio.current = null;
     }
 
-    // Clear queue
-    audioQueue.current = [];
 
     // Cancel speech synthesis and flush the queue
     if (window.speechSynthesis) {

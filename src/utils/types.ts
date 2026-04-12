@@ -27,3 +27,5 @@ export interface Book {
   fileUrl: string; // URL to the PDF file
   lastAccessed?: number; // Optional timestamp
 }
+
+export type ReadingState = "loading" | "reading" | "off";

@@ -1,7 +1,7 @@
 "use client";
 
-import React, { lazy, Suspense, useState, useEffect } from "react";
-import Reader from "./Reader";
+import React, { lazy, Suspense, useState, useMemo } from "react";
+import Reader from "@/components/Reader";
 import Landing from "@/components/Landing";
 import Navbar from "@/components/Navbar";
 import Footer from "@/components/Footer";
@@ -11,6 +11,9 @@ import { useBookManager } from "@/hooks/useBookManager";
 import { usePlan } from "@/context/PlanContext";
 import { useVisitor } from "@/context/VisitorContext";
 import { UserApi } from "@/apis/userApi";
+import { useUserSync } from "@/hooks/useUserSync";
+import { useFileUpload } from "@/hooks/useFileUpload";
+import { useAppInitialization } from "@/hooks/useAppInitialization";
 
 const FreeTrialModal = lazy(() => import("../components/FreeTrialModal"));
 const BookList = lazy(() => import("../components/BookList"));
@@ -19,7 +22,7 @@ const Page: React.FC = () => {
   const [isSettingsModalOpen, setIsSettingsModalOpen] = useState(false);
   const [isFullScreen, setIsFullScreen] = useState(false);
   const { user } = useAuth();
-  const userApi = new UserApi();
+  const userApi = useMemo(() => new UserApi(), []);
   const { visitor, initializeVisitor } = useVisitor();
   const {
     init: initPlan,
@@ -34,45 +37,9 @@ const Page: React.FC = () => {
   const isPremium = plan === "premium" || plan === "pro" || isFreeTrial;
   const bookLimit = isPremium ? 100 : 10;
 
-  // Initialize visitor on mount
-  useEffect(() => {
-    initializeVisitor();
-  }, [initializeVisitor]);
-
-  // Initialize plan when visitor is available
-  useEffect(() => {
-    if (visitor) {
-      initPlan(visitor);
-    }
-  }, [visitor, initPlan]);
-
-  // Sync user's free trial period with visitor's
-  useEffect(() => {
-    const updateUser = async () => {
-      if (user && user?.email?.trim() !== "" && visitor) {
-        // Normalize both dates to UTC
-        const userDateUTC = new Date(user.freeTrialStartDate).toISOString();
-        const visitorDateUTC = new Date(
-          visitor.freeTrialStartDate
-        ).toISOString();
-
-        // Compare the normalized UTC dates
-        if (userDateUTC !== visitorDateUTC) {
-          // Add 1 hour offset to have a correct comparison later
-          const adjustedVisitorDate = new Date(visitor.freeTrialStartDate);
-          adjustedVisitorDate.setHours(adjustedVisitorDate.getHours() + 1);
-          try {
-            await userApi.updateUser(user.email, {
-              freeTrialStartDate: adjustedVisitorDate,
-            });
-          } catch (error) {
-            console.error("Failed to update user free trial date:", error);
-          }
-        }
-      }
-    };
-    updateUser();
-  }, [user, visitor, userApi]);
+  // Refactored Hooks
+  useAppInitialization({ initializeVisitor, initPlan, visitor });
+  useUserSync({ user, visitor, userApi });
 
   const {
     books,
@@ -91,23 +58,7 @@ const Page: React.FC = () => {
     },
   });
 
-  const handleFileChange = async (e: React.ChangeEvent<HTMLInputElement>) => {
-    if (e.target.files?.[0]) {
-      const file = e.target.files[0];
-      const reader = new FileReader();
-
-      reader.onloadend = async () => {
-        const fileUrl = reader.result as string;
-        await addBook(file.name, fileUrl);
-      };
-
-      reader.onerror = () => {
-        console.error("FileReader encountered an error.");
-      };
-
-      reader.readAsDataURL(file);
-    }
-  };
+  const { handleFileChange } = useFileUpload({ addBook });
 
   const currentBook = books.find((book) => book.id === currentBookId);
 
