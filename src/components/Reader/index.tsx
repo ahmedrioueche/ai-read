@@ -11,11 +11,12 @@ import { cancellableDelay, splitTextIntoChunks } from "@/utils/helper";
 import { SpecialZoomLevel } from "@react-pdf-viewer/core";
 import { pageNavigationPlugin } from "@react-pdf-viewer/page-navigation";
 import { zoomPlugin } from "@react-pdf-viewer/zoom";
-import { useEffect, useRef, useState, useMemo } from "react";
-import { useReaderState } from "./useReaderState";
+import { useEffect, useMemo, useRef, useState } from "react";
+import AiChat from "./AiChat";
 import ReaderControls from "./ReaderControls";
-import ReaderViewer from "./ReaderViewer";
 import ReaderOverlays from "./ReaderOverlays";
+import ReaderViewer from "./ReaderViewer";
+import { useReaderState } from "./useReaderState";
 
 const Reader = ({
   book,
@@ -45,7 +46,8 @@ const Reader = ({
   >([]);
   const [isDarkMode, setIsDarkMode] = useState(false);
   const aiApi = useMemo(() => new AiApi(), []);
-  
+  const [isChatOpen, setIsChatOpen] = useState(false);
+
   const zoomPluginInstance = zoomPlugin();
   const { zoomTo } = zoomPluginInstance;
   const pageNavigationPluginInstance = pageNavigationPlugin();
@@ -74,6 +76,7 @@ const Reader = ({
     getVisibleText,
     getRemainingFullText,
     bookContext,
+    getPageText,
   } = useBook(bookUrl, isFullScreen);
 
   const {
@@ -202,39 +205,54 @@ const Reader = ({
     try {
       const { text, elements } = await getVisibleText();
       const visibleChunks = splitTextIntoChunks(text, 500, 50);
-      if (visibleChunks.length === 0) throw new Error("No visible text chunks found.");
+      if (visibleChunks.length === 0)
+        throw new Error("No visible text chunks found.");
       const firstProcessed = await aiApi.preprocessText(visibleChunks[0]);
       textQueueRef.current = [firstProcessed];
       processQueue();
       setActiveHighlightElements(elements);
       startHighlighting();
-      if (settings.ttsType === "basic") await cancellableDelay(3000, () => autoReading.isActivated);
-      for (let i = 1; i < visibleChunks.length && autoReading.isActivated; i++) {
+      if (settings.ttsType === "basic")
+        await cancellableDelay(3000, () => autoReading.isActivated);
+      for (
+        let i = 1;
+        i < visibleChunks.length && autoReading.isActivated;
+        i++
+      ) {
         try {
           const processed = await aiApi.preprocessText(visibleChunks[i]);
           textQueueRef.current.push(processed);
-          if (!isProcessingRef.current && autoReading.isActivated) processQueue();
+          if (!isProcessingRef.current && autoReading.isActivated)
+            processQueue();
           if (!autoReading.isActivated) break;
           settings.ttsType === "basic"
             ? await cancellableDelay(15000, () => autoReading.isActivated)
             : await cancellableDelay(5000, () => autoReading.isActivated);
-        } catch (e) { console.error("Error processing visible chunk:", e); }
+        } catch (e) {
+          console.error("Error processing visible chunk:", e);
+        }
       }
       if (autoReading.isActivated) {
         const remainingText = getRemainingFullText(text, fullText);
         if (remainingText.trim() !== "") {
-          const preChunks = splitTextIntoChunks(remainingText, MAX_CHUNK_LENGTH);
+          const preChunks = splitTextIntoChunks(
+            remainingText,
+            MAX_CHUNK_LENGTH,
+          );
           for (const chunk of preChunks) {
             if (!autoReading.isActivated) break;
             try {
               const processed = await aiApi.preprocessText(chunk);
               textQueueRef.current.push(processed);
-              if (!isProcessingRef.current && autoReading.isActivated) processQueue();
+              if (!isProcessingRef.current && autoReading.isActivated)
+                processQueue();
               if (!autoReading.isActivated) break;
               settings.ttsType === "basic"
                 ? await cancellableDelay(60000, () => autoReading.isActivated)
                 : await cancellableDelay(30000, () => autoReading.isActivated);
-            } catch (e) { console.error("Error processing chunk:", e); }
+            } catch (e) {
+              console.error("Error processing chunk:", e);
+            }
           }
         }
       }
@@ -251,7 +269,9 @@ const Reader = ({
       const chunk = textQueueRef.current.shift()!;
       try {
         await handleTextToSpeech(chunk);
-      } catch (e) { console.error("Error processing chunk:", e); }
+      } catch (e) {
+        console.error("Error processing chunk:", e);
+      }
     }
     isProcessingRef.current = false;
     if (textQueueRef.current.length === 0) setReadingState("off");
@@ -263,7 +283,12 @@ const Reader = ({
         setSavedSelectedText(selectedText);
         const preprocessedText = await aiApi.preprocessText(selectedText);
         if (!isValidText(preprocessedText, isSettingsModalOpen)) return;
-        if (settings?.enableReading && !autoReading.isActivated && !autoReading.isReading && readingState !== "reading") {
+        if (
+          settings?.enableReading &&
+          !autoReading.isActivated &&
+          !autoReading.isReading &&
+          readingState !== "reading"
+        ) {
           readText(preprocessedText);
         }
         if (settings?.enableTranslation) getTranslation(preprocessedText);
@@ -287,29 +312,39 @@ const Reader = ({
     if (isHighlighting && readingState === "reading") {
       handleHighlighting();
     } else {
-      activeHighlightElements.forEach((el) => el.classList.remove("highlighted-text"));
+      activeHighlightElements.forEach((el) =>
+        el.classList.remove("highlighted-text"),
+      );
     }
   }, [isHighlighting, activeHighlightElements, readingState]);
 
   useEffect(() => {
     if (settings) {
       switch (settings.readingSpeed) {
-        case "normal": setReadingSpeed(0.9); break;
-        case "slow": setReadingSpeed(0.7); break;
-        case "fast": setReadingSpeed(1.2); break;
+        case "normal":
+          setReadingSpeed(0.9);
+          break;
+        case "slow":
+          setReadingSpeed(0.7);
+          break;
+        case "fast":
+          setReadingSpeed(1.2);
+          break;
       }
     }
   }, [settings]);
 
   // Controls Logic
   const handleZoomIn = () => {
-    const newZoomLevel = typeof zoomLevel === "number" ? zoomLevel + 0.25 : 1.25;
+    const newZoomLevel =
+      typeof zoomLevel === "number" ? zoomLevel + 0.25 : 1.25;
     zoomTo(newZoomLevel);
     setZoomLevel(newZoomLevel);
   };
 
   const handleZoomOut = () => {
-    const newZoomLevel = typeof zoomLevel === "number" ? zoomLevel - 0.25 : 0.75;
+    const newZoomLevel =
+      typeof zoomLevel === "number" ? zoomLevel - 0.25 : 0.75;
     zoomTo(newZoomLevel);
     setZoomLevel(newZoomLevel);
   };
@@ -333,7 +368,11 @@ const Reader = ({
   };
 
   return (
-    <div ref={rootRef} className={`h-screen w-screen bg-gray-100 relative ${isDarkMode ? `dark-mode-pdf` : ""}`} style={{ touchAction: "none" }}>
+    <div
+      ref={rootRef}
+      className={`h-screen w-screen bg-gray-100 relative ${isDarkMode ? `dark-mode-pdf` : ""}`}
+      style={{ touchAction: "none" }}
+    >
       <ReaderControls
         isDarkMode={isDarkMode}
         isControlsVisible={isControlsVisible}
@@ -346,6 +385,16 @@ const Reader = ({
         totalPages={totalPages}
         handlePageInputSubmit={handlePageInputSubmit}
         handlePageInputChange={handlePageInputChange}
+      />
+
+      <AiChat
+        isOpen={isChatOpen}
+        onClose={() => setIsChatOpen(false)}
+        bookContext={bookContext}
+        currentPage={currentPage}
+        getPageText={getPageText}
+        isDarkMode={isDarkMode}
+        language={translationLanguageData?.language || "English"}
       />
 
       <ReaderViewer
@@ -378,6 +427,7 @@ const Reader = ({
         translationLanguageData={translationLanguageData}
         viewerRef={viewerRef}
         setIsHoveredOver={setIsHoveredOver}
+        handleChatClick={() => setIsChatOpen(!isChatOpen)}
       />
     </div>
   );

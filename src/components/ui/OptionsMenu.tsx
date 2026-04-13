@@ -1,6 +1,12 @@
 import useScreen from "@/hooks/useScreen";
 import { ReadingState } from "@/utils/types";
-import { FileText, Info, Loader, StopCircle } from "lucide-react";
+import {
+  FileText,
+  Info,
+  Loader,
+  MessageCircle,
+  StopCircle,
+} from "lucide-react";
 import React, { useEffect, useState } from "react";
 
 const OptionsMenu: React.FC<{
@@ -12,6 +18,7 @@ const OptionsMenu: React.FC<{
   readingState: ReadingState;
   isDarkMode: boolean;
   isFullScreen: boolean;
+  handleChatClick: () => void;
 }> = ({
   selectedText,
   getExplanation,
@@ -21,6 +28,7 @@ const OptionsMenu: React.FC<{
   readingState,
   isDarkMode,
   isFullScreen,
+  handleChatClick,
 }) => {
   const [isExpanded, setIsExpanded] = useState(false);
   const [isStartReadingClicked, setIsStartReadingClicked] = useState(false);
@@ -64,6 +72,36 @@ const OptionsMenu: React.FC<{
       >
         {/* Vertical Icon Container */}
         <div className="flex flex-col items-start space-y-1 w-full">
+          {/* AI Chat Option - Always at the top */}
+          <div
+            className={`
+              cursor-pointer px-2 py-1 rounded-full 
+              ${
+                isDarkMode
+                  ? "hover:bg-gray-700 text-dark-secondary"
+                  : "hover:bg-gray-100 text-light-secondary"
+              } transition-all
+              flex items-center w-full
+            `}
+            onClick={() => {
+              handleChatClick();
+              setIsExpanded(false);
+            }}
+          >
+            <MessageCircle className="w-5 h-5" />
+            {isExpanded && (
+              <span
+                className={`ml-2 text-xs font-medium ${
+                  isDarkMode ? "text-dark-secondary" : "text-light-secondary"
+                }`}
+              >
+                Ask Guide
+              </span>
+            )}
+          </div>
+
+          <div className="w-full h-[1px] bg-gray-400/10 my-1" />
+
           {/* Explanation Icon */}
           {selectedText && (
             <div

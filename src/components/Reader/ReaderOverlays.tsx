@@ -23,6 +23,7 @@ interface ReaderOverlaysProps {
   translationLanguageData: any;
   viewerRef: React.RefObject<any>;
   setIsHoveredOver: (hovered: boolean) => void;
+  handleChatClick: () => void;
 }
 
 const ReaderOverlays: React.FC<ReaderOverlaysProps> = ({
@@ -44,6 +45,7 @@ const ReaderOverlays: React.FC<ReaderOverlaysProps> = ({
   translationLanguageData,
   viewerRef,
   setIsHoveredOver,
+  handleChatClick,
 }) => {
   const shouldRenderMinimalCard = (text: string) => {
     return text && text?.trim()?.split(" ")?.length < 20;
@@ -62,6 +64,7 @@ const ReaderOverlays: React.FC<ReaderOverlaysProps> = ({
         readingState={readingState}
         isDarkMode={isDarkMode}
         isFullScreen={isFullScreen}
+        handleChatClick={handleChatClick}
       />
 
       {translation &&

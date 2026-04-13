@@ -1,6 +1,7 @@
 import { useState, useEffect, useRef, useCallback } from "react";
 import { franc } from "franc-min";
 import pdfToText from "react-pdftotext";
+import * as pdfjs from "pdfjs-dist";
 import { useSettings } from "@/context/SettingsContext";
 import { formatLanguageToName } from "@/utils/helper";
 
@@ -21,8 +22,8 @@ const useBook = (bookUrl: string, isFullScreen: boolean) => {
       const text = await pdfToText(fileBlob);
       setFullText(text);
 
-      // Detect language from the first 5000 characters
-      const limitedText = text.slice(0, 5000);
+      // Detect language from the first 10000 characters
+      const limitedText = text.slice(0, 10000);
       setBookContext(limitedText);
 
       const detectedLanguage = franc(limitedText);
@@ -239,6 +240,23 @@ const useBook = (bookUrl: string, isFullScreen: boolean) => {
     return fullText.slice(originalTextPosition).trim();
   };
 
+  const getPageText = async (pageNumber: number): Promise<string> => {
+    if (!bookUrl) return "";
+    try {
+      pdfjs.GlobalWorkerOptions.workerSrc = `//cdnjs.cloudflare.com/ajax/libs/pdf.js/${pdfjs.version}/pdf.worker.min.js`;
+      const loadingTask = pdfjs.getDocument(bookUrl);
+      const pdf = await loadingTask.promise;
+      if (pageNumber < 1 || pageNumber > pdf.numPages) return "";
+      const page = await pdf.getPage(pageNumber);
+      const textContent = await page.getTextContent();
+      const text = textContent.items.map((item: any) => item.str).join(" ");
+      return text;
+    } catch (error) {
+      console.error(`Error getting text for page ${pageNumber}:`, error);
+      return "";
+    }
+  };
+
   const getTopOffset = () => {
     return isFullScreen ? 60 : 120 - scrollY;
   };
@@ -261,6 +279,7 @@ const useBook = (bookUrl: string, isFullScreen: boolean) => {
     handleTextSelection,
     bookContext,
     setBookContext,
+    getPageText,
   };
 };
 

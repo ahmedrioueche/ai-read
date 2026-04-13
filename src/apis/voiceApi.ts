@@ -1,9 +1,4 @@
-import { AppAlerts } from "@/lib/appAlerts";
 import axios from "axios";
-
-interface VoiceResponse {
-  data: any;
-}
 
 interface VoiceSettings {
   stability?: number;
@@ -11,223 +6,83 @@ interface VoiceSettings {
 }
 
 export default class VoiceApi {
-  private apiKeys: string[];
-  private apiUrl: string;
-  private static workingApiKey: string | null = null;
-  private static readonly STORAGE_KEY = "elevenlabs-working-key";
-  private appAlerts = new AppAlerts();
-
-  constructor() {
-    this.apiKeys = [
-      process.env.NEXT_PUBLIC_ELEVENLABS_KEY_1 || "",
-      process.env.NEXT_PUBLIC_ELEVENLABS_KEY_2 || "",
-      process.env.NEXT_PUBLIC_ELEVENLABS_KEY_3 || "",
-      process.env.NEXT_PUBLIC_ELEVENLABS_KEY_4 || "",
-      process.env.NEXT_PUBLIC_ELEVENLABS_KEY_5 || "",
-      process.env.NEXT_PUBLIC_ELEVENLABS_KEY_6 || "",
-      process.env.NEXT_PUBLIC_ELEVENLABS_KEY_7 || "",
-      process.env.NEXT_PUBLIC_ELEVENLABS_KEY_8 || "",
-      process.env.NEXT_PUBLIC_ELEVENLABS_KEY_9 || "",
-      process.env.NEXT_PUBLIC_ELEVENLABS_KEY_10 || "",
-      process.env.NEXT_PUBLIC_ELEVENLABS_KEY_11 || "",
-      process.env.NEXT_PUBLIC_ELEVENLABS_KEY_12 || "",
-      process.env.NEXT_PUBLIC_ELEVENLABS_KEY_13 || "",
-      process.env.NEXT_PUBLIC_ELEVENLABS_KEY_14 || "",
-      process.env.NEXT_PUBLIC_ELEVENLABS_KEY_15 || "",
-      process.env.NEXT_PUBLIC_ELEVENLABS_KEY_16 || "",
-    ];
-
-    this.apiUrl = "https://api.elevenlabs.io/v1";
-
-    // Try to load the working key from localStorage on initialization
-    if (typeof window !== "undefined") {
-      const storedKey = localStorage.getItem(VoiceApi.STORAGE_KEY);
-      if (storedKey && this.apiKeys.includes(storedKey)) {
-        VoiceApi.workingApiKey = storedKey;
-      }
-    }
-  }
-
-  // Helper method to try API keys
-  private async tryApiKeys<T>(
-    requestFn: (apiKey: string) => Promise<T>,
-  ): Promise<T> {
-    let startIndex = 0;
-
-    // If a working API key exists, try it first
-    if (VoiceApi.workingApiKey) {
-      try {
-        const result = await requestFn(VoiceApi.workingApiKey);
-        return result;
-      } catch (error) {
-        console.error("Working API key failed, trying other keys...");
-        // Find the index of the working API key and start from the next one
-        startIndex = this.apiKeys.indexOf(VoiceApi.workingApiKey) + 1;
-        VoiceApi.workingApiKey = null; // Reset the working API key since it failed
-        // Clear from localStorage when key fails
-        if (typeof window !== "undefined") {
-          localStorage.removeItem(VoiceApi.STORAGE_KEY);
-        }
-      }
-    }
-
-    // Try the remaining API keys
-    for (let i = startIndex; i < this.apiKeys.length; i++) {
-      const apiKey = this.apiKeys[i];
-      if (!apiKey) continue; // Skip empty keys
-
-      try {
-        const result = await requestFn(apiKey);
-        VoiceApi.workingApiKey = apiKey; // Store the working API key
-        // Save to localStorage when we find a working key
-        if (typeof window !== "undefined") {
-          localStorage.setItem(VoiceApi.STORAGE_KEY, apiKey);
-        }
-        return result;
-      } catch (error) {
-        console.error(`Error with API key ${i + 1}:`, error);
-        this.appAlerts.sendErrorAlert(`Error with API key ${i + 1}`);
-        if (i === this.apiKeys.length - 1) {
-          this.appAlerts.sendErrorAlert(`"All API keys failed`);
-          throw new Error("All API keys failed");
-        }
-      }
-    }
-
-    throw new Error("No API keys available");
-  }
-
-  // Fetch available voices
+  // Fetch available voices via backend bridge
   async getVoices(): Promise<any> {
-    return this.tryApiKeys(async (apiKey) => {
-      const response = await axios.get<VoiceResponse>(`${this.apiUrl}/voices`, {
-        headers: {
-          "xi-api-key": apiKey,
-        },
-      });
+    try {
+      const response = await axios.post("/api/tts", { action: "voices", provider: "elevenlabs" });
       return response.data;
-    });
+    } catch (error) {
+      console.error("Voices Bridge Error:", error);
+      throw error;
+    }
   }
 
-  // Text to Speech conversion
+  // Text to Speech conversion via backend bridge
   async textToSpeech(
     text: string,
     voiceId: string,
     voiceSettings: VoiceSettings = {},
   ): Promise<ArrayBuffer> {
-    return this.tryApiKeys(async (apiKey) => {
-      try {
-        const url = `${this.apiUrl}/text-to-speech/${voiceId}`;
-        const payload = {
-          text,
-          voice_settings: {
-            stability: voiceSettings.stability || 0.5,
-            similarity_boost: voiceSettings.similarity_boost || 0.5,
-          },
-          model_id: "eleven_multilingual_v2",
-        };
-
-        const response = await axios.post<ArrayBuffer>(url, payload, {
-          headers: {
-            "Content-Type": "application/json",
-            "xi-api-key": apiKey,
-          },
-          responseType: "arraybuffer",
-        });
-
-        if (!(response.data instanceof ArrayBuffer)) {
-          throw new Error("Invalid audio data format received");
-        }
-
-        return response.data;
-      } catch (error) {
-        console.error("Error in textToSpeech:", error);
-        throw new Error("Failed to generate speech");
-      }
-    });
-  }
-
-  // Get the working API key
-  getWorkingApiKey(): string | null {
-    return VoiceApi.workingApiKey;
-  }
-
-  // Get the remaining credit for the valid API key
-  async getValidKeyRemainingCredit(): Promise<number | null> {
-    if (!VoiceApi.workingApiKey) {
-      console.error("No valid API key found.");
-      return null;
-    }
-
     try {
-      const response = await axios.get(`${this.apiUrl}/user`, {
-        headers: {
-          "xi-api-key": VoiceApi.workingApiKey,
-        },
+      const response = await axios.post("/api/tts", {
+        action: "speech",
+        provider: "elevenlabs",
+        text,
+        voiceId,
+        voiceSettings,
+      }, {
+        responseType: "arraybuffer",
       });
 
-      // Extract the remaining character limit from the response
-      const remainingCredit =
-        response.data.subscription.character_limit -
-        response.data.subscription.character_count;
-      return remainingCredit;
+      return response.data;
     } catch (error) {
-      console.error("Failed to fetch remaining credit:", error);
+      console.error("TTS Bridge Error:", error);
+      throw new Error("Failed to generate speech");
+    }
+  }
+
+  // Get the remaining credit via backend bridge
+  async getValidKeyRemainingCredit(): Promise<number | null> {
+    try {
+      const response = await axios.post("/api/tts", { action: "credit", provider: "elevenlabs" });
+      return response.data.remaining;
+    } catch (error) {
+      console.error("Credit Bridge Error:", error);
       return null;
     }
   }
 }
 
 export class VoiceApi2 {
-  private apiKey = process.env.NEXT_PUBLIC_AZURE_KEY_1;
-  private apiUrl =
-    "https://eastus.tts.speech.microsoft.com/cognitiveservices/v1";
-
-  // Method to fetch available voices
+  // Method to fetch available voices via backend bridge
   async getVoices(): Promise<any[]> {
-    const voicesUrl = `https://eastus.tts.speech.microsoft.com/cognitiveservices/voices/list`;
-
-    const headers = {
-      "Ocp-Apim-Subscription-Key": this.apiKey,
-    };
-
     try {
-      const response = await axios.get(voicesUrl, { headers });
+      const response = await axios.post("/api/tts", { action: "voices", provider: "azure" });
       return response.data;
     } catch (error) {
-      console.error("Error fetching available voices:", error);
+      console.error("Azure Voices Bridge Error:", error);
       throw error;
     }
   }
 
-  // Method to synthesize speech
+  // Method to synthesize speech via backend bridge
   async textToSpeech(
     text: string,
     voiceName: string = "en-US-JennyNeural",
   ): Promise<ArrayBuffer> {
-    const headers = {
-      "Ocp-Apim-Subscription-Key": this.apiKey,
-      "Content-Type": "application/ssml+xml",
-      "X-Microsoft-OutputFormat": "audio-16khz-128kbitrate-mono-mp3",
-    };
-
-    const ssml = `
-      <speak version='1.0' xml:lang='en-US'>
-        <voice name='${voiceName}'>
-          ${text}
-        </voice>
-      </speak>
-    `;
-
     try {
-      const response = await axios.post(this.apiUrl, ssml, {
-        headers: headers,
+      const response = await axios.post("/api/tts", {
+        action: "speech",
+        provider: "azure",
+        text,
+        voiceName,
+      }, {
         responseType: "arraybuffer",
       });
 
       return response.data;
     } catch (error) {
-      console.error("Error synthesizing speech:", error);
+      console.error("Azure TTS Bridge Error:", error);
       throw error;
     }
   }

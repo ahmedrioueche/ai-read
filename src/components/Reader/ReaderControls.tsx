@@ -1,5 +1,5 @@
 import React from "react";
-import { ZoomIn, ZoomOut } from "lucide-react";
+import { ZoomIn, ZoomOut, MessageCircle } from "lucide-react";
 import { SpecialZoomLevel } from "@react-pdf-viewer/core";
 
 interface ReaderControlsProps {
@@ -11,9 +11,9 @@ interface ReaderControlsProps {
   handleZoomOut: () => void;
   handleZoomChange: (newZoom: number | SpecialZoomLevel) => void;
   currentPage: number;
-  totalPages: number;
   handlePageInputSubmit: (e: React.FormEvent) => void;
   handlePageInputChange: (e: React.ChangeEvent<HTMLInputElement>) => void;
+  totalPages: number;
 }
 
 const ReaderControls: React.FC<ReaderControlsProps> = ({
