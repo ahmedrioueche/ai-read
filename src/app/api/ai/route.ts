@@ -32,14 +32,10 @@ const API_KEYS = [
 async function tryApiKeys<T>(
   requestFn: (apiKey: string) => Promise<T>,
 ): Promise<T> {
-  console.log(`[Gemini] Starting request with ${API_KEYS.length} available keys`);
-  
   for (let i = 0; i < API_KEYS.length; i++) {
     const apiKey = API_KEYS[i];
     const maskedKey = `${apiKey.substring(0, 6)}...${apiKey.substring(apiKey.length - 4)}`;
-    console.log(`[Gemini] Trying API key ${i + 1}/${API_KEYS.length} (${maskedKey})`);
-    console.log(`API key (DEBUG): ${apiKey}`);
-    
+
     try {
       return await requestFn(apiKey);
     } catch (error: any) {
@@ -50,8 +46,17 @@ async function tryApiKeys<T>(
   throw new Error("All Gemini API keys failed or no keys found");
 }
 
+import { checkRateLimit } from "@/utils/rateLimiter";
+
 export async function POST(req: Request) {
   try {
+    const ip = req.headers.get("x-forwarded-for") || "anonymous";
+    const limiter = checkRateLimit(ip);
+
+    if (!limiter.allowed) {
+      return NextResponse.json({ error: limiter.message }, { status: 429 });
+    }
+
     const { action, prompt, history, systemInstruction } = await req.json();
 
     if (action === "prompt" || action === "chat") {

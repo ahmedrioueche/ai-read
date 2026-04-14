@@ -37,8 +37,17 @@ async function tryElevenLabsKeys<T>(
   throw new Error("All ElevenLabs API keys failed");
 }
 
+import { checkRateLimit } from "@/utils/rateLimiter";
+
 export async function POST(req: Request) {
   try {
+    const ip = req.headers.get("x-forwarded-for") || "anonymous";
+    const limiter = checkRateLimit(ip);
+    
+    if (!limiter.allowed) {
+      return NextResponse.json({ error: limiter.message }, { status: 429 });
+    }
+
     const { action, text, voiceId, voiceSettings, voiceName, provider } = await req.json();
 
     if (provider === "azure") {

@@ -100,16 +100,11 @@ export class AiApi {
     6. If you don't find the answer in the provided context, but it's a well-known book, you can use your general knowledge, but prioritize the provided text.
     7. ALWAYS maintain a helpful and premium tone.`;
 
-    try {
-      return await this.callAiRoute({
-        action: "chat",
-        prompt: message,
-        history,
-        systemInstruction,
-      });
-    } catch (e) {
-      console.error("Failed to chat with AI", e);
-      return undefined;
-    }
+    return await this.callAiRoute({
+      action: "chat",
+      prompt: message,
+      history,
+      systemInstruction,
+    });
   };
 }

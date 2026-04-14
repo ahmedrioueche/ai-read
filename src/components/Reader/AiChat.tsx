@@ -1,7 +1,7 @@
 "use client";
-import React, { useState, useEffect, useRef } from "react";
-import { X, Send, MessageCircle, Bot, User, Loader2 } from "lucide-react";
 import { AiApi } from "@/apis/aiApi";
+import { Bot, Loader2, MessageCircle, Send, X } from "lucide-react";
+import React, { useEffect, useRef, useState } from "react";
 
 interface Message {
   role: "user" | "model";
@@ -31,7 +31,24 @@ const AiChat: React.FC<AiChatProps> = ({
   const [input, setInput] = useState("");
   const [isLoading, setIsLoading] = useState(false);
   const messagesEndRef = useRef<HTMLDivElement>(null);
+  const chatRef = useRef<HTMLDivElement>(null);
   const aiApi = new AiApi();
+
+  useEffect(() => {
+    const handleClickOutside = (event: MouseEvent) => {
+      // Disable click-outside-to-close on mobile to allow book interaction (copy/paste/reading)
+      if (window.innerWidth < 768) return;
+
+      if (chatRef.current && !chatRef.current.contains(event.target as Node)) {
+        onClose();
+      }
+    };
+
+    if (isOpen) {
+      document.addEventListener("mousedown", handleClickOutside);
+    }
+    return () => document.removeEventListener("mousedown", handleClickOutside);
+  }, [isOpen, onClose]);
 
   const scrollToBottom = () => {
     messagesEndRef.current?.scrollIntoView({ behavior: "smooth" });
@@ -67,16 +84,20 @@ const AiChat: React.FC<AiChatProps> = ({
       const MAX_HISTORY_MESSAGES = 10;
       const MAX_MESSAGE_LENGTH = 1500;
 
-      const optimizedHistory = messages.slice(-MAX_HISTORY_MESSAGES).map((m) => {
-        let content = m.content;
-        if (content.length > MAX_MESSAGE_LENGTH) {
-          content = content.substring(0, MAX_MESSAGE_LENGTH) + "... [truncated for context]";
-        }
-        return {
-          role: m.role === "user" ? ("user" as const) : ("model" as const),
-          parts: [{ text: content }],
-        };
-      });
+      const optimizedHistory = messages
+        .slice(-MAX_HISTORY_MESSAGES)
+        .map((m) => {
+          let content = m.content;
+          if (content.length > MAX_MESSAGE_LENGTH) {
+            content =
+              content.substring(0, MAX_MESSAGE_LENGTH) +
+              "... [truncated for context]";
+          }
+          return {
+            role: m.role === "user" ? ("user" as const) : ("model" as const),
+            parts: [{ text: content }],
+          };
+        });
 
       const response = await aiApi.chatWithBook(
         userMessage,
@@ -84,22 +105,21 @@ const AiChat: React.FC<AiChatProps> = ({
         bookContext || "",
         dynamicContext,
         currentPage,
-        language
+        language,
       );
 
       if (response) {
         setMessages((prev) => [...prev, { role: "model", content: response }]);
-      } else {
-        setMessages((prev) => [
-          ...prev,
-          { role: "model", content: "Sorry, I couldn't process that request." },
-        ]);
       }
-    } catch (error) {
+    } catch (error: any) {
       console.error("Chat error:", error);
+      const errorMessage =
+        error.response?.data?.error ||
+        error.message ||
+        "An error occurred. Please try again.";
       setMessages((prev) => [
         ...prev,
-        { role: "model", content: "An error occurred. Please try again." },
+        { role: "model", content: errorMessage },
       ]);
     } finally {
       setIsLoading(false);
@@ -109,26 +129,45 @@ const AiChat: React.FC<AiChatProps> = ({
   if (!isOpen) return null;
 
   return (
-    <div
-      className={`fixed right-4 bottom-24 z-[100] flex flex-col w-[350px] md:w-[400px] h-[500px] md:h-[600px] rounded-2xl shadow-2xl overflow-hidden transition-all duration-300 border ${
-        isDarkMode
-          ? "bg-dark-background border-dark-secondary/50 filter invert hue-rotate-180"
-          : "bg-white border-gray-200"
-      } backdrop-blur-xl shadow-orange-500/10`}
-    >
+    <>
+      <div
+        ref={chatRef}
+        className={`fixed z-[100] flex flex-col transition-all duration-300 border ${
+          isDarkMode
+            ? "bg-dark-background border-dark-secondary/50 filter invert hue-rotate-180"
+            : "bg-white border-gray-200"
+        } backdrop-blur-xl shadow-orange-500/10 shadow-2xl overflow-hidden
+      /* Mobile: Bottom Centered Card (Non-Obstructive) */
+      left-1/2 bottom-4 top-auto -translate-x-1/2 -translate-y-0 w-[94%] max-h-[50dvh] h-auto max-w-[500px] rounded-2xl
+      /* Desktop: Floating Bottom-Right */
+      md:left-auto md:top-auto md:translate-x-0 md:translate-y-0 md:right-4 md:bottom-24 md:w-[400px] md:h-[600px] md:max-h-none md:rounded-2xl
+      `}
+      >
       {/* Header */}
       <div
         className={`flex items-center justify-between p-4 border-b ${
-          isDarkMode ? "border-dark-secondary/20 bg-dark-background" : "border-gray-100 bg-gray-50/50"
+          isDarkMode
+            ? "border-dark-secondary/20 bg-dark-background"
+            : "border-gray-100 bg-gray-50/50"
         }`}
       >
         <div className="flex items-center space-x-2">
-          <div className={`p-2 rounded-lg ${isDarkMode ? "bg-dark-secondary/10 text-dark-secondary" : "bg-light-secondary/10 text-light-secondary"}`}>
+          <div
+            className={`p-2 rounded-lg ${isDarkMode ? "bg-dark-secondary/10 text-dark-secondary" : "bg-light-secondary/10 text-light-secondary"}`}
+          >
             <Bot size={20} />
           </div>
           <div>
-            <h3 className={`font-semibold ${isDarkMode ? "text-dark-foreground" : "text-gray-800"}`}>AI Reading Guide</h3>
-            <p className={`text-[10px] ${isDarkMode ? "text-dark-foreground/60" : "text-gray-500"}`}>Current: Page {currentPage}</p>
+            <h3
+              className={`font-semibold ${isDarkMode ? "text-dark-foreground" : "text-gray-800"}`}
+            >
+              AI Reading Guide
+            </h3>
+            <p
+              className={`text-[10px] ${isDarkMode ? "text-dark-foreground/60" : "text-gray-500"}`}
+            >
+              Current: Page {currentPage}
+            </p>
           </div>
         </div>
         <button
@@ -143,9 +182,15 @@ const AiChat: React.FC<AiChatProps> = ({
       <div className="flex-1 overflow-y-auto p-4 space-y-4 scrollbar-hide">
         {messages.length === 0 && (
           <div className="h-full flex flex-col items-center justify-center text-center p-8">
-            <MessageCircle size={48} className={`mb-4 ${isDarkMode ? "text-dark-secondary/20" : "text-light-secondary/20"}`} />
-            <p className={`text-sm ${isDarkMode ? "text-dark-foreground/60" : "text-gray-500"}`}>
-              I can help you understand this book, summarize sections, or answer specific questions about the content.
+            <MessageCircle
+              size={48}
+              className={`mb-4 ${isDarkMode ? "text-dark-secondary/20" : "text-light-secondary/20"}`}
+            />
+            <p
+              className={`text-sm ${isDarkMode ? "text-dark-foreground/60" : "text-gray-500"}`}
+            >
+              I can help you understand this book, summarize sections, or answer
+              specific questions about the content.
             </p>
           </div>
         )}
@@ -157,15 +202,21 @@ const AiChat: React.FC<AiChatProps> = ({
             <div
               className={`max-w-[85%] p-3 rounded-2xl text-sm ${
                 m.role === "user"
-                  ? isDarkMode ? "bg-dark-secondary text-white rounded-tr-none shadow-lg shadow-orange-500/20" : "bg-light-secondary text-white rounded-tr-none shadow-lg shadow-orange-500/20"
+                  ? isDarkMode
+                    ? "bg-dark-secondary text-white rounded-tr-none shadow-lg shadow-orange-500/20"
+                    : "bg-light-secondary text-white rounded-tr-none shadow-lg shadow-orange-500/20"
                   : isDarkMode
-                  ? "bg-dark-secondary/10 text-dark-foreground rounded-tl-none"
-                  : "bg-gray-100 text-gray-800 rounded-tl-none"
+                    ? "bg-dark-secondary/10 text-dark-foreground rounded-tl-none"
+                    : "bg-gray-100 text-gray-800 rounded-tl-none"
               }`}
             >
               <div className="flex items-start space-x-2">
-                {m.role === "model" && <Bot size={14} className="mt-1 flex-shrink-0" />}
-                <p className="whitespace-pre-wrap leading-relaxed">{m.content}</p>
+                {m.role === "model" && (
+                  <Bot size={14} className="mt-1 flex-shrink-0" />
+                )}
+                <p className="whitespace-pre-wrap leading-relaxed">
+                  {m.content}
+                </p>
               </div>
             </div>
           </div>
@@ -177,7 +228,10 @@ const AiChat: React.FC<AiChatProps> = ({
                 isDarkMode ? "bg-dark-secondary/10" : "bg-gray-100"
               }`}
             >
-              <Loader2 size={16} className={`animate-spin ${isDarkMode ? "text-dark-secondary" : "text-light-secondary"}`} />
+              <Loader2
+                size={16}
+                className={`animate-spin ${isDarkMode ? "text-dark-secondary" : "text-light-secondary"}`}
+              />
             </div>
           </div>
         )}
@@ -208,7 +262,9 @@ const AiChat: React.FC<AiChatProps> = ({
             disabled={!input.trim() || isLoading}
             className={`absolute right-2 top-1/2 -translate-y-1/2 p-2 rounded-lg transition-all ${
               input.trim() && !isLoading
-                ? isDarkMode ? "bg-dark-secondary text-white hover:opacity-90" : "bg-light-secondary text-white hover:opacity-90"
+                ? isDarkMode
+                  ? "bg-dark-secondary text-white hover:opacity-90"
+                  : "bg-light-secondary text-white hover:opacity-90"
                 : "text-gray-400 cursor-not-allowed"
             }`}
           >
@@ -216,13 +272,14 @@ const AiChat: React.FC<AiChatProps> = ({
           </button>
         </div>
       </form>
-      
+
       <style jsx>{`
         div::-webkit-scrollbar {
           display: none;
         }
       `}</style>
     </div>
+    </>
   );
 };
 
