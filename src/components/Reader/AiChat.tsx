@@ -31,24 +31,7 @@ const AiChat: React.FC<AiChatProps> = ({
   const [input, setInput] = useState("");
   const [isLoading, setIsLoading] = useState(false);
   const messagesEndRef = useRef<HTMLDivElement>(null);
-  const chatRef = useRef<HTMLDivElement>(null);
   const aiApi = new AiApi();
-
-  useEffect(() => {
-    const handleClickOutside = (event: MouseEvent) => {
-      // Disable click-outside-to-close on mobile to allow book interaction (copy/paste/reading)
-      if (window.innerWidth < 768) return;
-
-      if (chatRef.current && !chatRef.current.contains(event.target as Node)) {
-        onClose();
-      }
-    };
-
-    if (isOpen) {
-      document.addEventListener("mousedown", handleClickOutside);
-    }
-    return () => document.removeEventListener("mousedown", handleClickOutside);
-  }, [isOpen, onClose]);
 
   const scrollToBottom = () => {
     messagesEndRef.current?.scrollIntoView({ behavior: "smooth" });
@@ -131,16 +114,15 @@ const AiChat: React.FC<AiChatProps> = ({
   return (
     <>
       <div
-        ref={chatRef}
         className={`fixed z-[100] flex flex-col transition-all duration-300 border ${
           isDarkMode
             ? "bg-dark-background border-dark-secondary/50 filter invert hue-rotate-180"
             : "bg-white border-gray-200"
         } backdrop-blur-xl shadow-orange-500/10 shadow-2xl overflow-hidden
-      /* Mobile: Bottom Centered Card (Non-Obstructive) */
-      left-1/2 bottom-4 top-auto -translate-x-1/2 -translate-y-0 w-[94%] max-h-[50dvh] h-auto max-w-[500px] rounded-2xl
-      /* Desktop: Floating Bottom-Right */
-      md:left-auto md:top-auto md:translate-x-0 md:translate-y-0 md:right-4 md:bottom-24 md:w-[400px] md:h-[600px] md:max-h-none md:rounded-2xl
+      /* Mobile Portrait: Centered higher up */
+      bottom-[10%] left-1/2 -translate-x-1/2 w-[94%] max-h-[70dvh] h-auto max-w-[500px] rounded-2xl
+      /* Landscape / Tablet / Desktop: Side-Docked Right */
+      md:right-6 md:bottom-10 md:left-auto md:translate-x-0 md:w-[400px] md:h-[70vh] md:max-h-[70vh]
       `}
       >
       {/* Header */}
