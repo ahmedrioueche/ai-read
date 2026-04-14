@@ -119,10 +119,10 @@ const AiChat: React.FC<AiChatProps> = ({
             ? "bg-dark-background border-dark-secondary/50 filter invert hue-rotate-180"
             : "bg-white border-gray-200"
         } backdrop-blur-xl shadow-orange-500/10 shadow-2xl overflow-hidden
-      /* Mobile Portrait: Centered higher up */
-      bottom-[10%] left-1/2 -translate-x-1/2 w-[94%] max-h-[70dvh] h-auto max-w-[500px] rounded-2xl
+      /* Mobile Portrait: Centered higher up and taller */
+      bottom-[15dvh] left-1/2 -translate-x-1/2 w-[94%] max-h-[80dvh] h-auto max-w-[600px] rounded-2xl
       /* Landscape / Tablet / Desktop: Side-Docked Right */
-      md:right-6 md:bottom-10 md:left-auto md:translate-x-0 md:w-[400px] md:h-[70vh] md:max-h-[70vh]
+      md:right-6 md:bottom-12 md:left-auto md:translate-x-0 md:w-[450px] md:h-[85vh] md:max-h-[85vh]
       `}
       >
       {/* Header */}
