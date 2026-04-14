@@ -119,15 +119,15 @@ const AiChat: React.FC<AiChatProps> = ({
             ? "bg-dark-background border-dark-secondary/50 filter invert hue-rotate-180"
             : "bg-white border-gray-200"
         } backdrop-blur-xl shadow-orange-500/10 shadow-2xl overflow-hidden
-      /* Mobile Portrait: Centered higher up and taller */
-      bottom-[15dvh] left-1/2 -translate-x-1/2 w-[94%] max-h-[80dvh] h-auto max-w-[600px] rounded-2xl
-      /* Landscape / Tablet / Desktop: Side-Docked Right */
-      md:right-6 md:bottom-12 md:left-auto md:translate-x-0 md:w-[450px] md:h-[85vh] md:max-h-[85vh]
+      /* Mobile: Full Screen */
+      inset-0 w-full h-full rounded-none
+      /* Desktop: Reverted to stable floating window */
+      md:top-auto md:left-auto md:right-4 md:bottom-24 md:w-[400px] md:h-[600px] md:rounded-2xl
       `}
       >
       {/* Header */}
       <div
-        className={`flex items-center justify-between p-4 border-b ${
+        className={`flex items-center justify-between px-4 py-2 border-b ${
           isDarkMode
             ? "border-dark-secondary/20 bg-dark-background"
             : "border-gray-100 bg-gray-50/50"
@@ -223,7 +223,7 @@ const AiChat: React.FC<AiChatProps> = ({
       {/* Input Area */}
       <form
         onSubmit={handleSend}
-        className={`p-4 border-t ${
+        className={`px-4 py-3 border-t ${
           isDarkMode ? "border-dark-secondary/20" : "border-gray-100"
         }`}
       >
