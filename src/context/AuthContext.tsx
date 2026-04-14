@@ -1,14 +1,14 @@
-import {
-  useState,
-  useEffect,
-  createContext,
-  useContext,
-  ReactNode,
-} from "react";
-import { User as SupabaseUser } from "@supabase/supabase-js";
-import supabase from "../utils/supabase";
-import bcrypt from "bcryptjs";
 import { User } from "@prisma/client";
+import { User as SupabaseUser } from "@supabase/supabase-js";
+import bcrypt from "bcryptjs";
+import {
+  createContext,
+  ReactNode,
+  useContext,
+  useEffect,
+  useState,
+} from "react";
+import supabase from "../utils/supabase";
 
 interface AuthState {
   user: User;
@@ -28,7 +28,7 @@ interface AuthContextType extends AuthState {
   signUp: (
     email: string,
     password: string,
-    userData: Partial<User>
+    userData: Partial<User>,
   ) => Promise<any>;
   signOut: () => Promise<void>;
 }
@@ -53,6 +53,8 @@ const initUser: User = {
   lastPaymentValue: null,
   freeTrialStartDate: new Date(),
   freeTrialShownAt: null,
+  lastOrderId: null,
+  subExpirationDate: null,
 };
 export function AuthProvider({ children }: { children: ReactNode }) {
   const [authState, setAuthState] = useState<AuthState>({
@@ -132,7 +134,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
   const signUp = async (
     email: string,
     password: string,
-    userData: Partial<User>
+    userData: Partial<User>,
   ) => {
     setAuthState((prev) => ({ ...prev, loading: true, error: null })); // Set loading state
     try {
