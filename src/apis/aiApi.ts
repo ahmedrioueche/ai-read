@@ -107,4 +107,23 @@ export class AiApi {
       systemInstruction,
     });
   };
+
+  transcribeAudio = async (audioBlob: Blob): Promise<string> => {
+    try {
+      const formData = new FormData();
+      formData.append("audio", audioBlob);
+
+      const response = await axios.post("/api/transcribe", formData, {
+        headers: {
+          "Content-Type": "multipart/form-data",
+        },
+      });
+
+      return response.data.text;
+    } catch (error) {
+      console.error("Transcription API Error:", error);
+      throw error;
+    }
+  };
 }
+
