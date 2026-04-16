@@ -12,6 +12,7 @@ import {
 import React, { useEffect, useRef, useState } from "react";
 
 interface Message {
+  id: string;
   role: "user" | "model";
   content: string;
   isTyping?: boolean;
@@ -43,13 +44,33 @@ const AiChat: React.FC<AiChatProps> = ({
   const [isTranscribing, setIsTranscribing] = useState(false);
   const [isStartingMic, setIsStartingMic] = useState(false);
   const messagesEndRef = useRef<HTMLDivElement>(null);
+  const scrollContainerRef = useRef<HTMLDivElement>(null);
   const textareaRef = useRef<HTMLTextAreaElement>(null);
   const mediaRecorderRef = useRef<MediaRecorder | null>(null);
+  const isMountedRef = useRef(true);
   const aiApi = new AiApi();
 
-  const scrollToBottom = () => {
-    messagesEndRef.current?.scrollIntoView({ behavior: "smooth" });
+  useEffect(() => {
+    isMountedRef.current = true;
+    return () => {
+      isMountedRef.current = false;
+    };
+  }, []);
+
+  const handleClearChat = () => {
+    setMessages([]);
   };
+
+  const scrollToBottom = (behavior: ScrollBehavior = "smooth") => {
+    messagesEndRef.current?.scrollIntoView({ behavior });
+  };
+
+  // Scroll to bottom when chat opens
+  useEffect(() => {
+    if (isOpen) {
+      setTimeout(() => scrollToBottom("auto"), 100);
+    }
+  }, [isOpen]);
 
   const adjustHeight = () => {
     if (textareaRef.current) {
@@ -61,10 +82,6 @@ const AiChat: React.FC<AiChatProps> = ({
   useEffect(() => {
     adjustHeight();
   }, [input]);
-
-  useEffect(() => {
-    scrollToBottom();
-  }, [messages, isRecording, isTranscribing]);
 
   const startRecording = async () => {
     try {
@@ -120,10 +137,16 @@ const AiChat: React.FC<AiChatProps> = ({
     if (textareaRef.current) {
       textareaRef.current.style.height = "auto";
     }
-    setMessages((prev) => [...prev, { role: "user", content: userMessage }]);
+    setMessages((prev) => [
+      ...prev,
+      { id: Date.now().toString(), role: "user", content: userMessage },
+    ]);
     setIsLoading(true);
+    // Force scroll to bottom for new user message
+    setTimeout(() => scrollToBottom("smooth"), 0);
 
     try {
+      if (!isMountedRef.current) return;
       const [prevPage, currPage, nextPage] = await Promise.all([
         getPageText(currentPage - 1),
         getPageText(currentPage),
@@ -166,44 +189,53 @@ const AiChat: React.FC<AiChatProps> = ({
 
       setIsLoading(false);
 
-      if (response) {
-        // Create an initial empty model message with isTyping: true
-        const messageIndex = messages.length + 1;
+      if (response && isMountedRef.current) {
+        // Create an initial empty model message with a stable ID
+        const aiMessageId = (Date.now() + 1).toString();
         setMessages((prev) => [
           ...prev,
-          { role: "model", content: "", isTyping: true },
+          { id: aiMessageId, role: "model", content: "", isTyping: true },
         ]);
 
         // Type out the message
         let currentText = "";
         const words = response.split(" ");
         for (let i = 0; i < words.length; i++) {
+          if (!isMountedRef.current) break;
+          
+          // Check if user is at the bottom before updating content
+          const container = scrollContainerRef.current;
+          const isAtBottom = container 
+            ? container.scrollHeight - container.scrollTop <= container.clientHeight + 100 
+            : true;
+
           currentText += (i === 0 ? "" : " ") + words[i];
-          setMessages((prev) => {
-            const newMessages = [...prev];
-            newMessages[newMessages.length - 1] = {
-              ...newMessages[newMessages.length - 1],
-              content: currentText,
-            };
-            return newMessages;
-          });
-          scrollToBottom();
+          setMessages((prev) =>
+            prev.map((m) =>
+              m.id === aiMessageId ? { ...m, content: currentText } : m,
+            ),
+          );
+
+          if (isAtBottom) {
+            scrollToBottom("auto");
+          }
+
           await new Promise((resolve) =>
             setTimeout(resolve, 30 + Math.random() * 20),
           );
         }
 
         // Finalize typing state
-        setMessages((prev) => {
-          const newMessages = [...prev];
-          newMessages[newMessages.length - 1] = {
-            ...newMessages[newMessages.length - 1],
-            isTyping: false,
-          };
-          return newMessages;
-        });
+        if (isMountedRef.current) {
+          setMessages((prev) =>
+            prev.map((m) =>
+              m.id === aiMessageId ? { ...m, isTyping: false } : m,
+            ),
+          );
+        }
       }
     } catch (error: any) {
+      if (!isMountedRef.current) return;
       setIsLoading(false);
       console.error("Chat error:", error);
       const errorMessage =
@@ -212,7 +244,11 @@ const AiChat: React.FC<AiChatProps> = ({
         "An error occurred. Please try again.";
       setMessages((prev) => [
         ...prev,
-        { role: "model", content: errorMessage },
+        {
+          id: Date.now().toString(),
+          role: "model",
+          content: errorMessage,
+        },
       ]);
     }
   };
@@ -248,28 +284,42 @@ const AiChat: React.FC<AiChatProps> = ({
               <Bot size={20} />
             </div>
             <div>
-              <h3
-                className={`font-semibold ${isDarkMode ? "text-dark-foreground" : "text-gray-800"}`}
-              >
-                AI Reading Guide
-              </h3>
-              <p
-                className={`text-[10px] ${isDarkMode ? "text-dark-foreground/60" : "text-gray-500"}`}
-              >
-                Current: Page {currentPage}
-              </p>
+              <h3 className="text-sm font-bold text-white tracking-tight">AI Reading Guide</h3>
+              <div className="flex items-center space-x-1">
+                <div className="w-1.5 h-1.5 rounded-full bg-green-500 animate-pulse" />
+                <span className="text-[10px] text-gray-500 uppercase font-bold tracking-widest">
+                  Online
+                </span>
+              </div>
             </div>
           </div>
-          <button
-            onClick={onClose}
-            className="p-1 rounded-full hover:bg-gray-500/10 transition-colors"
-          >
-            <X size={20} />
-          </button>
+          <div className="flex items-center space-x-1">
+            <button
+              onClick={handleClearChat}
+              className={`p-2 rounded-lg transition-colors ${
+                isDarkMode ? "hover:bg-white/5 text-gray-400" : "hover:bg-gray-100 text-gray-400"
+              }`}
+              title="Clear Chat"
+            >
+              <Square size={16} />
+            </button>
+            <button
+              onClick={onClose}
+              className={`p-2 rounded-lg transition-colors ${
+                isDarkMode ? "hover:bg-white/5 text-gray-400" : "hover:bg-gray-100 text-gray-400"
+              }`}
+            >
+              <X size={20} />
+            </button>
+          </div>
         </div>
 
         {/* Messages Window */}
-        <div className="flex-1 overflow-y-auto p-4 space-y-4 scrollbar-hide">
+        <div
+          ref={scrollContainerRef}
+          className="flex-1 overflow-y-auto p-4 space-y-4 min-h-0"
+          id="chat-messages"
+        >
           {messages.length === 0 && (
             <div className="h-full flex flex-col items-center justify-center text-center p-8">
               <MessageCircle
@@ -284,9 +334,9 @@ const AiChat: React.FC<AiChatProps> = ({
               </p>
             </div>
           )}
-          {messages.map((m, i) => (
+          {messages.map((m) => (
             <div
-              key={i}
+              key={m.id}
               className={`flex ${m.role === "user" ? "justify-end" : "justify-start"}`}
             >
               <div

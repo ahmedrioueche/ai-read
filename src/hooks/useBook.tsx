@@ -13,6 +13,7 @@ const useBook = (bookUrl: string, isFullScreen: boolean) => {
   const [selectedText, setSelectedText] = useState<string | null>(null);
   const [bookContext, setBookContext] = useState<string | null>(null);
   const { settings, updateSettings } = useSettings();
+  const pdfDocRef = useRef<pdfjs.PDFDocumentProxy | null>(null);
 
   // Function to extract text from the PDF
   const extractText = async (fileUrl: string) => {
@@ -244,8 +245,14 @@ const useBook = (bookUrl: string, isFullScreen: boolean) => {
     if (!bookUrl) return "";
     try {
       pdfjs.GlobalWorkerOptions.workerSrc = `//cdnjs.cloudflare.com/ajax/libs/pdf.js/${pdfjs.version}/pdf.worker.min.js`;
-      const loadingTask = pdfjs.getDocument(bookUrl);
-      const pdf = await loadingTask.promise;
+
+      let pdf = pdfDocRef.current;
+      if (!pdf) {
+        const loadingTask = pdfjs.getDocument(bookUrl);
+        pdf = await loadingTask.promise;
+        pdfDocRef.current = pdf;
+      }
+
       if (pageNumber < 1 || pageNumber > pdf.numPages) return "";
       const page = await pdf.getPage(pageNumber);
       const textContent = await page.getTextContent();
@@ -265,6 +272,8 @@ const useBook = (bookUrl: string, isFullScreen: boolean) => {
   useEffect(() => {
     if (bookUrl) {
       extractText(bookUrl);
+      // Clear cached PDF document when URL changes
+      pdfDocRef.current = null;
     }
   }, [bookUrl]);
 

@@ -28,8 +28,10 @@ interface AuthContextType extends AuthState {
   signUp: (
     email: string,
     password: string,
-    userData: Partial<User>,
+    userData: Partial<User>
   ) => Promise<any>;
+  signInWithGoogle: (redirect?: string) => Promise<any>;
+  resetPassword: (email: string) => Promise<any>;
   signOut: () => Promise<void>;
 }
 
@@ -64,6 +66,17 @@ export function AuthProvider({ children }: { children: ReactNode }) {
     error: null,
   });
 
+  // Helper to get the correct base URL for redirects
+  const getBaseURL = () => {
+    // Priority: Environment Variable -> Window Origin
+    let url =
+      process.env.NEXT_PUBLIC_SITE_URL ||
+      (typeof window !== "undefined" ? window.location.origin : "");
+
+    // Clean up: Remove trailing slash
+    return url.endsWith("/") ? url.slice(0, -1) : url;
+  };
+
   useEffect(() => {
     const getSession = async () => {
       const {
@@ -86,7 +99,34 @@ export function AuthProvider({ children }: { children: ReactNode }) {
         .select("*")
         .eq("id", authUser.id)
         .single();
+      
+      if (error && error.code === "PGRST116") {
+        // User record not found, create it (likely first-time social login)
+        const { data: newData, error: insertError } = await supabase
+          .from("User")
+          .upsert({
+            id: authUser.id,
+            email: authUser.email!,
+            password: "", // No password for OAuth users
+            plan: "free-trial",
+            createdAt: new Date().toISOString(),
+          })
+          .select()
+          .single();
+
+        if (insertError) throw insertError;
+        
+        setAuthState({
+          user: newData,
+          authUser,
+          loading: false,
+          error: null,
+        });
+        return;
+      }
+
       if (error) throw error;
+
       setAuthState({
         user: data,
         authUser,
@@ -94,6 +134,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
         error: null,
       });
     } catch (error) {
+      console.error("fetchUserData error:", error);
       setAuthState({
         user: initUser,
         authUser: null,
@@ -104,7 +145,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
   };
 
   const signIn = async (email: string, password: string) => {
-    setAuthState((prev) => ({ ...prev, loading: true, error: null })); // Set loading state
+    setAuthState((prev) => ({ ...prev, loading: true, error: null }));
     try {
       const { data: authData, error } = await supabase.auth.signInWithPassword({
         email,
@@ -122,25 +163,53 @@ export function AuthProvider({ children }: { children: ReactNode }) {
 
       return { data: authData, error: null };
     } catch (error) {
+      const err = error as Error;
       setAuthState((prev) => ({
         ...prev,
         loading: false,
-        error: error as Error,
+        error: err,
       }));
-      return { data: null, error };
+      return { data: null, error: err };
+    }
+  };
+
+  const signInWithGoogle = async (redirect?: string) => {
+    setAuthState((prev) => ({ ...prev, loading: true, error: null }));
+    try {
+      const callbackUrl = redirect ? `${getBaseURL()}${redirect}` : getBaseURL();
+      const { data, error } = await supabase.auth.signInWithOAuth({
+        provider: "google",
+        options: {
+          redirectTo: callbackUrl,
+        },
+      });
+
+      if (error) throw error;
+      return { data, error: null };
+    } catch (error) {
+      const err = error as Error;
+      setAuthState((prev) => ({
+        ...prev,
+        loading: false,
+        error: err,
+      }));
+      return { data: null, error: err };
     }
   };
 
   const signUp = async (
     email: string,
     password: string,
-    userData: Partial<User>,
+    userData: Partial<User>
   ) => {
-    setAuthState((prev) => ({ ...prev, loading: true, error: null })); // Set loading state
+    setAuthState((prev) => ({ ...prev, loading: true, error: null }));
     try {
       const { data: authData, error: authError } = await supabase.auth.signUp({
         email,
         password,
+        options: {
+          emailRedirectTo: getBaseURL(),
+        },
       });
 
       if (authError) {
@@ -149,15 +218,14 @@ export function AuthProvider({ children }: { children: ReactNode }) {
       }
 
       if (authData.user) {
+        // Create user in public schema
         const hashedPassword = await bcrypt.hash(password, 10);
-        const { error: dbError } = await supabase.from("User").insert([
-          {
-            id: authData.user.id,
-            email: authData.user.email,
-            password: hashedPassword,
-            ...userData,
-          },
-        ]);
+        const { error: dbError } = await supabase.from("User").upsert({
+          id: authData.user.id,
+          email: authData.user.email!,
+          password: hashedPassword,
+          ...userData,
+        });
 
         if (dbError) {
           setAuthState((prev) => ({ ...prev, loading: false, error: dbError }));
@@ -169,12 +237,25 @@ export function AuthProvider({ children }: { children: ReactNode }) {
 
       return { data: authData, error: null };
     } catch (error) {
+      const err = error as Error;
       setAuthState((prev) => ({
         ...prev,
         loading: false,
-        error: error as Error,
+        error: err,
       }));
-      return { data: null, error };
+      return { data: null, error: err };
+    }
+  };
+
+  const resetPassword = async (email: string) => {
+    try {
+      const { error } = await supabase.auth.resetPasswordForEmail(email, {
+        redirectTo: `${getBaseURL()}/reset-password`,
+      });
+      if (error) throw error;
+      return { success: true, error: null };
+    } catch (error) {
+      return { success: false, error: error as Error };
     }
   };
 
@@ -191,7 +272,15 @@ export function AuthProvider({ children }: { children: ReactNode }) {
 
   return (
     <AuthContext.Provider
-      value={{ ...authState, isAuthenticated, signIn, signUp, signOut }}
+      value={{
+        ...authState,
+        isAuthenticated,
+        signIn,
+        signUp,
+        signInWithGoogle,
+        resetPassword,
+        signOut,
+      }}
     >
       {children}
     </AuthContext.Provider>

@@ -100,12 +100,14 @@ export class AiApi {
     6. If you don't find the answer in the provided context, but it's a well-known book, you can use your general knowledge, but prioritize the provided text.
     7. ALWAYS maintain a helpful and premium tone.`;
 
-    return await this.callAiRoute({
+    const response = await this.callAiRoute({
       action: "chat",
       prompt: message,
       history,
       systemInstruction,
     });
+
+    return typeof response === "string" ? response : "";
   };
 
   transcribeAudio = async (audioBlob: Blob): Promise<string> => {
