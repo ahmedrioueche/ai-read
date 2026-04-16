@@ -26,7 +26,7 @@ const FeaturesModal: React.FC<{
 
   return (
     <div className="fixed inset-0 bg-black/50 backdrop-blur-sm flex items-center justify-center z-50">
-      <div className="bg-dark-background w-full h-full max-h-[90vh] max-w-screen mx-0 sm:mx-4 rounded-none sm:rounded-xl shadow-2xl p-4 sm:p-6 overflow-y-auto">
+      <div className="bg-dark-background w-full h-full max-h-[90vh] max-w-screen md:max-w-[50%] mx-0 sm:mx-4 rounded-none sm:rounded-xl shadow-2xl p-4 sm:p-6 overflow-y-auto">
         <div className="flex justify-between items-center mb-6">
           <div className="flex flex-row">
             <InfoIcon className="mr-2 text-dark-secondary" />
@@ -95,7 +95,7 @@ const FeaturesModal: React.FC<{
 
               {plan.name === "Basic" && (
                 <button
-                  className={`w-full py-2 rounded-lg text-sm font-medium bg-dark-background cursor-auto ${
+                  className={`w-full py-2 cursor-not-allowed rounded-lg text-sm font-medium bg-dark-background cursor-auto ${
                     currentPlan === "basic"
                       ? "border border-1 border-dark-secondary text-white"
                       : "text-dark-secondary"
@@ -109,12 +109,12 @@ const FeaturesModal: React.FC<{
 
               {plan.name === "Premium" && (
                 <button
-                  className={`w-full py-2 rounded-lg text-sm font-medium ${
+                  className={`w-full py-2 rounded-lg text-sm font-medium  ${
                     currentPlan === "premium"
-                      ? "border border-1 bg-dark-background border-dark-secondary cursor-auto"
+                      ? "border border-1 bg-dark-background border-dark-secondary cursor-not-allowed"
                       : isUpgradeDisabled
-                      ? "bg-dark-secondary/30 cursor-auto text-gray-300"
-                      : "bg-dark-secondary hover:bg-dark-secondary/90"
+                        ? "bg-dark-secondary/30 cursor-not-allowed text-gray-300"
+                        : "bg-dark-secondary hover:bg-dark-secondary/90"
                   } text-white  transition-colors`}
                   onClick={() => handleUpgrade("premium")}
                 >

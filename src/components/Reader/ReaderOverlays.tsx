@@ -20,6 +20,8 @@ interface ReaderOverlaysProps {
   setExplanation: (val: string | null) => void;
   summary: string | null;
   setSummary: (val: string | null) => void;
+  isSummarizing: boolean;
+  isExplaining: boolean;
   translationLanguageData: any;
   viewerRef: React.RefObject<any>;
   setIsHoveredOver: (hovered: boolean) => void;
@@ -42,6 +44,8 @@ const ReaderOverlays: React.FC<ReaderOverlaysProps> = ({
   setExplanation,
   summary,
   setSummary,
+  isSummarizing,
+  isExplaining,
   translationLanguageData,
   viewerRef,
   setIsHoveredOver,
@@ -64,6 +68,8 @@ const ReaderOverlays: React.FC<ReaderOverlaysProps> = ({
         readingState={readingState}
         isDarkMode={isDarkMode}
         isFullScreen={isFullScreen}
+        isSummarizing={isSummarizing}
+        isExplaining={isExplaining}
         handleChatClick={handleChatClick}
       />
 

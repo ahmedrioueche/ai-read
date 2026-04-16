@@ -19,6 +19,8 @@ const useTextProcessing = (
   const [translation, setTranslation] = useState<string | null>(null);
   const [summary, setSummary] = useState<string | null>(null);
   const [explanation, setExplanation] = useState<string | null>(null);
+  const [isSummarizing, setIsSummarizing] = useState(false);
+  const [isExplaining, setIsExplaining] = useState(false);
   const { settings } = useSettings();
   const translationLanguage =
     settings?.translationLanguage?.language || "English";
@@ -48,32 +50,46 @@ const useTextProcessing = (
 
   const getSummary = async (text: string) => {
     if (text.trim() !== "") {
-      const response = await aiApi.getSummary(text, translationLanguage);
-      if (response) {
-        setSummary(response);
-        setTimeout(() => {
-          if (!isHoveredOver) {
-            setSummary(null);
-          }
-        }, 5000 + response.length * 200);
+      setIsSummarizing(true);
+      try {
+        const response = await aiApi.getSummary(text, translationLanguage);
+        if (response) {
+          setSummary(response);
+          setTimeout(() => {
+            if (!isHoveredOver) {
+              setSummary(null);
+            }
+          }, 5000 + response.length * 200);
+        }
+      } catch (error) {
+        console.error("Summary error:", error);
+      } finally {
+        setIsSummarizing(false);
       }
     }
   };
 
   const getExplanation = async (text: string) => {
     if (text.trim() !== "") {
-      const response = await aiApi.getExplantion(
-        text,
-        translationLanguage,
-        bookContext!
-      );
-      if (response) {
-        setExplanation(response);
-        setTimeout(() => {
-          if (!isHoveredOver) {
-            setExplanation(null);
-          }
-        }, 5000 + response.length * 200);
+      setIsExplaining(true);
+      try {
+        const response = await aiApi.getExplantion(
+          text,
+          translationLanguage,
+          bookContext!
+        );
+        if (response) {
+          setExplanation(response);
+          setTimeout(() => {
+            if (!isHoveredOver) {
+              setExplanation(null);
+            }
+          }, 5000 + response.length * 200);
+        }
+      } catch (error) {
+        console.error("Explanation error:", error);
+      } finally {
+        setIsExplaining(false);
       }
     }
   };
@@ -82,6 +98,8 @@ const useTextProcessing = (
     translation,
     summary,
     explanation,
+    isSummarizing,
+    isExplaining,
     setTranslation,
     setExplanation,
     setSummary,

@@ -18,6 +18,8 @@ const OptionsMenu: React.FC<{
   readingState: ReadingState;
   isDarkMode: boolean;
   isFullScreen: boolean;
+  isSummarizing: boolean;
+  isExplaining: boolean;
   handleChatClick: () => void;
 }> = ({
   selectedText,
@@ -28,6 +30,8 @@ const OptionsMenu: React.FC<{
   readingState,
   isDarkMode,
   isFullScreen,
+  isSummarizing,
+  isExplaining,
   handleChatClick,
 }) => {
   const [isExpanded, setIsExpanded] = useState(false);
@@ -115,18 +119,22 @@ const OptionsMenu: React.FC<{
               flex items-center w-full
             `}
               onClick={() => {
-                getExplanation();
+                if (!isExplaining) getExplanation();
                 setIsExpanded(false);
               }}
             >
-              <Info className="w-5 h-5" />
+              {isExplaining ? (
+                <Loader className="w-5 h-5 animate-spin" />
+              ) : (
+                <Info className="w-5 h-5" />
+              )}
               {isExpanded && (
                 <span
                   className={`ml-2 text-xs ${
                     isDarkMode ? "text-gray-100" : "text-gray-700"
                   }`}
                 >
-                  Explain
+                  {isExplaining ? "Explaining..." : "Explain"}
                 </span>
               )}
             </div>
@@ -145,18 +153,22 @@ const OptionsMenu: React.FC<{
                 flex items-center w-full
               `}
               onClick={() => {
-                getSummary();
+                if (!isSummarizing) getSummary();
                 setIsExpanded(false);
               }}
             >
-              <FileText className="w-5 h-5" />
+              {isSummarizing ? (
+                <Loader className="w-5 h-5 animate-spin" />
+              ) : (
+                <FileText className="w-5 h-5" />
+              )}
               {isExpanded && (
                 <span
                   className={`ml-2 text-xs ${
                     isDarkMode ? "text-gray-100" : "text-gray-700"
                   }`}
                 >
-                  Summarize
+                  {isSummarizing ? "Summarizing..." : "Summarize"}
                 </span>
               )}
             </div>

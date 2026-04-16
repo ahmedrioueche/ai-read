@@ -56,6 +56,7 @@ const useReading = () => {
   const handleTextToSpeech = async (text: string): Promise<void> => {
     return new Promise(async (resolve) => {
       try {
+        setReadingState("loading");
         if (ttsType === "premium") {
           const audioBlob = await fetchTtsAudio(text);
           playAudio(audioBlob, resolve);

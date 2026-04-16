@@ -90,6 +90,8 @@ const Reader = ({
     getSummary,
     getExplanation,
     isValidText,
+    isSummarizing,
+    isExplaining,
   } = useTextProcessing(bookContext, isHoveredOver);
 
   const {
@@ -424,6 +426,8 @@ const Reader = ({
         setExplanation={setExplanation}
         summary={summary}
         setSummary={setSummary}
+        isSummarizing={isSummarizing}
+        isExplaining={isExplaining}
         translationLanguageData={translationLanguageData}
         viewerRef={viewerRef}
         setIsHoveredOver={setIsHoveredOver}

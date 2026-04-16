@@ -1,9 +1,9 @@
-import React from "react";
-import { X, Zap, Clock, AlertTriangle } from "lucide-react";
 import { plans } from "@/utils/constants";
-import { User } from "@prisma/client";
-import { useRouter } from "next/navigation";
 import { calculateRemainingTime } from "@/utils/helper";
+import { User } from "@prisma/client";
+import { AlertTriangle, X, Zap } from "lucide-react";
+import { useRouter } from "next/navigation";
+import React from "react";
 
 interface FreeTrialModalProps {
   user: User;
@@ -38,7 +38,7 @@ const FreeTrialModal: React.FC<FreeTrialModalProps> = ({
 
   return (
     <div className="fixed inset-0 bg-black/50 backdrop-blur-sm flex items-center justify-center z-50">
-      <div className="bg-dark-background w-full h-full max-h-[90vh] max-w-screen mx-0 sm:mx-4 rounded-none sm:rounded-xl shadow-2xl p-4 sm:p-6 overflow-y-auto">
+      <div className="bg-dark-background w-full h-full max-h-[90vh] max-w-screen md:max-w-[50%] mx-0 sm:mx-4 rounded-none sm:rounded-xl shadow-2xl p-4 sm:p-6 overflow-y-auto">
         <div className="flex justify-between items-center mb-6">
           <div className="flex items-center space-x-3">
             {/* Icon for the title */}
@@ -88,7 +88,7 @@ const FreeTrialModal: React.FC<FreeTrialModalProps> = ({
         </div>
 
         {/* Features List */}
-        <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+        <div className="grid grid-cols-1 md:grid-cols-2 gap-6 ">
           {plans.map((plan, index) => (
             <div
               key={index}
@@ -126,7 +126,7 @@ const FreeTrialModal: React.FC<FreeTrialModalProps> = ({
 
               {plan.name === "Basic" && (
                 <button
-                  className="w-full py-2 rounded-lg text-sm font-medium bg-dark-background border border-1 border-dark-secondary text-white hover:bg-dark-secondary/90 transition-colors"
+                  className="w-full py-2 rounded-lg  text-sm font-medium bg-dark-background border border-1 border-dark-secondary text-white hover:bg-dark-secondary/90 transition-colors"
                   onClick={() => onClose()}
                 >
                   Continue with {isTrialActive ? "Free Trial" : "Basic Plan"}
@@ -138,7 +138,7 @@ const FreeTrialModal: React.FC<FreeTrialModalProps> = ({
                   className={`w-full py-2 rounded-lg text-sm font-medium text-white transition-colors
                   ${
                     isUpgradeDisabled
-                      ? "bg-dark-secondary/80 cursor-auto"
+                      ? "bg-dark-secondary/80 cursor-not-allowed"
                       : "bg-dark-secondary  hover:bg-dark-secondary/90 cursor-pointer "
                   }`}
                   onClick={() =>

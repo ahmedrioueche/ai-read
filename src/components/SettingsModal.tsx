@@ -252,7 +252,10 @@ export const SettingsModal: React.FC<SettingsModalProps> = ({
           return voiceLang.startsWith(bookLangCode);
         }) || basicVoices[0];
 
-      setTtsVoice({ value: defaultBasicVoice?.value || "" });
+      setTtsVoice({ 
+        value: defaultBasicVoice?.value || "", 
+        label: defaultBasicVoice?.label || "" 
+      });
     } else if (ttsType === "premium" && premiumVoices.length > 0) {
       if (settings.ttsType === "premium") {
         //display the selected voice
@@ -286,7 +289,7 @@ export const SettingsModal: React.FC<SettingsModalProps> = ({
       const utterance = new SpeechSynthesisUtterance(sampleText);
       const voices = window.speechSynthesis.getVoices();
       const selectedVoice = voices.find(
-        (voice) => voice.name === ttsVoice.label
+        (voice) => voice.name === ttsVoice.value
       );
 
       if (selectedVoice) {
@@ -296,16 +299,25 @@ export const SettingsModal: React.FC<SettingsModalProps> = ({
         utterance.pitch = 1;
         utterance.volume = 1;
 
-        try {
-          await new Promise((resolve, reject) => {
-            utterance.onend = resolve;
-            utterance.onerror = reject;
-            window.speechSynthesis.speak(utterance);
-            setIsPlaying(true);
-          });
-        } catch (error) {
-          console.error("Speech synthesis failed:", error);
-        }
+        utterance.onstart = () => {
+          setIsPlaying(true);
+          setIsPlayLoading(false);
+        };
+
+        utterance.onend = () => {
+          setIsPlaying(false);
+        };
+
+        utterance.onerror = (event) => {
+          console.error("Speech synthesis failed:", event);
+          setIsPlaying(false);
+          setIsPlayLoading(false);
+        };
+
+        window.speechSynthesis.speak(utterance);
+      } else {
+        console.error("Selected voice not found in system");
+        setIsPlayLoading(false);
       }
     } else {
       try {
@@ -324,12 +336,14 @@ export const SettingsModal: React.FC<SettingsModalProps> = ({
 
         audioElement.play();
         setIsPlaying(true);
+        setIsPlayLoading(false);
 
         audioElement.onended = () => {
           URL.revokeObjectURL(audioUrl);
           setIsPlaying(false);
         };
       } catch (error) {
+        setIsPlayLoading(false);
         console.error("Failed to play sample text using API:", error);
         setStatus({
           status: "Error",
@@ -348,7 +362,6 @@ export const SettingsModal: React.FC<SettingsModalProps> = ({
         }, 5000);
       }
     }
-    setIsPlayLoading(false);
   };
 
   useEffect(() => {
