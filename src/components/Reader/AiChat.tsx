@@ -222,7 +222,7 @@ const AiChat: React.FC<AiChatProps> = ({
   return (
     <>
       <div
-        className={`fixed z-[100] flex flex-col transition-all duration-300 border ${
+        className={`fixed z-[100] ai-chat-container flex flex-col transition-all duration-300 border ${
           isDarkMode
             ? "bg-dark-background border-dark-secondary/50 filter invert hue-rotate-180"
             : "bg-white border-gray-200"

@@ -369,11 +369,37 @@ const Reader = ({
     jumpToPage(currentPage);
   };
 
+  const handleBackgroundClick = (e: React.MouseEvent) => {
+    if (!isChatOpen) return;
+
+    const target = e.target as HTMLElement;
+
+    // 1. Don't close if clicking inside the Chat
+    if (target.closest(".ai-chat-container")) return;
+
+    // 2. Don't close if clicking the Controls
+    if (target.closest(".reader-controls")) return;
+
+    // 3. Don't close if clicking the Book Page content
+    // Note: react-pdf-viewer uses these classes for pages/text
+    if (
+      target.closest(".rpv-core__page-layer") ||
+      target.closest(".rpv-core__text-layer") ||
+      target.closest(".rpv-core__annotation-layer")
+    ) {
+      return;
+    }
+
+    // 4. Default: It's a background click
+    setIsChatOpen(false);
+  };
+
   return (
     <div
       ref={rootRef}
       className={`h-screen w-screen bg-gray-100 relative ${isDarkMode ? `dark-mode-pdf` : ""}`}
       style={{ touchAction: "none" }}
+      onClick={handleBackgroundClick}
     >
       <ReaderControls
         isDarkMode={isDarkMode}

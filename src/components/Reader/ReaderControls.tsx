@@ -31,7 +31,7 @@ const ReaderControls: React.FC<ReaderControlsProps> = ({
 }) => {
   return (
     <div
-      className={`fixed ${
+      className={`fixed reader-controls ${
         isDarkMode ? "top-4" : "top-16"
       } left-4 z-50 flex items-center space-x-4 ${
         isDarkMode
