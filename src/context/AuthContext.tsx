@@ -78,10 +78,12 @@ export function AuthProvider({ children }: { children: ReactNode }) {
   };
 
   useEffect(() => {
+    // 1. Initial session check
     const getSession = async () => {
       const {
         data: { session },
       } = await supabase.auth.getSession();
+      
       if (session?.user) {
         fetchUserData(session.user);
       } else {
@@ -90,6 +92,30 @@ export function AuthProvider({ children }: { children: ReactNode }) {
     };
 
     getSession();
+
+    // 2. Listen for auth state changes (login, logout, session refresh, OAuth completion)
+    const { data: { subscription } } = supabase.auth.onAuthStateChange(
+      async (event, session) => {
+        console.log("Auth event:", event);
+        
+        if (session?.user) {
+          await fetchUserData(session.user);
+        } else if (event === "SIGNED_OUT") {
+          setAuthState({
+            user: initUser,
+            authUser: null,
+            loading: false,
+            error: null,
+          });
+        } else {
+          setAuthState((prev) => ({ ...prev, loading: false }));
+        }
+      }
+    );
+
+    return () => {
+      subscription.unsubscribe();
+    };
   }, []);
 
   const fetchUserData = async (authUser: SupabaseUser) => {
@@ -261,10 +287,16 @@ export function AuthProvider({ children }: { children: ReactNode }) {
 
   const signOut = async () => {
     const { error } = await supabase.auth.signOut();
-    console.log(error);
-
     if (error) {
+      console.error("signOut error:", error);
       setAuthState((prev) => ({ ...prev, error: error as Error }));
+    } else {
+      setAuthState({
+        user: initUser,
+        authUser: null,
+        loading: false,
+        error: null,
+      });
     }
   };
 

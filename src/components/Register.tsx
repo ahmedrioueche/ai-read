@@ -5,6 +5,7 @@ import { Loader, Lock, Mail, UserPlus } from "lucide-react";
 import Link from "next/link";
 import { useRouter, useSearchParams } from "next/navigation";
 import React, { useState } from "react";
+import Logo from "@/components/Logo";
 
 export default function RegisterPage() {
   const [email, setEmail] = useState("");
@@ -77,13 +78,7 @@ export default function RegisterPage() {
         <div className="hidden md:flex w-1/2 bg-gradient-to-br from-dark-background via-[#080808] to-[#0a0a0a] p-12 flex-col justify-between relative">
           <div className="absolute inset-0 opacity-20 bg-[radial-gradient(circle_at_50%_50%,rgba(255,107,0,0.1),transparent)]" />
 
-          <Link href="/" className="flex items-center space-x-3 group">
-            <img src="/images/logo.png" alt="Logo" className="h-10 w-auto" />
-            <div className="text-4xl font-bold font-dancing">
-              <span className="text-dark-secondary">AI</span>
-              <span className="text-white">Read</span>
-            </div>
-          </Link>
+          <Logo />
 
           <div className="space-y-6">
             <h2 className="text-4xl lg:text-5xl font-bold leading-tight text-white tracking-tight">
@@ -107,6 +102,7 @@ export default function RegisterPage() {
 
         {/* Form Side */}
         <div className="flex-1 p-8 lg:p-16 flex flex-col justify-center border-r border-white/5">
+          <Logo className="md:hidden justify-center mb-8" />
           <div className="mb-10 text-center md:text-left">
             <h1 className="text-3xl font-bold text-white mb-2">
               Create Account

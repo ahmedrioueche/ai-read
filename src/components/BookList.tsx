@@ -1,6 +1,7 @@
-import React, { useState, useRef, useEffect } from "react";
+import Logo from "@/components/Logo";
+import { BookData } from "@/hooks/useBookManager";
 import { ChevronRight, Trash2, X } from "lucide-react";
-import { BookData } from "@/app/Home";
+import React, { useEffect, useRef, useState } from "react";
 
 interface BookListProps {
   books: BookData[];
@@ -105,13 +106,7 @@ const BookList: React.FC<BookListProps> = ({
           }}
           className="h-full bg-dark-background shadow-lg transition-transform duration-300 ease-in-out"
         >
-          <div className="flex flex-row items-center space-x-2 mt-4 ml-6 mb-2">
-            <img src="/images/logo.png" alt="Logo" className="h-6 w-5" />
-            <div className="text-xl font-bold font-dancing">
-              <span className="text-dark-secondary">AI</span>
-              <span className="text-white">Read</span>
-            </div>
-          </div>
+          <Logo className="mt-4 ml-6 mb-2" />
           <div
             className="p-4 h-full overflow-y-auto"
             style={{ scrollbarWidth: "none", msOverflowStyle: "none" }}

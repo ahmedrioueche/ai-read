@@ -3,6 +3,7 @@ import React, { useState } from "react";
 import { Mail, Loader, ArrowLeft, CheckCircle2 } from "lucide-react";
 import Link from "next/link";
 import { useAuth } from "@/context/AuthContext";
+import Logo from "@/components/Logo";
 
 export default function ForgotPassword() {
   const [email, setEmail] = useState("");
@@ -37,6 +38,8 @@ export default function ForgotPassword() {
 
       <div className="w-full max-w-[500px] bg-white/[0.02] border border-white/[0.05] backdrop-blur-2xl rounded-[32px] overflow-hidden shadow-2xl relative z-10 p-8 lg:p-12">
         
+        <Logo className="justify-center mb-8" />
+
         <Link href="/login" className="inline-flex items-center text-gray-400 hover:text-white transition-colors mb-8 group">
           <ArrowLeft className="w-4 h-4 mr-2 group-hover:-translate-x-1 transition-transform" />
           <span className="text-sm font-medium">Back to login</span>

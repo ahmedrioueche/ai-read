@@ -20,6 +20,7 @@ import { useRouter } from "next/navigation";
 import { useAuth } from "@/context/AuthContext";
 import { usePlan } from "@/context/PlanContext";
 import { calculateRemainingTime } from "@/utils/helper";
+import Logo from "@/components/Logo";
 
 const SettingsModal = lazy(() => import("@/components/SettingsModal"));
 const FeaturesModal = lazy(() => import("@/components/FeaturesModal"));
@@ -43,8 +44,7 @@ const Navbar: React.FC<{
   const router = useRouter();
   const language = "en";
   const text = dict[language];
-  const { user, signOut } = useAuth();
-  const isAuth = user?.email?.trim() !== "";
+  const { user, signOut, isAuthenticated } = useAuth();
   const { plan, isFreeTrial, freeTrialEndDate } = usePlan();
   const isPremium = plan === "premium";
 
@@ -120,13 +120,7 @@ const Navbar: React.FC<{
           isFullscreen ? "hidden" : "flex"
         } items-center justify-between px-6 py-4 z-50 bg-dark-background text-dark-foreground shadow-md`}
       >
-        <div className="flex flex-row items-center space-x-2">
-          <img src="/images/logo.png" alt="Logo" className="h-6 w-5" />
-          <div className="text-xl font-bold font-dancing">
-            <span className="text-dark-secondary">AI</span>
-            <span className="text-white">Read</span>
-          </div>
-        </div>
+        <Logo />
 
         <div className="flex items-center space-x-6" onClick={handleIconClick}>
           <div className="flex flex-row items-center font-dancing cursor-pointer hover:text-dark-secondary transition duration-300">
@@ -168,7 +162,7 @@ const Navbar: React.FC<{
             className="overflow-y-auto mt-2 z-[100] absolute top-[3.2rem] right-0 w-[12rem] bg-dark-background border border-gray-600 rounded-lg shadow-lg flex flex-col p-1.5 space-y-2"
             ref={dropdownRef}
           >
-            {isAuth && (
+            {isAuthenticated && (
               <div>
                 <div className="flex items-center px-2 py-1.5 w-full cursor-auto text-sm font-medium font-satisfy text-light-text dark:text-dark-text hover:bg-dark-secondary transition-colors duration-300">
                   <Mail className="mr-2 h-4 w-4" />
@@ -204,7 +198,7 @@ const Navbar: React.FC<{
                 icon: isPremium ? CreditCard : ArrowUpCircle,
                 isDisabled: true,
                 onClick: () => {
-                  if (!isAuth) {
+                  if (!isAuthenticated) {
                     router.push("/login?redirect=/payment");
                   } else {
                     if (isPremium) {
@@ -250,7 +244,7 @@ const Navbar: React.FC<{
               </div>
             )}
             <hr className="w-full border-t border-gray-300 my-1" />
-            {!isAuth ? (
+            {!isAuthenticated ? (
               <>
                 <Link
                   href="/login"

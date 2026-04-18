@@ -49,13 +49,19 @@ const useBook = (bookUrl: string, isFullScreen: boolean) => {
       // Check if there's a current selection in the document
       const activeElement = document.activeElement;
       if (activeElement && "value" in activeElement) {
-        const inputElement = activeElement as HTMLInputElement;
-        selection = inputElement.value
-          .substring(
-            inputElement.selectionStart || 0,
-            inputElement.selectionEnd || 0
-          )
-          .trim();
+        try {
+          const inputElement = activeElement as HTMLInputElement | HTMLTextAreaElement;
+          if (typeof inputElement.value === "string") {
+            selection = inputElement.value
+              .substring(
+                inputElement.selectionStart || 0,
+                inputElement.selectionEnd || 0
+              )
+              .trim();
+          }
+        } catch (error) {
+          // Ignore errors if selection properties are not supported by the element type
+        }
       }
     }
 
